@@ -1,0 +1,11 @@
+node_modules/
+.runtime/
+.void/
+.wrangler/
+dist/
+evidence/
+.void-wrangler.jsonc
+.env
+.env.*
+!.env.example
+.DS_Store
