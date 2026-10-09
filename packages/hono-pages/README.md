@@ -48,9 +48,27 @@ import { useForm } from 'void-plugin-hono-jsx/form';
 
 Head resolution and escaping follow Void. The adapter synchronizes document attributes and inert script metadata; navigation does not execute newly inserted scripts. Raw `script.innerHTML` is authored content. Serialize dynamic JSON-LD and escape `<` before assigning it.
 
+## Load-policy islands
+
+Use a `.island.tsx` or `.island.jsx` page for static server content and import an interactive component using Void's import attribute:
+
+```tsx
+import Counter from '../components/Counter' with { island: 'load' };
+export const layout = false;
+export default function Page() {
+  return <main><p>Static server content</p><Counter initialCount={9} message="Hello" /></main>;
+}
+```
+
+Place the counter outside the pages directory. It can use Hono hooks and event handlers normally. The adapter renders its initial HTML inside Void's `data-island`, `data-hydrate` and `data-props` markers, then uses `initIslands` to load and mount only interactive components. Props must be JSON-serializable values. Hono escapes the JSON attribute; parsed browser props match the server values. Mounting redraws the island contents. It does not reuse the server DOM.
+
+A static-only island page emits no client script or module preload tags. Static page modules stay outside the normal Pages browser manifest. A project containing only static island pages builds empty client entry modules with no framework code. Void's own automatic prerender policy still applies to eligible island pages. Full static output and explicit prerender configuration remain pending in Issue #10.
+
+Only the `load` policy, a single default relative TSX/JSX import, and attributes directly in the island page are supported. Other policies and malformed imports fail during discovery. Island layouts, nested attributed imports and island form helpers are unsupported. Direct imports of `void-plugin-hono-jsx/form` in an island page or component fail with a diagnostic; `useForm` also requires a full Pages provider at runtime. Use ordinary document links in static island pages. Pages navigation falls back to a document request for island routes. Static layouts remain server content and do not retain interactive state.
+
 ## Experimental limitations
 
-The virtual renderer/client entries follow version-specific conventions observed in Void's official adapter rather than a documented third-party registration API. Browser mounting redraws the SSR page; DOM reuse is not guaranteed. Islands, deferred props, prerender/static output, ISR and page-file HMR still require the corresponding follow-up issues. Unsupported modes fail clearly. Package publication and repository visibility are separate maintainer decisions.
+The virtual renderer/client entries follow version-specific conventions observed in Void's official adapter rather than a documented third-party registration API. Browser mounting redraws the SSR page; DOM reuse is not guaranteed. Deferred props, explicit prerender/static output, ISR and page-file HMR still require the corresponding follow-up issues. Unsupported modes fail clearly. Package publication and repository visibility are separate maintainer decisions.
 
 ## Verification
 

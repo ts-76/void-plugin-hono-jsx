@@ -5,6 +5,7 @@ import { pagesRuntimePath, clientRuntimePath, publicRuntimeModules } from './run
 import { generateComponentManifest, resolvePagesDir, resolveStaticPageDataBuildOptions, scanPages, type PageScanResult } from 'void/pages';
 import type { Plugin } from 'vite';
 import { honoJsx } from './hono-jsx.ts';
+import { honoIslands } from './hono-islands.ts';
 
 const rendererId = 'virtual:void-pages-renderer';
 const clientId = 'virtual:void-pages-client';
@@ -21,7 +22,7 @@ export function voidHonoPages(): Plugin[] {
       if (layout.island || !/\.[jt]sx$/.test(layout.filePath)) throw new Error('Hono Pages: only standard TSX/JSX layouts are supported.');
     }
     for (const page of scan.pages) {
-      if (!/\.[jt]sx$/.test(page.componentPath) || page.renderMode === 'island') {
+      if (!/\.[jt]sx$/.test(page.componentPath)) {
         throw new Error(`Hono Pages: only standard TSX/JSX pages are supported: ${page.componentPath}.`);
       }
       if (page.prerender === true) {
@@ -31,7 +32,7 @@ export function voidHonoPages(): Plugin[] {
     return scan;
   }
 
-  return [honoJsx(), {
+  return [honoIslands(), honoJsx(), {
     name: 'void-hono:pages',
     enforce: 'pre',
     config() {
@@ -70,7 +71,8 @@ export function voidHonoPages(): Plugin[] {
     async load(id) {
       if (id !== `\0${rendererId}` && id !== `\0${clientId}`) return;
       const currentScan = scan ?? await rescan();
-      const manifest = generateComponentManifest(currentScan, pagesDir);
+      const manifest = generateComponentManifest(id === `\0${clientId}` ? { ...currentScan, pages: currentScan.pages.filter((page) => !page.island) } : currentScan, pagesDir);
+      if (id === `\0${clientId}` && !currentScan.pages.some((page) => !page.island)) return 'export {};';
       if (id === `\0${rendererId}`) {
         return `
 import { jsx } from 'hono/jsx';
