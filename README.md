@@ -166,9 +166,9 @@ The plugin rejects unverified Void versions. A successful smoke test establishes
 
 ### Supported behavior and limitations
 
-The example supports initial SSR of TSX/JSX pages with loader props, file-based routes, client-only pages, browser mounting, local interaction, and full-document reloads. Browser mounting redraws the page; reuse of the existing SSR DOM is not guaranteed.
+The example supports initial SSR of TSX/JSX pages with loader props, file-based routes, client-only pages, browser mounting, local interaction, SPA navigation, and full-document reloads. Browser mounting redraws the page; reuse of the existing SSR DOM is not guaranteed.
 
-Layouts, page actions, island pages, explicit prerendering, and static output are rejected with diagnostics. Deferred props fail clearly at rendering time. SPA navigation, shared-data hooks, persistent state across navigation, head updates, and page-file discovery during HMR are not implemented. Follow-up work is tracked in [Issues #3 through #13](https://github.com/ts-76/void-hono-jsx-poc/issues).
+Layouts, page actions, island pages, explicit prerendering, and static output are rejected with diagnostics. Deferred props fail clearly at rendering time. Shared-data hooks, persistent layout state, and page-file discovery during HMR are not implemented. Head behavior still needs dedicated coverage in Issue #6. Follow-up work is tracked in [Issues #3 through #13](https://github.com/ts-76/void-hono-jsx-poc/issues).
 
 The loader deliberately includes a string containing closing script tags, an ampersand, and Unicode line separators. The HTTP check verifies safe JSON embedding and an exact props round trip. Browser checks additionally confirm that the string remains text and never executes.
 
@@ -200,3 +200,26 @@ node scripts/check-pages-routing.mjs http://127.0.0.1:4174 --check-build
 HTTP checks compare SSR output with Void's `X-VoidPages` JSON response for each route. The build check confirms that a server-only sentinel exists in the server bundle and is absent from client assets. It never returns that sentinel as page props.
 
 Chrome checks on 2026-10-09 passed for all six route requests in both development and production preview. Each page mounts, accepts a counter click, and resets on reload. Client-only markup appears only after mounting. Type checking, six scanner/diagnostic tests, production build, HTTP checks, and server-only bundle isolation also passed.
+
+### Navigation
+
+[Issue #3](https://github.com/ts-76/void-hono-jsx-poc/issues/3) connects Hono rendering to `createVoidRouter` from `void/pages-client`. Void owns page requests, cancellation, history, and scroll handling. Import `Link` and `useRouter` from `runtime/pages` in this repository's examples:
+
+```tsx
+const router = useRouter();
+<Link href="/users/alice?tab=profile">Alice</Link>
+<button onClick={() => void router.refresh()}>Refresh</button>
+```
+
+`Link` handles primary, unmodified clicks on same-origin HTTP links. Modified clicks, downloads, external links, other targets, and `reloadDocument` keep native anchor behavior. Ordinary GET visits reset page state. Void's `refresh()` preserves page state by default. The root's `data-navigation` attribute reports `idle`, `loading`, or `submitting`.
+
+A rejected link visit shows an accessible error message and keeps the current page available. HTTP responses without the Pages protocol and failed network requests follow Void's full-document fallback. Callers of `router.visit()` and `router.refresh()` should handle rejected promises themselves.
+
+Chrome checks on 2026-10-09 passed in development and production preview: loader props and query strings updated without document reload; back/forward and hash navigation worked; refresh preserved the counter; a newer visit cancelled a slow request; an invalid JSON response cleared pending state and allowed recovery; navigation into a client-only page worked. Native-link checks and an explicit document reload also passed. See `evidence/pages-navigation-browser.log` for the recorded checks. To repeat the browser checks with Python 3, agent-browser 0.19.0, and Google Chrome on macOS, start both servers and run:
+
+```sh
+agent-browser --session void-hono-pages --executable-path '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' open http://127.0.0.1:5174
+python3 scripts/check-pages-navigation.py
+```
+
+The checks use the example's deliberate slow and failing routes. They inject one malformed Pages response to verify error recovery without depending on Void's development error overlay.

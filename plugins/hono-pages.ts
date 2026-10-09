@@ -1,6 +1,7 @@
 import { createRequire } from 'node:module';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { generateComponentManifest, resolvePagesDir, resolveStaticPageDataBuildOptions, scanPages, type PageScanResult } from 'void/pages';
 import type { Plugin } from 'vite';
 import { honoJsx } from './hono-jsx.ts';
@@ -10,6 +11,7 @@ const clientId = 'virtual:void-pages-client';
 
 /** Experimental Pages contract verified against Void 0.26.0. */
 export function voidHonoPages(): Plugin[] {
+  const runtimeDir = fileURLToPath(new URL('../runtime/', import.meta.url));
   const root = process.cwd();
   const pagesDir = resolvePagesDir(root);
   let scan: PageScanResult | undefined;
@@ -67,6 +69,8 @@ export function voidHonoPages(): Plugin[] {
       if (id === `\0${rendererId}`) {
         return `
 import { jsx } from 'hono/jsx';
+import { createSsrRouter } from 'void/pages-client';
+import { RouterContext } from ${JSON.stringify(join(runtimeDir, 'pages.tsx'))};
 import { serializePageData } from 'void/pages-server';
 import { renderHeadToString, renderHtmlAttrs, renderBodyAttrs } from 'void/pages-head';
 ${manifest}
@@ -77,7 +81,8 @@ export async function renderPage(pageObj, assetTags) {
   const load = components[pageObj.component];
   if (!load) throw new Error('Hono Pages: unknown page component ' + pageObj.component);
   const { default: Page } = await load();
-  const markup = await jsx(Page, pageObj.props).toString();
+  if (typeof Page !== 'function') throw new Error('Hono Pages: a page must export a component function.');
+  const markup = await jsx(RouterContext.Provider, { value: createSsrRouter(pageObj.url, pageObj.params), children: jsx(Page, pageObj.props) }).toString();
   const head = pageObj.head;
   return '<!doctype html><html' + (head ? renderHtmlAttrs(head) : '') + '><head>'
     + '<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="data:,">'
@@ -89,18 +94,9 @@ export async function renderPage(pageObj, assetTags) {
 `;
       }
       return `
-import { render } from 'hono/jsx/dom';
-import { jsx } from 'hono/jsx/dom/jsx-runtime';
+import { startHonoPages } from ${JSON.stringify(join(runtimeDir, 'client.tsx'))};
 ${manifest}
-const data = document.getElementById('__VOID_PAGE_DATA__');
-const root = document.getElementById('app');
-if (!data || !root) throw new Error('Hono Pages: initial page data or app root is missing.');
-const page = JSON.parse(data.textContent);
-const load = components[page.component];
-if (!load) throw new Error('Hono Pages: unknown page component ' + page.component);
-const { default: Page } = await load();
-render(jsx(Page, page.props), root);
-root.dataset.honoPages = 'mounted';
+await startHonoPages({ components, layoutTree, routeMeta, matchRoute });
 `;
     },
   }];
