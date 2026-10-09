@@ -263,3 +263,16 @@ Void's shared router updates title/meta/link tags at navigation commit. The adap
 `script.innerHTML` follows Void's raw-content semantics. For JSON-LD containing dynamic values, serialize JSON and replace `<` with `\\u003c` before assigning it, as the example does. Title, meta content, and attribute values use Void's escaping helpers.
 
 Visit `/head/one` and `/head/two` to compare metadata. Project defaults and middleware data coexist with page-derived values. `python3 scripts/check-pages-head.py` checks direct requests, SPA visits, back/forward, refresh, precedence, stale tag/attribute removal, duplicate prevention, script preservation and inert reinsertion, and escaped dynamic values in both development and production preview.
+
+### Installable adapter package
+
+The package name is `void-plugin-hono-jsx`. Build and validate it with the supported Node version:
+
+```sh
+npm ci
+npm run check:consumer
+```
+
+The check packs only ESM code, declarations and documentation, installs the tarball in an isolated locked consumer, then verifies types, SSR, runtime hooks, counter updates, SPA navigation and reload in development and production preview. The prepared workflow in `.github/workflow-templates/package.yml` runs the same check on Node 24.21.0 after it is moved into `.github/workflows/`. Activation currently requires adding the `workflow` scope to the repository GitHub authentication. See [package documentation](packages/hono-pages/README.md) for configuration and public exports.
+
+The plugin resolves server and DOM runtime entries using Vite's consumer environment. Compiled runtime entries share the public Pages import, and Hono stays outside dependency prebundling to preserve one context and hook implementation per environment. The package remains private and unpublished while the release and license decisions in Issue #12 are pending.
