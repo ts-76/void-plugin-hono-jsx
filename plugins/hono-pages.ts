@@ -14,6 +14,7 @@ const clientId = 'virtual:void-pages-client';
 export function voidHonoPages(): Plugin[] {
   const root = process.cwd();
   const pagesDir = resolvePagesDir(root);
+  const staticData = resolveStaticPageDataBuildOptions(root);
   let scan: PageScanResult | undefined;
 
   async function rescan() {
@@ -25,8 +26,8 @@ export function voidHonoPages(): Plugin[] {
       if (!/\.[jt]sx$/.test(page.componentPath)) {
         throw new Error(`Hono Pages: only standard TSX/JSX pages are supported: ${page.componentPath}.`);
       }
-      if (page.prerender === true) {
-        throw new Error('Hono Pages: prerendering is not supported yet (issue #10).');
+      if (staticData.enabled && page.methods.some((method) => method === 'action' || method === 'actions')) {
+        throw new Error(`Hono Pages: actions require a server and cannot be used with static output: ${page.componentPath}.`);
       }
     }
     return scan;
@@ -45,9 +46,6 @@ export function voidHonoPages(): Plugin[] {
       const { version } = metadata;
       if (version !== '0.26.0') {
         throw new Error(`Hono Pages: Void ${version} is unverified; this experimental adapter requires 0.26.0.`);
-      }
-      if (resolveStaticPageDataBuildOptions(root).enabled) {
-        throw new Error('Hono Pages: static output is not supported yet (issue #10).');
       }
       return {
         resolve: { dedupe: ['hono'] },
@@ -82,6 +80,7 @@ import { serializePageData } from 'void/pages-server';
 import { renderHeadToString, renderHtmlAttrs, renderBodyAttrs } from 'void/pages-head';
 ${manifest}
 export async function renderPage(pageObj, assetTags) {
+  if (${JSON.stringify(staticData.enabled)} && pageObj.deferredKeys) throw new Error('Hono Pages: deferred props cannot be statically prerendered; remove defer().');
   const load = components[pageObj.component];
   if (!load) throw new Error('Hono Pages: unknown page component ' + pageObj.component);
   const { default: Page } = await load();
@@ -107,7 +106,7 @@ export async function renderPage(pageObj, assetTags) {
       return `
 import { startHonoPages } from ${JSON.stringify(clientRuntimePath)};
 ${manifest}
-await startHonoPages({ components, layoutTree, routeMeta, matchRoute });
+await startHonoPages({ components, layoutTree, routeMeta, matchRoute, staticPageData: ${JSON.stringify(staticData.enabled)}, staticPageDataFastPath: ${JSON.stringify(staticData.fastPath)} });
 `;
     },
   }];
