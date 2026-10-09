@@ -11,6 +11,7 @@ async function withPages(files, check) {
   try {
     await mkdir(join(root, 'pages'));
     for (const [name, source] of Object.entries(files)) {
+      await mkdir(join(root, 'pages', name, '..'), { recursive: true });
       await writeFile(join(root, 'pages', name), source);
     }
     process.chdir(root);
@@ -42,8 +43,7 @@ test('Void discovers a loader-backed page and the adapter generates both entries
 });
 
 for (const [name, files, error] of [
-  ['client-only pages', { 'index.tsx': page, 'index.server.ts': 'export const ssr = false;' }, /only SSR/],
-  ['island pages', { 'index.island.tsx': page }, /only SSR/],
+  ['island pages', { 'index.island.tsx': page }, /only standard TSX/],
   ['layouts', { 'index.tsx': page, 'layout.tsx': page }, /layouts are not supported/],
   ['actions', { 'index.tsx': page, 'index.server.ts': 'export const action = () => ({});' }, /actions are not supported/],
   ['explicit prerendering', { 'index.tsx': page, 'index.server.ts': 'export const prerender = true;' }, /prerendering is not supported/],
@@ -54,3 +54,21 @@ for (const [name, files, error] of [
     });
   });
 }
+
+test('Void route conventions and a client-only page are accepted without a second router', async () => {
+  await withPages({
+    'about.tsx': page,
+    'users/[id].tsx': page,
+    'docs/[...slug].tsx': page,
+    '(marketing)/contact.tsx': page,
+    'browser.tsx': 'const browserOnly = window.navigator.userAgent; ' + page,
+    'browser.server.ts': 'export const ssr = false; export const loader = () => ({ initialCount: 11 });',
+  }, async (plugin) => {
+    await plugin.buildStart();
+    const client = await plugin.load(plugin.resolveId('virtual:void-pages-client'));
+    assert.match(client, /users\/\[id\]\.tsx/);
+    assert.match(client, /docs\/\[\.\.\.slug\]\.tsx/);
+    assert.match(client, /browser\.tsx/);
+    assert.doesNotMatch(client, /browser\.server/);
+  });
+});

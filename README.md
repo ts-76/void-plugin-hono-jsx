@@ -166,12 +166,37 @@ The plugin rejects unverified Void versions. A successful smoke test establishes
 
 ### Supported behavior and limitations
 
-The example supports initial SSR of a TSX/JSX page with a synchronous loader result, browser mounting, local interaction, and full-document reloads. Browser mounting redraws the page; reuse of the existing SSR DOM is not guaranteed.
+The example supports initial SSR of TSX/JSX pages with loader props, file-based routes, client-only pages, browser mounting, local interaction, and full-document reloads. Browser mounting redraws the page; reuse of the existing SSR DOM is not guaranteed.
 
-Layouts, page actions, client-only pages, island pages, explicit prerendering, and static output are rejected with diagnostics. Deferred props fail clearly at rendering time. SPA navigation, shared-data hooks, persistent state across navigation, head updates, and page-file discovery during HMR are not implemented. Follow-up work is tracked in [Issues #2–#13](https://github.com/ts-76/void-hono-jsx-poc/issues).
+Layouts, page actions, island pages, explicit prerendering, and static output are rejected with diagnostics. Deferred props fail clearly at rendering time. SPA navigation, shared-data hooks, persistent state across navigation, head updates, and page-file discovery during HMR are not implemented. Follow-up work is tracked in [Issues #3 through #13](https://github.com/ts-76/void-hono-jsx-poc/issues).
 
 The loader deliberately includes a string containing closing script tags, an ampersand, and Unicode line separators. The HTTP check verifies safe JSON embedding and an exact props round trip. Browser checks additionally confirm that the string remains text and never executes.
 
 On 2026-10-09, type checking, six scanner/diagnostic tests, production build, and HTTP checks passed. Chrome checks passed in both development and production preview: counter **7 → 8 → 9 → 10**, reset to **7**, reload to **7**, matching loader text, no injected script execution, and no page or console errors.
 
 The repository remains private and the package remains unpublished. Package distribution and OSS release decisions are tracked separately in Issues #7 and #12.
+
+### File-based routes and client-only pages
+
+[Issue #2](https://github.com/ts-76/void-hono-jsx-poc/issues/2) adds examples using Void's existing route discovery and request protocol.
+
+| URL | Behavior |
+| --- | --- |
+| `/about` | Static page. |
+| `/users/alice` | Dynamic page. Its loader reads `id` and displays `alice`. |
+| `/docs/guide/start` | Catch-all page. Its loader reads `slug` and displays `guide/start`. |
+| `/contact` | Grouped page. The route group does not appear in the URL. |
+| `/browser` | Client-only page. Void runs the loader and sends an empty app shell with initial count 11. |
+
+The client-only component accesses `window` at module scope. A successful HTTP response proves that the server does not evaluate that module. The generated client entry reads the loader payload and mounts it normally. Setting `ssr = false` in a companion server module uses Void's own shell renderer.
+
+Run these checks with the development and production-preview servers active:
+
+```sh
+node scripts/check-pages-routing.mjs http://127.0.0.1:5174
+node scripts/check-pages-routing.mjs http://127.0.0.1:4174 --check-build
+```
+
+HTTP checks compare SSR output with Void's `X-VoidPages` JSON response for each route. The build check confirms that a server-only sentinel exists in the server bundle and is absent from client assets. It never returns that sentinel as page props.
+
+Chrome checks on 2026-10-09 passed for all six route requests in both development and production preview. Each page mounts, accepts a counter click, and resets on reload. Client-only markup appears only after mounting. Type checking, six scanner/diagnostic tests, production build, HTTP checks, and server-only bundle isolation also passed.

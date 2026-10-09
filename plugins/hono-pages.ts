@@ -20,8 +20,8 @@ export function voidHonoPages(): Plugin[] {
       throw new Error('Hono Pages: layouts are not supported yet (issue #4).');
     }
     for (const page of scan.pages) {
-      if (!/\.[jt]sx$/.test(page.componentPath) || page.renderMode !== 'server') {
-        throw new Error(`Hono Pages: only SSR TSX/JSX pages are supported: ${page.componentPath}.`);
+      if (!/\.[jt]sx$/.test(page.componentPath) || page.renderMode === 'island') {
+        throw new Error(`Hono Pages: only standard TSX/JSX pages are supported: ${page.componentPath}.`);
       }
       if (page.methods.some((method) => method !== 'loader')) {
         throw new Error(`Hono Pages: actions are not supported yet (issue #5): ${page.componentPath}.`);
@@ -30,6 +30,7 @@ export function voidHonoPages(): Plugin[] {
         throw new Error('Hono Pages: prerendering is not supported yet (issue #10).');
       }
     }
+    return scan;
   }
 
   return [honoJsx(), {
@@ -37,7 +38,11 @@ export function voidHonoPages(): Plugin[] {
     config() {
       const require = createRequire(import.meta.url);
       const packagePath = join(dirname(require.resolve('void')), '..', 'package.json');
-      const { version } = JSON.parse(readFileSync(packagePath, 'utf8')) as { version: string };
+      const metadata: unknown = JSON.parse(readFileSync(packagePath, 'utf8'));
+      if (typeof metadata !== 'object' || metadata === null || !('version' in metadata) || typeof metadata.version !== 'string') {
+        throw new Error('Hono Pages: the Void package version is missing.');
+      }
+      const { version } = metadata;
       if (version !== '0.26.0') {
         throw new Error(`Hono Pages: Void ${version} is unverified; this experimental adapter requires 0.26.0.`);
       }
@@ -57,8 +62,8 @@ export function voidHonoPages(): Plugin[] {
     },
     async load(id) {
       if (id !== `\0${rendererId}` && id !== `\0${clientId}`) return;
-      if (!scan) await rescan();
-      const manifest = generateComponentManifest(scan!, pagesDir);
+      const currentScan = scan ?? await rescan();
+      const manifest = generateComponentManifest(currentScan, pagesDir);
       if (id === `\0${rendererId}`) {
         return `
 import { jsx } from 'hono/jsx';
