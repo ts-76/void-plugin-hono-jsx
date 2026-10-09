@@ -68,13 +68,13 @@ npm run preview
 
 Vite 8 の `EnvironmentOptions` は `oxc` を持たないため、この PoC は環境ごとの `configEnvironment` で Oxc を設定せず、`transform` 内で環境を判定します。TypeScript の既定 JSX 型は `hono/jsx` とし、クライアント entry には DOM 用 `@jsxImportSource` を指定しています。
 
-このプラグインが担うのは JSX 変換だけです。Void の Pages アダプター登録、ファイルベース Pages ルーティング、loaders / actions、layouts、islands、クライアントルーター、状態維持 HMR、SSR DOM の再利用保証は実装していません。Vite の更新時には再読み込みで状態が失われる可能性があります。
+`hono-jsx` プラグインが担うのは JSX 変換だけです。後続の Issue #1 で、別の実験用 Pages アダプターと loader 付きの例を追加しました。対応範囲と使い方は末尾の「Experimental Void Pages adapter」を参照してください。
 
 ## Hydration と公式 API の確認
 
 Hono 4.13.13 では `hono/jsx/dom` が `render` を公開しています。`hydrateRoot` は `hono/jsx/dom/client` にあり、実装に hydrate は render 相当と記載されています。この PoC は `render` を使い、SSR が作ったカウンター領域をブラウザーで描き直します。React のような既存 DOM 再利用型 hydration と同じ保証はしません。
 
-Void の Custom SSR entry 名、`defineRender`、assetTags、`voidPlugin()` の戻り値は確認した資料と一致しました。Hono の公式 Void 統合ガイドは middleware / helper の使用を説明していますが、Hono JSX の Pages アダプターとしての対応を保証する記述は確認していません。独自 Pages アダプターの公開登録 API も確認できていません。
+Void の Custom SSR entry 名、`defineRender`、assetTags、`voidPlugin()` の戻り値は確認した資料と一致しました。Hono の公式 Void 統合ガイドは middleware / helper の使用を説明していますが、Hono JSX の Pages アダプターとしての対応を保証する記述は確認していません。実験用 Pages アダプターでは公式 React アダプターの接続方法を確認して使用していますが、独自アダプター用の安定した公開登録 API として保証されたものではありません。
 
 ## 2026-10-09 の検証結果
 
@@ -112,3 +112,66 @@ Void の Custom SSR entry 名、`defineRender`、assetTags、`voidPlugin()` の�
 - [Void Pages Routing](https://void.cloud/guide/pages-routing/overview)
 - [Hono Client Components](https://hono.dev/docs/guides/jsx-dom)
 - [Vite Plugin API](https://vite.dev/guide/api-plugin)
+
+## Experimental Void Pages adapter
+
+[Issue #1](https://github.com/ts-76/void-hono-jsx-poc/issues/1) introduces a separate Pages smoke example. The original Custom SSR example remains available through `npm run dev`, `npm run build`, and `npm run preview`.
+
+The Pages example uses Void's scanner and loader pipeline, Hono JSX for server rendering, and Hono DOM for browser mounting. Its loader returns an initial counter value of **7**, so the example verifies actual server-to-client props rather than a hard-coded browser default. Reset and reload restore that loader value.
+
+With Node.js 24.21.0 or newer and dependencies installed at the repository root:
+
+```sh
+mkdir -p .void/logs
+export WRANGLER_LOG_PATH="$PWD/.void/logs"
+export WRANGLER_SEND_METRICS=false
+export VOID_INSPECTOR_PORT=false
+export CLOUDFLARE_CF_FETCH_ENABLED=false
+npm run typecheck
+npm test
+npm run dev:pages
+```
+
+The development example is served at http://127.0.0.1:5174/. In another terminal, set the same environment variables and run:
+
+```sh
+npm run build:pages
+npm run preview:pages
+```
+
+The production preview is served at http://127.0.0.1:4174/. With both servers running, verify the HTTP contract:
+
+```sh
+node scripts/check-pages-smoke.mjs http://127.0.0.1:5174
+node scripts/check-pages-smoke.mjs http://127.0.0.1:4174
+```
+
+The example configuration composes `voidPlugin()` with `voidHonoPages()`. The latter includes the JSX transform; do not register `honoJsx()` again. Run Vite from the example's working directory, as the provided scripts do, so both Void and the adapter resolve the same project root.
+
+### Integration contract
+
+The contract was checked against installed Void **0.26.0** and the published **@void/react 0.26.0** adapter. Hono **4.13.13** and Vite **8.3.3** are the tested baseline.
+
+| Interface | Status and use |
+| --- | --- |
+| `void/pages`: `resolvePagesDir`, `scanPages`, `generateComponentManifest` | Exported package APIs used by the Vite plugin to reuse Void's page discovery and component IDs. |
+| `void/pages-protocol`: `PageObject` | Exported payload type. The renderer receives the component ID, loader props, route data, and resolved head from Void. |
+| `void/pages-server`: `serializePageData` | Exported runtime serializer used to embed the payload safely in an application/json script. |
+| `void/pages-head`: rendering helpers | Exported runtime helpers used for initial head and document attributes. Client-side head updates are deferred to Issue #6. |
+| `virtual:void-pages-renderer`: `renderPage(pageObj, assetTags)` | A version-specific virtual-module convention consumed by Void and provided by official adapters. It is not a documented third-party registration API. |
+| `virtual:void-pages-client` and `pages-client` build input | Version-specific client-entry conventions copied in behavior from the official adapter. The generated entry mounts the page using serialized loader props. |
+| `__VOID_PAGE_DATA__` and `#app` | Initial payload and mount-element conventions shared with the official adapter's SSR output. |
+
+The plugin rejects unverified Void versions. A successful smoke test establishes this pinned experimental integration; it does not establish an upstream-supported Hono Pages adapter or compatibility with every future Void release. Build-time discovery helpers are kept out of runtime imports by using the dedicated serializer and head exports.
+
+### Supported behavior and limitations
+
+The example supports initial SSR of a TSX/JSX page with a synchronous loader result, browser mounting, local interaction, and full-document reloads. Browser mounting redraws the page; reuse of the existing SSR DOM is not guaranteed.
+
+Layouts, page actions, client-only pages, island pages, explicit prerendering, and static output are rejected with diagnostics. Deferred props fail clearly at rendering time. SPA navigation, shared-data hooks, persistent state across navigation, head updates, and page-file discovery during HMR are not implemented. Follow-up work is tracked in [Issues #2–#12](https://github.com/ts-76/void-hono-jsx-poc/issues).
+
+The loader deliberately includes a string containing closing script tags, an ampersand, and Unicode line separators. The HTTP check verifies safe JSON embedding and an exact props round trip. Browser checks additionally confirm that the string remains text and never executes.
+
+On 2026-10-09, type checking, six scanner/diagnostic tests, production build, and HTTP checks passed. Chrome checks passed in both development and production preview: counter **7 → 8 → 9 → 10**, reset to **7**, reload to **7**, matching loader text, no injected script execution, and no page or console errors.
+
+The repository remains private and the package remains unpublished. Package distribution and OSS release decisions are tracked separately in Issues #7 and #12.
