@@ -168,7 +168,7 @@ The plugin rejects unverified Void versions. A successful smoke test establishes
 
 The example supports initial SSR of TSX/JSX pages with loader props, file-based routes, client-only pages, browser mounting, local interaction, SPA navigation, and full-document reloads. Browser mounting redraws the page; reuse of the existing SSR DOM is not guaranteed.
 
-Island pages, explicit prerendering, and static output are rejected with diagnostics. Deferred props fail clearly at rendering time. Page-file discovery during HMR is not implemented. Head behavior is covered by the dedicated SSR and navigation checks. Follow-up work is tracked in [Issues #3 through #13](https://github.com/ts-76/void-hono-jsx-poc/issues).
+Load-policy island pages are supported. Island layouts, explicit prerendering, and static output are rejected with diagnostics. Deferred props fail clearly at rendering time. Page-file discovery during HMR is not implemented. Head behavior is covered by the dedicated SSR and navigation checks. Follow-up work is tracked in [Issues #3 through #13](https://github.com/ts-76/void-hono-jsx-poc/issues).
 
 The loader deliberately includes a string containing closing script tags, an ampersand, and Unicode line separators. The HTTP check verifies safe JSON embedding and an exact props round trip. Browser checks additionally confirm that the string remains text and never executes.
 
@@ -276,3 +276,11 @@ npm run check:consumer
 The check packs only ESM code, declarations and documentation, installs the tarball in an isolated locked consumer, then verifies types, SSR, runtime hooks, counter updates, SPA navigation and reload in development and production preview. The prepared workflow in `.github/workflow-templates/package.yml` runs the same check on Node 24.21.0 after it is moved into `.github/workflows/`. Activation currently requires adding the `workflow` scope to the repository GitHub authentication. See [package documentation](packages/hono-pages/README.md) for configuration and public exports.
 
 The plugin resolves server and DOM runtime entries using Vite's consumer environment. Compiled runtime entries share the public Pages import, and Hono stays outside dependency prebundling to preserve one context and hook implementation per environment. The package remains private and unpublished while the release and license decisions in Issue #12 are pending.
+
+### Load-policy Hono islands
+
+Issue #8 adds `.island.tsx` pages with Void's `with { island: 'load' }` imports. The adapter server-renders static page content and the initial interactive component, safely embeds props in Void's island markers, and mounts only interactive components using `initIslands`. Regular Pages navigation uses a document request for island routes.
+
+The packed consumer at `fixtures/consumer` contains `/islands`, a loader-backed counter, and `/static`, a page with no interactive imports. `npm run check:consumer` verifies initial HTML, escaped props, counter updates and reload in development and preview. It also checks that static page sentinels never appear in client assets, then builds a project containing only static island pages and verifies empty executable client modules and zero script requests.
+
+See the [package island documentation](packages/hono-pages/README.md#load-policy-islands) for syntax, supported policy and diagnostics. Island layouts, nested attributed imports and island form helpers remain unsupported.

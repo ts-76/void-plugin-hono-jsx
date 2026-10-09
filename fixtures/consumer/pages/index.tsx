@@ -10,6 +10,7 @@ export default function Page({ initialCount }: Props) {
     <output id="count">{count}</output>
     <button id="increment" onClick={() => setCount((value) => value + 1)}>Increment</button>
     <Link id="other" href="/other">Other page</Link>
+    <Link id="islands-link" href="/islands">Island page</Link>
     <p id="runtime-hooks">{router.path}:{Object.keys(useShared()).length}:{Object.keys(useParams()).length}:{Object.keys(useErrors()).length}:{form.data.name}</p>
   </main>;
 }
