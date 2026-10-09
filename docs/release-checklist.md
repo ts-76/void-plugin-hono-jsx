@@ -1,13 +1,13 @@
 # Release checklist
 
-No release is authorized by this checklist. The package remains `private: true`, version `0.0.0`, with `UNLICENSED` metadata until maintainers finish the decisions below.
+No release is authorized by this checklist. The package remains `private: true`, version `0.0.0`, with MIT license metadata until maintainers finish the remaining release decisions below.
 
 ## Decisions and access
 
 - [x] Maintainer selected the package name `void-plugin-hono-jsx`.
-- [ ] Maintainer selected the project license and copyright attribution.
-- [ ] Add the chosen root/package license files and matching package metadata.
-- [ ] Review upstream adaptation notices and include them in the tarball.
+- [x] Maintainer selected the MIT license. The license attributes project copyright to its contributors.
+- [x] Add matching root/package MIT license files and package metadata.
+- [x] Review upstream adaptation notices and include them in the tarball.
 - [ ] Confirm npm name availability, publisher identity, ownership and account security.
 - [ ] Choose an initial experimental version and release support policy.
 - [ ] Decide repository visibility explicitly and review its full Git history before making it public.

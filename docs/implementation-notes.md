@@ -275,7 +275,7 @@ npm run check:consumer
 
 The check packs only ESM code, declarations and documentation, installs the tarball in an isolated locked consumer, then verifies types, SSR, runtime hooks, counter updates, SPA navigation and reload in development and production preview. The prepared workflow in `.github/workflow-templates/package.yml` runs the same check on Node 24.21.0 after it is moved into `.github/workflows/`. Activation currently requires adding the `workflow` scope to the repository GitHub authentication. See [package documentation](../packages/hono-pages/README.md) for configuration and public exports.
 
-The plugin resolves server and DOM runtime entries using Vite's consumer environment. Compiled runtime entries share the public Pages import, and Hono stays outside dependency prebundling to preserve one context and hook implementation per environment. The package remains private and unpublished while the release and license decisions in Issue #12 are pending.
+The plugin resolves server and DOM runtime entries using Vite's consumer environment. Compiled runtime entries share the public Pages import, and Hono stays outside dependency prebundling to preserve one context and hook implementation per environment. The package remains private and unpublished while release decisions remain pending. The maintainer selected MIT in the license follow-up.
 
 ### Load-policy Hono islands
 

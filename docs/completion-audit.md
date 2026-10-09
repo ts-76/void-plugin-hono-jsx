@@ -1,6 +1,6 @@
 # Issue completion audit
 
-This audit describes local implementation and validation on the final stacked branch. Checked acceptance criteria do not mean the draft PRs have been reviewed or merged. All issues remain open until their PRs are integrated. CI-dependent criteria and the project-license decision remain incomplete.
+This audit describes local implementation and validation on the final stacked branch. Checked acceptance criteria do not mean the draft PRs have been reviewed or merged. All issues remain open until their PRs are integrated. CI-dependent criteria remain incomplete. The maintainer selected MIT; the license follow-up adds matching files and package metadata.
 
 | Issue | Draft PR | Local evidence and scope | Remaining acceptance condition |
 | --- | --- | --- | --- |
@@ -15,7 +15,7 @@ This audit describes local implementation and validation on the final stacked br
 | #9 deferred | #22 | Controlled HTML/NDJSON gates verify early shell, typed value/error state, surviving page/layout state, early-result buffering and stale/pending-page isolation; excluded modes documented. | None locally. |
 | #10 static | #23 | Void-generated HTML/JSON served by a file-only server verifies declared paths, overrides, direct access/reload, interaction and SPA static data; action/deferred diagnostics exercised. | None locally. |
 | #11 development | #24 plus audit follow-up | Packed consumer edits page/loader and adds/removes routes without restart; state reset and one completed initialization per document; actionable exact-version diagnostics. | Activate workflow and verify the pinned development/production baseline in CI. |
-| #12 OSS preparation | #25 | English README, contribution guidance/templates, upstream notices, current-tree/tarball audits and release/recovery checklist. Package name selected. | Maintainer selects the project license. CI/publication/access decisions remain release gates. |
+| #12 OSS preparation | #25 plus license follow-up | English README, contribution guidance/templates, upstream notices, current-tree/tarball audits and release/recovery checklist. Package name and MIT license selected. | CI/publication/access decisions remain release gates. |
 | #13 ISR | #26 | Native local production worker with KV/Cache API verifies MISS/HIT/STALE, counts and regenerated values, page/global/zero TTLs, failure retention/recovery, safe props/assets and browser mounting. | None for the stated local acceptance scope. Managed edge stays explicitly unverified. |
 
 ## Final verification
@@ -24,4 +24,4 @@ The packed consumer runs through `npm run check:consumer`; evidence is in `evide
 
 The source browser scripts accept `VOID_HONO_DEV_PORT`, `VOID_HONO_PREVIEW_PORT` and `VOID_HONO_BROWSER_SESSION` so validation can use owned servers without touching another session. Their defaults remain 5174, 4174 and `void-hono-pages`. Checks that mutate the same fixture run sequentially.
 
-The prepared workflow is still a template under `.github/workflow-templates/`. The repository's GitHub authentication lacks the `workflow` scope, so no actual CI result is claimed. Release metadata stays private and UNLICENSED pending the maintainer's license decision. No merge, publication, provisioning or visibility change was performed.
+The prepared workflow is still a template under `.github/workflow-templates/`. The repository's GitHub authentication lacks the `workflow` scope, so no actual CI result is claimed. Release metadata stays private with the maintainer-selected MIT license. No merge, publication, provisioning or visibility change was performed.
