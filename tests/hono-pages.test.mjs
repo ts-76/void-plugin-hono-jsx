@@ -37,7 +37,7 @@ test('Void discovers a loader-backed page and the adapter generates both entries
     const client = await plugin.load(clientId);
     assert.match(renderer, /index\.tsx/);
     assert.match(renderer, /void\/pages-server/);
-    assert.match(client, /hono\/jsx\/dom/);
+    assert.match(client, /startHonoPages/);
     assert.doesNotMatch(client, /index\.server/);
   });
 });

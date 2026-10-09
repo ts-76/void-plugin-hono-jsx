@@ -1,3 +1,4 @@
+import { Navigation } from '../src/Navigation';
 import { useState } from 'hono/jsx';
 import type { Props } from './index.server';
 import './style.css';
@@ -6,6 +7,7 @@ export default function Page({ initialCount, message }: Props) {
   const [count, setCount] = useState(initialCount);
   return (
     <main>
+      <Navigation />
       <h1>Void Pages × Hono JSX</h1>
       <p id="loader-marker">Server loader initial count: {initialCount}</p>
       <p id="serialized-message">{message}</p>
