@@ -107,7 +107,7 @@ Only the `load` policy, a single default relative TSX/JSX import, and attributes
 
 ## Experimental limitations
 
-The virtual renderer/client entries follow version-specific conventions observed in Void's official adapter rather than a documented third-party registration API. Browser mounting redraws the SSR page; DOM reuse is not guaranteed. ISR still requires its follow-up issue. Unsupported modes fail clearly. Package publication and repository visibility are separate maintainer decisions.
+The virtual renderer/client entries follow version-specific conventions observed in Void's official adapter rather than a documented third-party registration API. Browser mounting redraws the SSR page; DOM reuse is not guaranteed. Local ISR uses Void's native direct-worker KV/Cache API runtime; managed edge behavior remains unverified. Unsupported modes fail clearly. Package publication and repository visibility are separate maintainer decisions.
 
 ## Verification
 
@@ -120,3 +120,9 @@ Repository: https://github.com/ts-76/void-hono-jsx-poc
 Page and companion-loader edits reload the document and reset page/layout state. This is not state-preserving HMR. Added and removed page files update Void's route manifest without restarting the server. The adapter clears its discovery cache and uses Void's existing structural reload notifications; sending a second worker reload can mix SSR module instances during a request.
 
 The packed-consumer check edits a page, changes its loader value, adds and removes a route, checks counter interaction after reloading, and asserts that the server stays running. It also verifies actionable diagnostics for unverified Void, Hono and Vite versions. Development and production preview are exercised on the exact baseline above; no additional framework versions are claimed. The prepared CI workflow covers that baseline on Node 24.21.0, but workflow activation and an actual GitHub Actions run remain pending the authentication scope update.
+
+## Local ISR
+
+For server output, set `routing.revalidate` in `void.config.ts` and override a page with `export const revalidate` in its companion server module. The adapter uses Void's existing cache runtime. The packed-consumer check verifies fresh and stale HTML, background regeneration, page/global/zero policies, retained valid HTML after regeneration failure, safe props, asset references and browser interaction.
+
+The fixture binds local `ISR_CACHE` storage for Void production preview. Real deployments require Void's cache bindings; the fixture's placeholder ID and test control API are for local checks only. Managed edge, cross-data-center invalidation and production KV behavior remain unverified. ISR requires a worker/cache runtime; static output is served as generated files. See the repository `docs/isr.md` and [Void revalidation guide](https://void.cloud/guide/edge/revalidation).

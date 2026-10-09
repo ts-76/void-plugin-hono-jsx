@@ -56,8 +56,9 @@ See the [package guide](packages/hono-pages/README.md) for public exports, confi
 - Load-policy Hono islands and zero-script static island pages.
 - Static HTML/page-data output and declared dynamic prerender paths.
 - Development document reloads for page/loader edits and route additions/removals.
+- Local production-preview ISR through Void's KV/Cache API runtime.
 
-Browser mounting redraws SSR content; it does not promise DOM reuse. Development reloads reset local state. Island layouts, other island policies, grouped deferred props, deferred prefetch and mutation-driven deferred refresh are unsupported. ISR validation is tracked in [Issue #13](https://github.com/ts-76/void-hono-jsx-poc/issues/13). Managed deployment has not been verified.
+Browser mounting redraws SSR content; it does not promise DOM reuse. Development reloads reset local state. Island layouts, other island policies, grouped deferred props, deferred prefetch and mutation-driven deferred refresh are unsupported. [ISR validation](docs/isr.md) covers the local direct-worker runtime. Managed deployment has not been verified.
 
 ## Examples and checks
 
@@ -69,6 +70,6 @@ npm test
 npm run check:consumer
 ```
 
-The consumer check installs the packed artifact in a temporary project and exercises development, production preview, islands, deferred data and static output in a browser. Install Playwright Chromium first with `npx playwright install chromium`, or set `PLAYWRIGHT_CHANNEL=chrome` to use installed Google Chrome. The prepared workflow has not been activated; CI results remain pending.
+The consumer check installs the packed artifact in a temporary project and exercises development, production preview, islands, deferred data, static output and local ISR in a browser. Install Playwright Chromium first with `npx playwright install chromium`, or set `PLAYWRIGHT_CHANNEL=chrome` to use installed Google Chrome. The prepared workflow has not been activated; CI results remain pending.
 
 [Contribution guidance](CONTRIBUTING.md) explains local checks and bug reports. [Implementation notes](docs/implementation-notes.md) preserve the original PoC record and detailed feature checks. [Release checklist](docs/release-checklist.md) records remaining release decisions. [Third-party notices](THIRD_PARTY_NOTICES.md) document upstream adapter references and dependency licenses.
