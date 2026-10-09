@@ -168,7 +168,7 @@ The plugin rejects unverified Void versions. A successful smoke test establishes
 
 The example supports initial SSR of a TSX/JSX page with a synchronous loader result, browser mounting, local interaction, and full-document reloads. Browser mounting redraws the page; reuse of the existing SSR DOM is not guaranteed.
 
-Layouts, page actions, client-only pages, island pages, explicit prerendering, and static output are rejected with diagnostics. Deferred props fail clearly at rendering time. SPA navigation, shared-data hooks, persistent state across navigation, head updates, and page-file discovery during HMR are not implemented. Follow-up work is tracked in [Issues #2–#12](https://github.com/ts-76/void-hono-jsx-poc/issues).
+Layouts, page actions, client-only pages, island pages, explicit prerendering, and static output are rejected with diagnostics. Deferred props fail clearly at rendering time. SPA navigation, shared-data hooks, persistent state across navigation, head updates, and page-file discovery during HMR are not implemented. Follow-up work is tracked in [Issues #2–#13](https://github.com/ts-76/void-hono-jsx-poc/issues).
 
 The loader deliberately includes a string containing closing script tags, an ampersand, and Unicode line separators. The HTTP check verifies safe JSON embedding and an exact props round trip. Browser checks additionally confirm that the string remains text and never executes.
 
