@@ -2,7 +2,7 @@
 
 An experimental Hono JSX adapter for Void Pages. It renders pages with `hono/jsx` on the server and mounts them with `hono/jsx/dom` in the browser. Void owns route discovery, loaders, actions, navigation, head metadata and prerender collection.
 
-The package is private and unpublished. Maintainers selected `void-plugin-hono-jsx` as its name; the project license is pending. This is not an official Void adapter. Publication and repository visibility require separate maintainer decisions.
+The package is private and unpublished. Maintainers selected `void-plugin-hono-jsx` as its name and the [MIT license](LICENSE) for the project. This is not an official Void adapter. Publication and repository visibility require separate maintainer decisions.
 
 ## Compatibility
 

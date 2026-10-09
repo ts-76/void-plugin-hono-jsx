@@ -1,6 +1,6 @@
 # Experimental Hono Pages adapter for Void
 
-This private validation package integrates Hono JSX with Void Pages. The package name is `void-plugin-hono-jsx`. It is unpublished and unlicensed for redistribution until maintainers make the release decisions in Issue #12. It is not an official Void adapter.
+This private validation package integrates Hono JSX with Void Pages. The package name is `void-plugin-hono-jsx`. It is unpublished and distributed under the [MIT license](LICENSE). Publication remains a separate maintainer decision. It is not an official Void adapter.
 
 ## Supported versions
 
