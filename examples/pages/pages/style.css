@@ -1,0 +1,4 @@
+:root { font-family: system-ui, sans-serif; color: #17233a; background: #f5f7fb; }
+main { max-width: 680px; margin: 64px auto; padding: 32px; background: white; border-radius: 16px; }
+button { margin-right: 12px; padding: 8px 16px; cursor: pointer; }
+#serialized-message { overflow-wrap: anywhere; }

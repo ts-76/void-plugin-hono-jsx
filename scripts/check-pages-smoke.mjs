@@ -1,0 +1,22 @@
+import assert from 'node:assert/strict';
+
+const base = process.argv[2];
+if (!base) throw new Error('Usage: node scripts/check-pages-smoke.mjs http://127.0.0.1:5174');
+const response = await fetch(base);
+assert.equal(response.status, 200);
+assert.match(response.headers.get('content-type'), /text\/html/);
+const html = await response.text();
+assert.match(html, /Server loader initial count: 7/);
+assert.match(html, /<output[^>]*id="count"[^>]*>7<\/output>/);
+const data = html.match(/<script id="__VOID_PAGE_DATA__" type="application\/json">([\s\S]*?)<\/script>/)?.[1];
+assert.ok(data, 'Void page payload exists');
+assert.ok(!data.includes('<'), 'Inline JSON cannot terminate the script element');
+const page = JSON.parse(data);
+assert.equal(page.component, 'index');
+assert.equal(page.props.initialCount, 7);
+assert.equal(page.props.message, '</script><script>globalThis.__honoPagesInjected = true</script>&\u2028\u2029');
+assert.match(html, /&lt;\/script&gt;&lt;script&gt;/);
+assert.match(html, /<script type="module"[^>]*src=/);
+const missing = await fetch(new URL('/missing', base));
+assert.equal(missing.status, 404);
+console.log(`SSR, loader props, safe serialization, client asset, and 404 checks passed: ${base}`);
