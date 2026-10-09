@@ -18,8 +18,8 @@ export function voidHonoPages(): Plugin[] {
 
   async function rescan() {
     scan = await scanPages(root, { pagesDir });
-    if (scan.layouts.length || scan.namedLayouts.length) {
-      throw new Error('Hono Pages: layouts are not supported yet (issue #4).');
+    for (const layout of [...scan.layouts, ...scan.namedLayouts]) {
+      if (layout.island || !/\.[jt]sx$/.test(layout.filePath)) throw new Error('Hono Pages: only standard TSX/JSX layouts are supported.');
     }
     for (const page of scan.pages) {
       if (!/\.[jt]sx$/.test(page.componentPath) || page.renderMode === 'island') {
@@ -70,7 +70,7 @@ export function voidHonoPages(): Plugin[] {
         return `
 import { jsx } from 'hono/jsx';
 import { createSsrRouter } from 'void/pages-client';
-import { RouterContext } from ${JSON.stringify(join(runtimeDir, 'pages.tsx'))};
+import { PageContext, RouterContext } from ${JSON.stringify(join(runtimeDir, 'pages.tsx'))};
 import { serializePageData } from 'void/pages-server';
 import { renderHeadToString, renderHtmlAttrs, renderBodyAttrs } from 'void/pages-head';
 ${manifest}
@@ -82,7 +82,14 @@ export async function renderPage(pageObj, assetTags) {
   if (!load) throw new Error('Hono Pages: unknown page component ' + pageObj.component);
   const { default: Page } = await load();
   if (typeof Page !== 'function') throw new Error('Hono Pages: a page must export a component function.');
-  const markup = await jsx(RouterContext.Provider, { value: createSsrRouter(pageObj.url, pageObj.params), children: jsx(Page, pageObj.props) }).toString();
+  let content = jsx(Page, pageObj.props);
+  const ids = layoutTree[pageObj.component] ?? [];
+  const layouts = await Promise.all(ids.map(async (id) => (await components[id]()).default));
+  for (const Layout of layouts.reverse()) {
+    if (typeof Layout !== 'function') throw new Error('Hono Pages: a layout must export a component function.');
+    content = jsx(Layout, { children: content });
+  }
+  const markup = await jsx(RouterContext.Provider, { value: createSsrRouter(pageObj.url, pageObj.params), children: jsx(PageContext.Provider, { value: pageObj, children: content }) }).toString();
   const head = pageObj.head;
   return '<!doctype html><html' + (head ? renderHtmlAttrs(head) : '') + '><head>'
     + '<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="data:,">'

@@ -168,7 +168,7 @@ The plugin rejects unverified Void versions. A successful smoke test establishes
 
 The example supports initial SSR of TSX/JSX pages with loader props, file-based routes, client-only pages, browser mounting, local interaction, SPA navigation, and full-document reloads. Browser mounting redraws the page; reuse of the existing SSR DOM is not guaranteed.
 
-Layouts, page actions, island pages, explicit prerendering, and static output are rejected with diagnostics. Deferred props fail clearly at rendering time. Shared-data hooks, persistent layout state, and page-file discovery during HMR are not implemented. Head behavior still needs dedicated coverage in Issue #6. Follow-up work is tracked in [Issues #3 through #13](https://github.com/ts-76/void-hono-jsx-poc/issues).
+Page actions, island pages, explicit prerendering, and static output are rejected with diagnostics. Deferred props fail clearly at rendering time. Page-file discovery during HMR is not implemented. Head behavior still needs dedicated coverage in Issue #6. Follow-up work is tracked in [Issues #3 through #13](https://github.com/ts-76/void-hono-jsx-poc/issues).
 
 The loader deliberately includes a string containing closing script tags, an ampersand, and Unicode line separators. The HTTP check verifies safe JSON embedding and an exact props round trip. Browser checks additionally confirm that the string remains text and never executes.
 
@@ -223,3 +223,13 @@ python3 scripts/check-pages-navigation.py
 ```
 
 The checks use the example's deliberate slow and failing routes. They inject one malformed Pages response to verify error recovery without depending on Void's development error overlay.
+
+### Layouts and shared data
+
+The adapter consumes Void's resolved layout chain for SSR and browser rendering. `layout.tsx` files wrap their descendants. A page's `export const layout = "shell"` selects the nearest `_layouts/shell.tsx` and replaces the innermost default layout. `"!shell"` selects only the named layout; `false` removes the chain. Island layouts remain unsupported.
+
+Layouts receive `children`. Stable layout IDs preserve state in the surviving chain while ordinary page visits reset page state. Leaving a layout unmounts it, so returning starts fresh. Changing an outer layout also replaces its descendants.
+
+`useShared()` and `useParams()` from `runtime/pages` expose the current PageObject data in both SSR and browser components. Shared values have type `Record<string, unknown>`; consumers should validate values before using them. The example's middleware supplies a tenant and request path. Each completed visit updates that data for the page and every active layout.
+
+Visit `/layouts/one` to test the root and nested counters. `/layouts/two` retains them, `/layouts/named` replaces the nested layout, `/layouts/exclusive` removes the root, and `/layouts/bare` removes all layouts. Run `python3 scripts/check-pages-layouts.py` with both servers and the documented Chrome session active. On 2026-10-09, SSR ordering, layout state, page resets, unmount/remount, named layout modes, shared data, and route parameters passed in development and production preview.
