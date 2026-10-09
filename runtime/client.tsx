@@ -4,6 +4,7 @@ import { useLayoutEffect, useState } from 'hono/jsx';
 import { createVoidRouter, type VoidRouterConfig } from 'void/pages-client';
 import { parseCacheFor } from 'void/pages-prefetch';
 import { PageContext, RouterContext } from './pages';
+import { createDocumentHead } from './document-head';
 
 type Manifest = Pick<VoidRouterConfig, 'components' | 'layoutTree' | 'routeMeta' | 'matchRoute'>;
 
@@ -18,6 +19,7 @@ export async function startHonoPages(manifest: Manifest) {
   type Frame = { page: Awaited<ReturnType<typeof createVoidRouter>>['initialPageData']; component: unknown; layouts: unknown[]; revision: number };
   let update: ((frame: Frame) => void) | undefined;
   let revision = 0;
+  let applyDocumentHead: ReturnType<typeof createDocumentHead> | undefined;
   const unsupportedDeferred = () => { throw new Error('Hono Pages: deferred props are not supported yet (issue #9).'); };
   const navigation = await createVoidRouter({
     ...manifest,
@@ -33,6 +35,7 @@ export async function startHonoPages(manifest: Manifest) {
         if (!options.preserveState) revision++;
         update({ page, component, layouts, revision });
         await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+        applyDocumentHead?.(page.head);
       },
     },
     viewTransitions: false,
@@ -41,6 +44,7 @@ export async function startHonoPages(manifest: Manifest) {
     cacheVisitedPageData: false,
     onNavigationChange(state) { root.dataset.navigation = state.state; },
   });
+  applyDocumentHead = createDocumentHead(navigation.initialPageData.head);
 
   function App() {
     const [frame, setFrame] = useState<Frame>({ page: navigation.initialPageData, component: navigation.initialComponent, layouts: navigation.initialLayouts, revision });

@@ -89,7 +89,6 @@ export async function renderPage(pageObj, assetTags) {
   const markup = await jsx(RouterContext.Provider, { value: createSsrRouter(pageObj.url, pageObj.params), children: jsx(PageContext.Provider, { value: pageObj, children: content }) }).toString();
   const head = pageObj.head;
   return '<!doctype html><html' + (head ? renderHtmlAttrs(head) : '') + '><head>'
-    + '<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="data:,">'
     + (head ? renderHeadToString(head) : '') + assetTags.css + assetTags.preloads
     + '</head><body' + (head ? renderBodyAttrs(head) : '') + '>'
     + '<script id="__VOID_PAGE_DATA__" type="application/json">' + serializePageData(pageObj) + '</script>'
