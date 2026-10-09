@@ -1,0 +1,4 @@
+Release audit passed for 125 tracked/proposed files; no configured path, credential or accidental-artifact patterns found. Upstream notices match.
+OSS tarball audit passed: 27 intended files, including upstream notices.
+Review scope: current tracked/proposed files and package file list. Git history requires a separate review before repository visibility changes.
+Release gates still pending: project license, workflow activation and actual CI result, npm access/versioning, explicit publication/visibility authorization.

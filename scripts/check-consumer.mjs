@@ -149,9 +149,9 @@ try {
   const packed = JSON.parse(npm(['pack', '--json', '--pack-destination', temporary], join(repo, 'packages/hono-pages')));
   assert.equal(packed.length, 1);
   const entries = packed[0].files.map((entry) => entry.path);
-  assert.ok(entries.includes('README.md') && entries.includes('package.json'));
+  assert.ok(entries.includes('README.md') && entries.includes('package.json') && entries.includes('THIRD_PARTY_NOTICES.md'));
   for (const path of entries) {
-    assert.ok(path === 'package.json' || path === 'README.md' || /^dist\/.+\.(js|d\.ts)$/.test(path), `Unexpected packed file: ${path}`);
+    assert.ok(path === 'package.json' || path === 'README.md' || path === 'THIRD_PARTY_NOTICES.md' || /^dist\/.+\.(js|d\.ts)$/.test(path), `Unexpected packed file: ${path}`);
     const content = await readFile(join(repo, 'packages/hono-pages', path), 'utf8');
     assert.doesNotMatch(content, /\/Users\/|\/private\/|\/nix\/store\/|\.runtime\//, `Machine-specific content: ${path}`);
   }
