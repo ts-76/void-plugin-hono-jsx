@@ -33,18 +33,23 @@ export function honoIslands(): Plugin {
     return found;
   }
 
+  async function rescan() {
+    scan = await scanPages(root, { pagesDir });
+    islands.clear();
+    pageFiles.clear();
+    for (const page of scan.pages.filter((page) => page.island)) {
+      const filename = realpathSync(join(pagesDir, page.componentPath));
+      pageFiles.add(filename);
+      imports(readFileSync(filename, 'utf8'), filename);
+    }
+  }
+
   return {
     name: 'void-hono:islands',
     enforce: 'pre',
-    async buildStart() {
-      scan = await scanPages(root, { pagesDir });
-      islands.clear();
-      pageFiles.clear();
-      for (const page of scan.pages.filter((page) => page.island)) {
-        const filename = realpathSync(join(pagesDir, page.componentPath));
-        pageFiles.add(filename);
-        imports(readFileSync(filename, 'utf8'), filename);
-      }
+    buildStart: rescan,
+    async hotUpdate({ file }) {
+      if (normalizePath(file).startsWith(normalizePath(pagesDir) + '/')) await rescan();
     },
     config() {
       return { build: { rollupOptions: { input: { 'islands-client': ISLANDS_CLIENT_ENTRY_ID } } } };

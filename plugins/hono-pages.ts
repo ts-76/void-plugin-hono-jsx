@@ -1,11 +1,11 @@
-import { createRequire } from 'node:module';
-import { readFileSync, realpathSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { realpathSync } from 'node:fs';
+import { normalizePath } from 'vite';
 import { pagesRuntimePath, clientRuntimePath, publicRuntimeModules } from './runtime-paths.ts';
 import { generateComponentManifest, resolvePagesDir, resolveStaticPageDataBuildOptions, scanPages, type PageScanResult } from 'void/pages';
 import type { Plugin } from 'vite';
 import { honoJsx } from './hono-jsx.ts';
 import { honoIslands } from './hono-islands.ts';
+import { assertSupportedFrameworks } from './compatibility.ts';
 
 const rendererId = 'virtual:void-pages-renderer';
 const clientId = 'virtual:void-pages-client';
@@ -37,16 +37,7 @@ export function voidHonoPages(): Plugin[] {
     name: 'void-hono:pages',
     enforce: 'pre',
     config() {
-      const require = createRequire(import.meta.url);
-      const packagePath = join(dirname(require.resolve('void')), '..', 'package.json');
-      const metadata: unknown = JSON.parse(readFileSync(packagePath, 'utf8'));
-      if (typeof metadata !== 'object' || metadata === null || !('version' in metadata) || typeof metadata.version !== 'string') {
-        throw new Error('Hono Pages: the Void package version is missing.');
-      }
-      const { version } = metadata;
-      if (version !== '0.26.0') {
-        throw new Error(`Hono Pages: Void ${version} is unverified; this experimental adapter requires 0.26.0.`);
-      }
+      assertSupportedFrameworks();
       return {
         resolve: { dedupe: ['hono'] },
         build: { manifest: true, rollupOptions: { input: { 'pages-client': clientId } } },
@@ -59,6 +50,22 @@ export function voidHonoPages(): Plugin[] {
     },
     async buildStart() {
       await rescan();
+    },
+    configureServer(server) {
+      const clear = (file: string) => {
+        if (normalizePath(file).startsWith(normalizePath(pagesDir) + '/')) scan = undefined;
+      };
+      server.watcher.on('add', clear);
+      server.watcher.on('unlink', clear);
+      server.httpServer?.once('close', () => { server.watcher.off('add', clear); server.watcher.off('unlink', clear); });
+    },
+    async hotUpdate({ file, type }) {
+      if (!normalizePath(file).startsWith(normalizePath(pagesDir) + '/')) return;
+      await rescan();
+      if (type !== 'update') return [];
+      this.environment.moduleGraph.invalidateAll();
+      this.environment.hot.send({ type: 'full-reload' });
+      return [];
     },
     resolveId(id) {
       if (id === rendererId || id === clientId) return `\0${id}`;

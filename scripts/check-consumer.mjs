@@ -9,6 +9,8 @@ import { chromium } from 'playwright';
 import { parseSync } from 'vite';
 import { checkDeferredConsumer } from './check-deferred-consumer.mjs';
 import { checkStaticConsumer } from './check-static-consumer.mjs';
+import { checkDevelopmentConsumer } from './check-development-consumer.mjs';
+import { checkCompatibilityConsumer } from './check-compatibility-consumer.mjs';
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
 const npmCli = process.env.npm_execpath;
@@ -94,6 +96,7 @@ async function smoke(mode, browser, staticOnly = false) {
       await page.reload();
       await page.locator('#app[data-hono-pages="mounted"]').waitFor();
       assert.equal(await page.locator('#count').textContent(), '5');
+      if (mode === 'development') await checkDevelopmentConsumer({ origin, page, consumer, assertRunning: () => { assert.equal(child.exitCode, null); assert.equal(child.signalCode, null); assert.doesNotMatch(logs, /server restarted|restarting server/i); } });
       await checkDeferredConsumer({ origin, page, mode });
       const islandResponse = await fetch(origin + '/islands');
       assert.equal(islandResponse.status, 200);
@@ -124,7 +127,7 @@ async function smoke(mode, browser, staticOnly = false) {
       assert.equal(await page.locator('script[src], link[rel="modulepreload"]').count(), 0);
       assert.deepEqual(scripts, []);
       assert.deepEqual(errors, []);
-    } finally { await page.close(); }
+    } catch (error) { console.error(logs.slice(-5000)); throw error; } finally { await page.close(); }
     console.log(`Packed consumer ${mode}: SSR, runtime exports, click, SPA navigation, reset, reload, load-policy islands, safe props and static-only zero-script rendering passed.`);
   } finally {
     if (child.pid && child.exitCode === null && child.signalCode === null) {
@@ -182,6 +185,7 @@ try {
     console.log('Static-only client assets: no executable statements or framework imports.');
     await smoke('preview', browser, true);
     await checkStaticConsumer({ repo, consumer, browser, env });
+    await checkCompatibilityConsumer({ consumer, env });
   } finally { await browser.close(); }
   console.log(`Package audit passed: ${entries.length} intended files; declarations and locked clean-consumer checks passed.`);
 } catch (error) {

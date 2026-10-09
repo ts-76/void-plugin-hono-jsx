@@ -162,13 +162,13 @@ The contract was checked against installed Void **0.26.0** and the published **@
 | `virtual:void-pages-client` and `pages-client` build input | Version-specific client-entry conventions copied in behavior from the official adapter. The generated entry mounts the page using serialized loader props. |
 | `__VOID_PAGE_DATA__` and `#app` | Initial payload and mount-element conventions shared with the official adapter's SSR output. |
 
-The plugin rejects unverified Void versions. A successful smoke test establishes this pinned experimental integration; it does not establish an upstream-supported Hono Pages adapter or compatibility with every future Void release. Build-time discovery helpers are kept out of runtime imports by using the dedicated serializer and head exports.
+The plugin rejects unverified Void, Hono and Vite versions with the supported install command. A successful smoke test establishes this pinned experimental integration; it does not establish an upstream-supported Hono Pages adapter or compatibility with every future Void release. Build-time discovery helpers are kept out of runtime imports by using the dedicated serializer and head exports.
 
 ### Supported behavior and limitations
 
 The example supports initial SSR of TSX/JSX pages with loader props, file-based routes, client-only pages, browser mounting, local interaction, SPA navigation, and full-document reloads. Browser mounting redraws the page; reuse of the existing SSR DOM is not guaranteed.
 
-Load-policy island pages are supported. Island layouts are rejected with diagnostics. Static output and explicit prerender settings use Void generation. Single deferred props use Void streaming and Hono loading/value/error state. Page-file discovery during HMR is not implemented. Head behavior is covered by the dedicated SSR and navigation checks. Follow-up work is tracked in [Issues #3 through #13](https://github.com/ts-76/void-hono-jsx-poc/issues).
+Load-policy island pages are supported. Island layouts are rejected with diagnostics. Static output and explicit prerender settings use Void generation. Single deferred props use Void streaming and Hono loading/value/error state. Development page and loader edits trigger a full reload; added and removed pages use Void's route watcher. Head behavior is covered by the dedicated SSR and navigation checks. Follow-up work is tracked in [Issues #3 through #13](https://github.com/ts-76/void-hono-jsx-poc/issues).
 
 The loader deliberately includes a string containing closing script tags, an ampersand, and Unicode line separators. The HTTP check verifies safe JSON embedding and an exact props round trip. Browser checks additionally confirm that the string remains text and never executes.
 
@@ -300,3 +300,9 @@ Issue #10 enables `output: "static"` and explicit `prerender` exports. The adapt
 `npm run check:consumer` installs the tarball, builds the static fixture with Void, and serves `dist/client` using a file-only server. It verifies generated HTML and JSON, assets, safe props, direct access, reload, counter updates and SPA navigation. Excluded and undeclared paths return 404. Actions fail static discovery; deferred props fail rendering, and Void warns and omits their generated HTML while continuing the build. The check asserts these expected diagnostics and fails on unexpected missing output.
 
 See the [package static output documentation](packages/hono-pages/README.md#static-output-and-prerendering) for configuration, clean URL serving and limitations.
+
+### Development reload and compatibility
+
+Page and companion-loader edits reload the document and reset page/layout state. This is not state-preserving HMR. Added and removed page files update Void's route manifest without restarting the server. The adapter clears its discovery cache and uses Void's existing structural reload notifications; sending a second worker reload can mix SSR module instances during a request.
+
+The packed-consumer check edits a page, changes its loader value, adds and removes a route, checks counter interaction after reloading, and asserts that the server stays running. It also verifies actionable diagnostics for unverified Void, Hono and Vite versions. Development and production preview are exercised on the exact baseline above; no additional framework versions are claimed. The prepared CI workflow covers that baseline on Node 24.21.0, but workflow activation and an actual GitHub Actions run remain pending the authentication scope update.
