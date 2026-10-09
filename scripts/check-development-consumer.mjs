@@ -1,0 +1,58 @@
+import assert from 'node:assert/strict';
+import { readFile, writeFile, rm } from 'node:fs/promises';
+import { join } from 'node:path';
+
+export async function checkDevelopmentConsumer({ page, origin, consumer, assertRunning }) {
+  const source = join(consumer, 'pages/index.tsx');
+  const loader = join(consumer, 'pages/index.server.ts');
+  const originalSource = await readFile(source, 'utf8');
+  const originalLoader = await readFile(loader, 'utf8');
+  const added = join(consumer, 'pages/added.tsx');
+  let failed = false;
+  try {
+    await page.goto(origin);
+    await page.locator('#app[data-hono-pages="mounted"]').waitFor();
+    await page.locator('#increment').click();
+    await page.waitForFunction(() => document.querySelector('#count')?.textContent === '6');
+    await writeFile(source, originalSource.replace('Clean package consumer', 'Edited package consumer'));
+    await page.getByRole('heading', { name: 'Edited package consumer' }).waitFor();
+    await page.locator('#app[data-hono-pages="mounted"]').waitFor();
+    assert.equal(await page.locator('#count').textContent(), '5');
+    await writeFile(loader, originalLoader.replace('initialCount: 5', 'initialCount: 12'));
+    await page.waitForFunction(() => document.querySelector('#count')?.textContent === '12');
+    await page.locator('#increment').click();
+    await page.waitForFunction(() => document.querySelector('#count')?.textContent === '13');
+    await writeFile(added, "import { Link } from 'void-plugin-hono-jsx/pages'; export default function Page() { return <main><h1 id=\"added-page\">Added page</h1><Link id=\"added-home\" href=\"/\">Home</Link></main>; }");
+    const deadline = Date.now() + 10000;
+    let ready = false;
+    while (Date.now() < deadline) {
+      const response = await fetch(origin + '/added');
+      if (response.ok && (await response.text()).includes('Added page')) { ready = true; break; }
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    assert.ok(ready, 'New page route did not appear');
+    await page.goto(origin + '/added');
+    await page.locator('#app[data-hono-pages="mounted"]').waitFor();
+    await page.locator('#added-home').click();
+    await page.waitForURL(origin + '/');
+    await rm(added);
+    let removed = false;
+    while (Date.now() < deadline + 10000) {
+      if ((await fetch(origin + '/added')).status === 404) { removed = true; break; }
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    assert.ok(removed, 'Removed page route stayed active');
+    await page.locator('#app[data-hono-pages="mounted"]').waitFor();
+    assertRunning();
+    console.log('Development: page/loader edits, state reset, page add/remove and current manifests passed without a server restart.');
+  } catch (error) { failed = true; throw error; } finally {
+    await rm(added, { force: true });
+    await writeFile(source, originalSource);
+    if (!failed) await page.getByRole('heading', { name: 'Clean package consumer' }).waitFor();
+    await writeFile(loader, originalLoader);
+    if (!failed) {
+      await page.waitForFunction(() => document.querySelector('#count')?.textContent === '5');
+      await page.locator('#app[data-hono-pages="mounted"]').waitFor();
+    }
+  }
+}

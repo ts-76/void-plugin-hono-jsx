@@ -6,13 +6,17 @@ permissions:
   contents: read
 jobs:
   consumer:
+    name: Pinned framework baseline on Node ${{ matrix.node }}
+    strategy:
+      matrix:
+        node: ['24.21.0']
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '24.21.0'
+          node-version: ${{ matrix.node }}
           cache: npm
       - run: npm ci
       - run: npm run typecheck
