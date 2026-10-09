@@ -35,3 +35,5 @@ Do not post credentials or private data in a public issue. For sensitive finding
 ## Release changes
 
 Package publication, repository visibility, project license and npm ownership are maintainer decisions. Contributors can prepare artifacts and evidence; they must not infer publication approval from a merged code change. Follow the [release checklist](docs/release-checklist.md).
+
+The source browser checks can use dedicated servers with `VOID_HONO_DEV_PORT`, `VOID_HONO_PREVIEW_PORT` and `VOID_HONO_BROWSER_SESSION`. Start the matching development and preview servers and Chrome session first. Defaults are 5174, 4174 and `void-hono-pages`. Run checks sequentially when they share fixture state.
