@@ -44,7 +44,7 @@ test('Void discovers a loader-backed page and the adapter generates both entries
 
 for (const [name, files, error] of [
   ['island pages', { 'index.island.tsx': page }, /only standard TSX/],
-  ['layouts', { 'index.tsx': page, 'layout.tsx': page }, /layouts are not supported/],
+  ['island layouts', { 'index.tsx': page, '_layouts/shell.island.tsx': page }, /only standard TSX\/JSX layouts/],
   ['actions', { 'index.tsx': page, 'index.server.ts': 'export const action = () => ({});' }, /actions are not supported/],
   ['explicit prerendering', { 'index.tsx': page, 'index.server.ts': 'export const prerender = true;' }, /prerendering is not supported/],
 ]) {
@@ -70,5 +70,22 @@ test('Void route conventions and a client-only page are accepted without a secon
     assert.match(client, /docs\/\[\.\.\.slug\]\.tsx/);
     assert.match(client, /browser\.tsx/);
     assert.doesNotMatch(client, /browser\.server/);
+  });
+});
+
+ test('Void resolves default, named, exclusive and disabled layout chains', async () => {
+  await withPages({
+    'layout.tsx': page, 'nested/layout.tsx': page, '_layouts/shell.tsx': page,
+    'nested/one.tsx': page,
+    'nested/named.tsx': 'export const layout = "shell"; ' + page,
+    'nested/exclusive.tsx': 'export const layout = "!shell"; ' + page,
+    'nested/bare.tsx': 'export const layout = false; ' + page,
+  }, async (plugin) => {
+    await plugin.buildStart();
+    const client = await plugin.load(plugin.resolveId('virtual:void-pages-client'));
+    assert.match(client, /"nested\/one": \["layout","nested\/layout"\]/);
+    assert.match(client, /"nested\/named": \["layout","_layouts\/shell"\]/);
+    assert.match(client, /"nested\/exclusive": \["_layouts\/shell"\]/);
+    assert.doesNotMatch(client, /"nested\/bare": \[/);
   });
 });
