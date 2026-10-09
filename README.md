@@ -168,7 +168,7 @@ The plugin rejects unverified Void versions. A successful smoke test establishes
 
 The example supports initial SSR of TSX/JSX pages with loader props, file-based routes, client-only pages, browser mounting, local interaction, SPA navigation, and full-document reloads. Browser mounting redraws the page; reuse of the existing SSR DOM is not guaranteed.
 
-Load-policy island pages are supported. Island layouts, explicit prerendering, and static output are rejected with diagnostics. Deferred props fail clearly at rendering time. Page-file discovery during HMR is not implemented. Head behavior is covered by the dedicated SSR and navigation checks. Follow-up work is tracked in [Issues #3 through #13](https://github.com/ts-76/void-hono-jsx-poc/issues).
+Load-policy island pages are supported. Island layouts, explicit prerendering, and static output are rejected with diagnostics. Single deferred props use Void streaming and Hono loading/value/error state. Page-file discovery during HMR is not implemented. Head behavior is covered by the dedicated SSR and navigation checks. Follow-up work is tracked in [Issues #3 through #13](https://github.com/ts-76/void-hono-jsx-poc/issues).
 
 The loader deliberately includes a string containing closing script tags, an ampersand, and Unicode line separators. The HTTP check verifies safe JSON embedding and an exact props round trip. Browser checks additionally confirm that the string remains text and never executes.
 
@@ -284,3 +284,11 @@ Issue #8 adds `.island.tsx` pages with Void's `with { island: 'load' }` imports.
 The packed consumer at `fixtures/consumer` contains `/islands`, a loader-backed counter, and `/static`, a page with no interactive imports. `npm run check:consumer` verifies initial HTML, escaped props, counter updates and reload in development and preview. It also checks that static page sentinels never appear in client assets, then builds a project containing only static island pages and verifies empty executable client modules and zero script requests.
 
 See the [package island documentation](packages/hono-pages/README.md#load-policy-islands) for syntax, supported policy and diagnostics. Island layouts, nested attributed imports and island form helpers remain unsupported.
+
+### Deferred loader props
+
+Issue #9 connects Void's deferred registry to Hono page state. Immediate props and loading UI render before the resolver completes. Initial HTML streaming and SPA NDJSON use the existing Void protocol. Page and layout state survive deferred updates; completions from disposed navigation cannot update a new page. An initial component-import buffer uses Void's existing queue to retain early results.
+
+The packed consumer uses controlled server gates to prove shell rendering before completion, success/error UI, retained page/layout state and stale-result rejection. It also delays the initial component module and verifies that a result arriving during that delay survives initialization. `scripts/check-deferred-consumer.mjs` runs these checks through `npm run check:consumer` in development and production preview.
+
+The public `Deferred<T>` export uses Void's discriminated loading/value/error state. The verified contract covers single deferred props on GET document requests and SPA navigation. Grouping, deferred prefetch, mutation-driven deferred refresh and islands are excluded. Void 0.26.0 forwards deferred resolver messages in production; the Hono adapter exposes that message as an `Error`. See the [package deferred documentation](packages/hono-pages/README.md#deferred-loader-props).
