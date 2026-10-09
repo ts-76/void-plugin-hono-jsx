@@ -2,7 +2,7 @@
 
 Void の Custom SSR で `hono/jsx` の HTML を返し、ブラウザーでは `hono/jsx/dom` でカウンターを描画する検証用プロジェクトです。クラウドへのデプロイ・認証は不要です。
 
-**現在は SSR とビルド成果物まで確認済みです。カウンターの実ブラウザー操作と本番プレビューは未検証です。** 別のローカルセッションで続きを検証するために保存しています。
+**2026-10-09 に、型チェック・本番ビルド・開発と本番プレビューでの Chrome 操作を確認しました。** SSR で初期 HTML を返し、ブラウザーでカウンターを操作する最小 PoC の検証は完了しています。
 
 ## 使用版
 
@@ -11,13 +11,13 @@ Void の Custom SSR で `hono/jsx` の HTML を返し、ブラウザーでは `h
 | 項目 | 使用版 |
 | --- | --- |
 | Node.js | 24.21.0 |
-| npm | 10.8.1 |
+| npm | 初回 10.8.1 / 再検証 11.19.0 |
 | Void | 0.26.0 |
 | Hono | 4.13.13 |
 | Vite | 8.3.3 |
 | TypeScript | 7.0.2 |
 
-Void 0.26.0 の engines は Node.js `>=24.21.0`、peerDependencies は Vite `^8.0.0` です。元の環境の Node.js 22.0.0 では要件を満たさなかったため、そこでの検証時だけ `.runtime` に Node.js を用意しました。このディレクトリは Git に含めていません。
+Void 0.26.0 の engines は Node.js `>=24.21.0`、peerDependencies は Vite `^8.0.0` です。初回環境の Node.js 22.0.0 と再検証した Mac の 24.20.0 は要件を満たさなかったため、`.runtime` に Node.js 24.21.0 を用意しました。このディレクトリは Git に含めていません。
 
 ## 再現手順
 
@@ -29,13 +29,14 @@ npm ci
 npm run typecheck
 ```
 
-macOS / Linux では、Wrangler のログ保存先をプロジェクト内に指定できます。標準のホームディレクトリへのログ保存が許可されない環境で使ってください。`VOID_INSPECTOR_PORT=false` は Void が対応するローカルデバッガーのポート無効化設定です。
+macOS / Linux では、次の設定で起動できます。Wrangler のログをプロジェクト内に保存し、ローカルデバッガーのポートを無効にします。`CLOUDFLARE_CF_FETCH_ENABLED=false` は、Miniflare が位置情報などの `Request.cf` 情報を外部から取得する処理を無効にし、ローカルの既定値を使う設定です。この PoC は `Request.cf` を参照しないため、外部取得は不要です。
 
 ```sh
 mkdir -p .void/logs
 export WRANGLER_LOG_PATH="$PWD/.void/logs"
 export WRANGLER_SEND_METRICS=false
 export VOID_INSPECTOR_PORT=false
+export CLOUDFLARE_CF_FETCH_ENABLED=false
 npm run dev
 ```
 
@@ -47,6 +48,7 @@ npm run dev
 export WRANGLER_LOG_PATH="$PWD/.void/logs"
 export WRANGLER_SEND_METRICS=false
 export VOID_INSPECTOR_PORT=false
+export CLOUDFLARE_CF_FETCH_ENABLED=false
 npm run build
 npm run preview
 ```
@@ -74,30 +76,32 @@ Hono 4.13.13 では `hono/jsx/dom` が `render` を公開しています。`hydr
 
 Void の Custom SSR entry 名、`defineRender`、assetTags、`voidPlugin()` の戻り値は確認した資料と一致しました。Hono の公式 Void 統合ガイドは middleware / helper の使用を説明していますが、Hono JSX の Pages アダプターとしての対応を保証する記述は確認していません。独自 Pages アダプターの公開登録 API も確認できていません。
 
-## 引き継ぎ時点の検証結果
+## 2026-10-09 の検証結果
 
 | 確認 | 結果 |
 | --- | --- |
-| npm から依存を取得 | 成功。180 packages を取得し lockfile を生成 |
-| `npm run typecheck` | 成功。Vite config の import に `.ts` を付け、`allowImportingTsExtensions` を追加した最終状態でも再実行し、終了コード 0 と診断なしを確認 |
-| `npm run dev` | 初回は sandbox のポート待ち受けが EPERM。承認済みのローカル実行と上記環境変数で起動成功 |
-| `curl http://127.0.0.1:5173/` | 成功。初期 HTML に SSR の文章、カウンター 0、クライアント起動前の表示、Vite client と client entry の script を確認 |
-| 開発時の Counter JSX 変換 | 成功。`hono/jsx/dom/jsx-dev-runtime` への import を確認 |
-| `npm run build` | `dist/ssr` と `dist/client` の生成を確認。ただし Wrangler がホーム配下へのログ保存で EPERM を出力。ログ保存先を指定した再ビルドは未実施 |
-| Mac の実ブラウザー操作 | ブロック。Chrome 拡張接続がタイムアウト。ネイティブ Chrome 操作も応答せず、ツール kernel が終了 |
-| 連続クリック・リセット・再読み込み | 未実施 |
-| 本番プレビューの HTTP / ブラウザー確認 | 未実施 |
-| DOM テスト | 未実施 |
+| lockfile から依存を取得 | `npm ci` 成功 |
+| 型チェック | Node.js 24.21.0 で `typecheck` 成功。終了コード 0、診断なし |
+| 本番ビルド | `dist/ssr` と `dist/client` を生成。ログ保存先を指定して終了コード 0、権限エラーなし |
+| 開発・本番プレビューの SSR | 両方 HTTP 200、`x-poc-renderer: hono/jsx`。初期 HTML に SSR の文章、カウンター 0、クライアント起動前の表示、client entry の script を確認 |
+| 開発時の Counter JSX 変換 | `hono/jsx/dom/jsx-dev-runtime` への import を確認 |
+| Chrome でのクライアント起動 | 両方に「クライアント起動済み: hono/jsx/dom」と表示 |
+| 連続クリック | 両方で `+1` を押し、1 → 2 → 3 と増えることを確認 |
+| リセット・再読み込み | 両方でリセットすると 0。再び増やして再読み込みすると 0 |
+| エラー確認 | 最終確認で両方の browser console、page errors、サーバーログに実行エラーなし |
+| 存在しない URL | 両方で `/missing` が HTTP 404 |
 
-元のマシンでは `evidence/` に install / typecheck / dev / build のログ、SSR HTML、レスポンスヘッダー、開発時変換コードを保存しています。マシン固有の絶対パスや runtime 情報を含むため、Git には含めていません。
+再検証では agent-browser から、Mac にインストール済みの Google Chrome を headless で操作しました。初回のブラウザー接続停止は、この方法で解消しています。
 
-次のローカルセッションでは、上記環境変数で型チェック・ビルドを再実行し、開発と本番プレビューそれぞれで次を確認してください。
+検証中、favicon の自動取得で console に 404 が出たため、SSR の head に空の data URL のアイコンを指定しました。また、Miniflare の `Request.cf` 外部取得がタイムアウトしたため、上記の環境変数を追加しました。修正後に再ビルド・再起動し、両方の表示、カウンター操作、再読み込み、エラー解消を再確認しています。
 
-1. HTTP 初期 HTML に SSR 文章と `output#count` の 0 が含まれること。
-2. ブラウザーに「クライアント起動済み: hono/jsx/dom」と表示されること。
-3. `+1` を連続で押すと 1、2、3 と増えること。
-4. リセットで 0 に戻ること。再び増やし、再読み込みで 0 に戻ること。
-5. ブラウザー console とサーバーログに実行エラーがないこと。
+この Mac の `evidence/` に install / typecheck / dev / build / preview のログ、SSR HTML、レスポンスヘッダー、開発時変換コード、`dev.png` と `preview.png` を保存しています。マシン固有の絶対パスや runtime 情報を含むため、Git には含めていません。
+
+## 検証の範囲と今後の候補
+
+今回確認したのは、Custom SSR と DOM カウンターを組み合わせる最小構成です。クラウドへのデプロイ、複数ブラウザー、状態維持 HMR、SSR DOM の再利用は検証していません。独立した DOM 単体テストも追加していません。
+
+今後、用途に応じて複数ページ、loaders / actions、layouts、islands などを検討できます。Void の Pages アダプター対応を進める場合は、まず公開登録 API を確認する必要があります。
 
 ## 参考にした公式資料
 
