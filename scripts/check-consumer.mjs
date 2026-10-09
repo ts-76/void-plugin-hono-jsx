@@ -11,6 +11,7 @@ import { checkDeferredConsumer } from './check-deferred-consumer.mjs';
 import { checkStaticConsumer } from './check-static-consumer.mjs';
 import { checkDevelopmentConsumer } from './check-development-consumer.mjs';
 import { checkCompatibilityConsumer } from './check-compatibility-consumer.mjs';
+import { checkIsrConsumer } from './check-isr-consumer.mjs';
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
 const npmCli = process.env.npm_execpath;
@@ -186,6 +187,7 @@ try {
     await smoke('preview', browser, true);
     await checkStaticConsumer({ repo, consumer, browser, env });
     await checkCompatibilityConsumer({ consumer, env });
+    await checkIsrConsumer({ repo, consumer, browser, env });
   } finally { await browser.close(); }
   console.log(`Package audit passed: ${entries.length} intended files; declarations and locked clean-consumer checks passed.`);
 } catch (error) {
