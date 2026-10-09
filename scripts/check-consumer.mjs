@@ -7,6 +7,7 @@ import { createServer } from 'node:net';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { parseSync } from 'vite';
+import { checkDeferredConsumer } from './check-deferred-consumer.mjs';
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
 const npmCli = process.env.npm_execpath;
@@ -92,6 +93,7 @@ async function smoke(mode, browser, staticOnly = false) {
       await page.reload();
       await page.locator('#app[data-hono-pages="mounted"]').waitFor();
       assert.equal(await page.locator('#count').textContent(), '5');
+      await checkDeferredConsumer({ origin, page, mode });
       const islandResponse = await fetch(origin + '/islands');
       assert.equal(islandResponse.status, 200);
       const islandHtml = await islandResponse.text();

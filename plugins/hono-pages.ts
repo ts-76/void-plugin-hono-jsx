@@ -82,9 +82,6 @@ import { serializePageData } from 'void/pages-server';
 import { renderHeadToString, renderHtmlAttrs, renderBodyAttrs } from 'void/pages-head';
 ${manifest}
 export async function renderPage(pageObj, assetTags) {
-  if (pageObj.deferred?.length || pageObj.deferredKeys) {
-    throw new Error('Hono Pages: deferred props are not supported yet (issue #9).');
-  }
   const load = components[pageObj.component];
   if (!load) throw new Error('Hono Pages: unknown page component ' + pageObj.component);
   const { default: Page } = await load();
@@ -98,11 +95,12 @@ export async function renderPage(pageObj, assetTags) {
   }
   const markup = await jsx(RouterContext.Provider, { value: createSsrRouter(pageObj.url, pageObj.params), children: jsx(PageContext.Provider, { value: pageObj, children: content }) }).toString();
   const head = pageObj.head;
+  const body = pageObj.deferredKeys ? assetTags.body.replaceAll('<script type="module"', '<script async type="module"') : assetTags.body;
   return '<!doctype html><html' + (head ? renderHtmlAttrs(head) : '') + '><head>'
     + (head ? renderHeadToString(head) : '') + assetTags.css + assetTags.preloads
     + '</head><body' + (head ? renderBodyAttrs(head) : '') + '>'
     + '<script id="__VOID_PAGE_DATA__" type="application/json">' + serializePageData(pageObj) + '</script>'
-    + '<div id="app">' + markup + '</div>' + assetTags.body + '</body></html>';
+    + '<div id="app">' + markup + '</div>' + body + '</body></html>';
 }
 `;
       }

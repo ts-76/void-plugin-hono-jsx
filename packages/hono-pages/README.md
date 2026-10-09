@@ -48,6 +48,27 @@ import { useForm } from 'void-plugin-hono-jsx/form';
 
 Head resolution and escaping follow Void. The adapter synchronizes document attributes and inert script metadata; navigation does not execute newly inserted scripts. Raw `script.innerHTML` is authored content. Serialize dynamic JSON-LD and escape `<` before assigning it.
 
+## Deferred loader props
+
+Return `defer(() => slowOperation())` from a Void loader. The public Hono `Deferred<T>` type is Void's `DeferredState<T>` discriminated union. Read its readonly `loading`, `error` and `value` fields:
+
+```tsx
+import type { Deferred } from 'void-plugin-hono-jsx/pages';
+function Result({ slow }: { slow: Deferred<string> }) {
+  if (slow.loading) return <p>Loading</p>;
+  if (slow.error) return <p role="alert">{slow.error.message}</p>;
+  return <p>{slow.value}</p>;
+}
+```
+
+The server renders immediate props and a loading state before the resolver completes. Deferred pages load the Pages entry asynchronously, so Hono can mount while the initial HTML stream is open. Initial HTML callbacks and SPA NDJSON responses use Void's existing protocol and deferred registry. During initial component imports, the adapter buffers early completions in Void's existing queue and drains them when the registry is ready.
+
+A resolved value or error updates the current page without resetting page-local state or surviving layouts. Updates from a pending page are ignored until that page commits. Void aborts and disposes old navigation resources; the adapter additionally accepts only updates belonging to the rendered props object.
+
+Void 0.26.0 forwards deferred resolver error messages in development and production streams. The adapter turns that message into an `Error` and exposes it through `error`; server stack traces are not included. Author resolver messages suitable for display to users. This follows the observed streaming error behavior of the pinned Void version.
+
+The verified contract covers single deferred props during GET document requests and SPA navigation. Grouped deferred props, deferred prefetching, mutation-driven deferred refresh and deferred island pages are excluded. The ordinary Pages action APIs remain documented under runtime exports.
+
 ## Load-policy islands
 
 Use a `.island.tsx` or `.island.jsx` page for static server content and import an interactive component using Void's import attribute:
@@ -68,7 +89,7 @@ Only the `load` policy, a single default relative TSX/JSX import, and attributes
 
 ## Experimental limitations
 
-The virtual renderer/client entries follow version-specific conventions observed in Void's official adapter rather than a documented third-party registration API. Browser mounting redraws the SSR page; DOM reuse is not guaranteed. Deferred props, explicit prerender/static output, ISR and page-file HMR still require the corresponding follow-up issues. Unsupported modes fail clearly. Package publication and repository visibility are separate maintainer decisions.
+The virtual renderer/client entries follow version-specific conventions observed in Void's official adapter rather than a documented third-party registration API. Browser mounting redraws the SSR page; DOM reuse is not guaranteed. Explicit prerender/static output, ISR and page-file HMR still require the corresponding follow-up issues. Unsupported modes fail clearly. Package publication and repository visibility are separate maintainer decisions.
 
 ## Verification
 
