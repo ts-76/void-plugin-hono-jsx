@@ -25,9 +25,6 @@ export function voidHonoPages(): Plugin[] {
       if (!/\.[jt]sx$/.test(page.componentPath) || page.renderMode === 'island') {
         throw new Error(`Hono Pages: only standard TSX/JSX pages are supported: ${page.componentPath}.`);
       }
-      if (page.methods.some((method) => method !== 'loader')) {
-        throw new Error(`Hono Pages: actions are not supported yet (issue #5): ${page.componentPath}.`);
-      }
       if (page.prerender === true) {
         throw new Error('Hono Pages: prerendering is not supported yet (issue #10).');
       }

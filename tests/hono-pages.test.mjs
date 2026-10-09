@@ -45,7 +45,6 @@ test('Void discovers a loader-backed page and the adapter generates both entries
 for (const [name, files, error] of [
   ['island pages', { 'index.island.tsx': page }, /only standard TSX/],
   ['island layouts', { 'index.tsx': page, '_layouts/shell.island.tsx': page }, /only standard TSX\/JSX layouts/],
-  ['actions', { 'index.tsx': page, 'index.server.ts': 'export const action = () => ({});' }, /actions are not supported/],
   ['explicit prerendering', { 'index.tsx': page, 'index.server.ts': 'export const prerender = true;' }, /prerendering is not supported/],
 ]) {
   test(`rejects unsupported ${name} after scanning real page files`, async () => {
@@ -87,5 +86,20 @@ test('Void route conventions and a client-only page are accepted without a secon
     assert.match(client, /"nested\/named": \["layout","_layouts\/shell"\]/);
     assert.match(client, /"nested\/exclusive": \["_layouts\/shell"\]/);
     assert.doesNotMatch(client, /"nested\/bare": \[/);
+  });
+});
+
+test('loader, action and named-action modules remain server-only in the component manifest', async () => {
+  await withPages({
+    'edit.tsx': page,
+    'edit.server.ts': 'export const loader = () => ({ name: "Original" }); export const action = () => ({});',
+    'named.tsx': page,
+    'named.server.ts': 'export const actions = { save: () => ({}) };',
+  }, async (plugin) => {
+    await plugin.buildStart();
+    const client = await plugin.load(plugin.resolveId('virtual:void-pages-client'));
+    assert.match(client, /edit\.tsx/);
+    assert.match(client, /named\.tsx/);
+    assert.doesNotMatch(client, /edit\.server|named\.server/);
   });
 });
