@@ -157,7 +157,7 @@ The contract was checked against installed Void **0.26.0** and the published **@
 | `void/pages`: `resolvePagesDir`, `scanPages`, `generateComponentManifest` | Exported package APIs used by the Vite plugin to reuse Void's page discovery and component IDs. |
 | `void/pages-protocol`: `PageObject` | Exported payload type. The renderer receives the component ID, loader props, route data, and resolved head from Void. |
 | `void/pages-server`: `serializePageData` | Exported runtime serializer used to embed the payload safely in an application/json script. |
-| `void/pages-head`: rendering helpers | Exported runtime helpers used for initial head and document attributes. Client-side head updates are deferred to Issue #6. |
+| `void/pages-head`: rendering helpers | Exported runtime helpers used for initial head and document attributes. Void owns client-side title/meta/link updates; the adapter also synchronizes document attributes and inert script tags. |
 | `virtual:void-pages-renderer`: `renderPage(pageObj, assetTags)` | A version-specific virtual-module convention consumed by Void and provided by official adapters. It is not a documented third-party registration API. |
 | `virtual:void-pages-client` and `pages-client` build input | Version-specific client-entry conventions copied in behavior from the official adapter. The generated entry mounts the page using serialized loader props. |
 | `__VOID_PAGE_DATA__` and `#app` | Initial payload and mount-element conventions shared with the official adapter's SSR output. |
@@ -168,7 +168,7 @@ The plugin rejects unverified Void versions. A successful smoke test establishes
 
 The example supports initial SSR of TSX/JSX pages with loader props, file-based routes, client-only pages, browser mounting, local interaction, SPA navigation, and full-document reloads. Browser mounting redraws the page; reuse of the existing SSR DOM is not guaranteed.
 
-Island pages, explicit prerendering, and static output are rejected with diagnostics. Deferred props fail clearly at rendering time. Page-file discovery during HMR is not implemented. Head behavior still needs dedicated coverage in Issue #6. Follow-up work is tracked in [Issues #3 through #13](https://github.com/ts-76/void-hono-jsx-poc/issues).
+Island pages, explicit prerendering, and static output are rejected with diagnostics. Deferred props fail clearly at rendering time. Page-file discovery during HMR is not implemented. Head behavior is covered by the dedicated SSR and navigation checks. Follow-up work is tracked in [Issues #3 through #13](https://github.com/ts-76/void-hono-jsx-poc/issues).
 
 The loader deliberately includes a string containing closing script tags, an ampersand, and Unicode line separators. The HTTP check verifies safe JSON embedding and an exact props round trip. Browser checks additionally confirm that the string remains text and never executes.
 
@@ -253,3 +253,13 @@ python3 scripts/check-pages-actions.py
 ```
 
 The browser check requires the documented Chrome session. It covers successful edits, validation with input retention, named actions, redirects, errors, pending/success state, duplicate suppression, and cancellation in development and production preview.
+
+### Head metadata
+
+Use Void's `head` configuration, middleware `headDefaults`, and page `defineHead()` functions. Void resolves precedence and serializes head content. The adapter renders that descriptor during SSR; it adds no implicit title, meta, or favicon tags. Configure document defaults such as charset, viewport, and favicon in Void's project head settings.
+
+Void's shared router updates title/meta/link tags at navigation commit. The adapter synchronizes owned HTML/body attributes, removes destination-stale attributes, and keeps declarative script tags consistent. Unchanged scripts retain their nodes. New navigation script tags are parsed as inert markup and do not execute; executable scripts follow normal browser behavior on full-document loading. Third-party script lifecycle management remains outside this adapter.
+
+`script.innerHTML` follows Void's raw-content semantics. For JSON-LD containing dynamic values, serialize JSON and replace `<` with `\\u003c` before assigning it, as the example does. Title, meta content, and attribute values use Void's escaping helpers.
+
+Visit `/head/one` and `/head/two` to compare metadata. Project defaults and middleware data coexist with page-derived values. `python3 scripts/check-pages-head.py` checks direct requests, SPA visits, back/forward, refresh, precedence, stale tag/attribute removal, duplicate prevention, script preservation and inert reinsertion, and escaped dynamic values in both development and production preview.
