@@ -13,6 +13,7 @@ function usePage() {
 
 export function useShared() { return usePage().shared; }
 export function useParams() { return usePage().params; }
+export function useErrors() { return usePage().errors ?? {}; }
 
 export function useRouter(): VoidRouter {
   const router = useContext(RouterContext);

@@ -168,7 +168,7 @@ The plugin rejects unverified Void versions. A successful smoke test establishes
 
 The example supports initial SSR of TSX/JSX pages with loader props, file-based routes, client-only pages, browser mounting, local interaction, SPA navigation, and full-document reloads. Browser mounting redraws the page; reuse of the existing SSR DOM is not guaranteed.
 
-Page actions, island pages, explicit prerendering, and static output are rejected with diagnostics. Deferred props fail clearly at rendering time. Page-file discovery during HMR is not implemented. Head behavior still needs dedicated coverage in Issue #6. Follow-up work is tracked in [Issues #3 through #13](https://github.com/ts-76/void-hono-jsx-poc/issues).
+Island pages, explicit prerendering, and static output are rejected with diagnostics. Deferred props fail clearly at rendering time. Page-file discovery during HMR is not implemented. Head behavior still needs dedicated coverage in Issue #6. Follow-up work is tracked in [Issues #3 through #13](https://github.com/ts-76/void-hono-jsx-poc/issues).
 
 The loader deliberately includes a string containing closing script tags, an ampersand, and Unicode line separators. The HTTP check verifies safe JSON embedding and an exact props round trip. Browser checks additionally confirm that the string remains text and never executes.
 
@@ -233,3 +233,23 @@ Layouts receive `children`. Stable layout IDs preserve state in the surviving ch
 `useShared()` and `useParams()` from `runtime/pages` expose the current PageObject data in both SSR and browser components. Shared values have type `Record<string, unknown>`; consumers should validate values before using them. The example's middleware supplies a tenant and request path. Each completed visit updates that data for the page and every active layout.
 
 Visit `/layouts/one` to test the root and nested counters. `/layouts/two` retains them, `/layouts/named` replaces the nested layout, `/layouts/exclusive` removes the root, and `/layouts/bare` removes all layouts. Run `python3 scripts/check-pages-layouts.py` with both servers and the documented Chrome session active. On 2026-10-09, SSR ordering, layout state, page resets, unmount/remount, named layout modes, shared data, and route parameters passed in development and production preview.
+
+### Forms and actions
+
+`useForm(initialData)` from `runtime/form` wraps Void's `submitAction` protocol. It provides `data`, `setData`, field `errors`, an action `error`, `pending`, `wasSuccessful`, `reset`, `cancel`, and `post`, `put`, `patch`, and `delete` methods. Pass a URL such as `/named?save` for a named action. Successful actions use Void's refreshed loader payload or follow its redirect. `useErrors()` exposes the current PageObject errors to other components.
+
+Input stays in the form after validation failure. Editing clears errors and success state; each submission clears the previous result. A synchronous guard ignores duplicate submissions while a request is active. Cancellation supersedes the visit with a state-preserving refresh and releases the form's pending state. It does not undo a mutation already performed on the server.
+
+Use `ValidationError` from `void/handler` for manual field validation or Void's Standard Schema validators. Void processes a 400 validator response's `issues` structure; an arbitrary `{ errors }` 400 response does not have the same meaning. Unexpected action failures remain available as `Error` objects, including `VoidActionError` status and response data where applicable.
+
+The `/edit` and `/named` fixtures use in-memory worker state for demonstration, which resets with the worker and is not a persistent datastore. The named example includes deliberate failure, delayed save, and redirect actions. Void preserves the originating query string on the demonstrated redirect.
+
+With both servers active, run the HTTP and browser checks sequentially because they mutate the same example state:
+
+```sh
+node scripts/check-pages-actions.mjs http://127.0.0.1:5174
+node scripts/check-pages-actions.mjs http://127.0.0.1:4174 --check-build
+python3 scripts/check-pages-actions.py
+```
+
+The browser check requires the documented Chrome session. It covers successful edits, validation with input retention, named actions, redirects, errors, pending/success state, duplicate suppression, and cancellation in development and production preview.
