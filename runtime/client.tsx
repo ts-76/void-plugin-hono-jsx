@@ -3,8 +3,8 @@ import { jsx } from 'hono/jsx/dom/jsx-runtime';
 import { useLayoutEffect, useState } from 'hono/jsx';
 import { createVoidRouter, type VoidRouterConfig } from 'void/pages-client';
 import { parseCacheFor } from 'void/pages-prefetch';
-import { PageContext, RouterContext } from './pages';
-import { createDocumentHead } from './document-head';
+import { PageContext, RouterContext } from './pages.tsx';
+import { createDocumentHead } from './document-head.ts';
 
 type Manifest = Pick<VoidRouterConfig, 'components' | 'layoutTree' | 'routeMeta' | 'matchRoute'>;
 

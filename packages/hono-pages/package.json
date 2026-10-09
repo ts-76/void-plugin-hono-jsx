@@ -1,0 +1,39 @@
+{
+  "name": "void-plugin-hono-jsx",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Experimental Hono JSX Pages adapter for Void 0.26.0",
+  "type": "module",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=24.21.0"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "exports": {
+    "./plugin": {
+      "types": "./dist/plugins/hono-pages.d.ts",
+      "import": "./dist/plugins/hono-pages.js"
+    },
+    "./pages": {
+      "types": "./dist/server/pages.d.ts",
+      "default": "./dist/server/pages.js"
+    },
+    "./form": {
+      "types": "./dist/server/form.d.ts",
+      "default": "./dist/server/form.js"
+    }
+  },
+  "peerDependencies": {
+    "hono": "4.13.13",
+    "void": "0.26.0",
+    "vite": "8.3.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ts-76/void-hono-jsx-poc.git",
+    "directory": "packages/hono-pages"
+  }
+}

@@ -1,6 +1,6 @@
 import { useRef, useState } from 'hono/jsx';
 import { isAbortError, submitAction, VoidActionError, type FormMethod } from 'void/pages-client';
-import { useErrors, useRouter } from './pages';
+import { useErrors, useRouter } from './pages.tsx';
 
 function fieldErrors(error: VoidActionError): Record<string, string> {
   const body = error.body;

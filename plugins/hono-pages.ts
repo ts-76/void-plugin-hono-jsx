@@ -1,7 +1,7 @@
 import { createRequire } from 'node:module';
-import { readFileSync } from 'node:fs';
+import { readFileSync, realpathSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { pagesRuntimePath, clientRuntimePath, publicRuntimeModules } from './runtime-paths.ts';
 import { generateComponentManifest, resolvePagesDir, resolveStaticPageDataBuildOptions, scanPages, type PageScanResult } from 'void/pages';
 import type { Plugin } from 'vite';
 import { honoJsx } from './hono-jsx.ts';
@@ -11,7 +11,6 @@ const clientId = 'virtual:void-pages-client';
 
 /** Experimental Pages contract verified against Void 0.26.0. */
 export function voidHonoPages(): Plugin[] {
-  const runtimeDir = fileURLToPath(new URL('../runtime/', import.meta.url));
   const root = process.cwd();
   const pagesDir = resolvePagesDir(root);
   let scan: PageScanResult | undefined;
@@ -34,6 +33,7 @@ export function voidHonoPages(): Plugin[] {
 
   return [honoJsx(), {
     name: 'void-hono:pages',
+    enforce: 'pre',
     config() {
       const require = createRequire(import.meta.url);
       const packagePath = join(dirname(require.resolve('void')), '..', 'package.json');
@@ -53,11 +53,19 @@ export function voidHonoPages(): Plugin[] {
         build: { manifest: true, rollupOptions: { input: { 'pages-client': clientId } } },
       };
     },
+    configEnvironment() {
+      const modules = Object.keys(publicRuntimeModules);
+      const packages = [...new Set(modules.map((id) => id.slice(0, id.lastIndexOf('/'))))];
+      return { optimizeDeps: { exclude: ['hono', ...modules] }, resolve: { noExternal: ['hono', ...packages] } };
+    },
     async buildStart() {
       await rescan();
     },
     resolveId(id) {
       if (id === rendererId || id === clientId) return `\0${id}`;
+      if (id === pagesRuntimePath || id === clientRuntimePath) return { id: realpathSync(id), external: false };
+      const runtime = publicRuntimeModules[id];
+      if (runtime) return { id: realpathSync(this.environment.config.consumer === 'client' ? runtime.client : runtime.server), external: false };
     },
     async load(id) {
       if (id !== `\0${rendererId}` && id !== `\0${clientId}`) return;
@@ -67,7 +75,7 @@ export function voidHonoPages(): Plugin[] {
         return `
 import { jsx } from 'hono/jsx';
 import { createSsrRouter } from 'void/pages-client';
-import { PageContext, RouterContext } from ${JSON.stringify(join(runtimeDir, 'pages.tsx'))};
+import { PageContext, RouterContext } from ${JSON.stringify(pagesRuntimePath)};
 import { serializePageData } from 'void/pages-server';
 import { renderHeadToString, renderHtmlAttrs, renderBodyAttrs } from 'void/pages-head';
 ${manifest}
@@ -97,7 +105,7 @@ export async function renderPage(pageObj, assetTags) {
 `;
       }
       return `
-import { startHonoPages } from ${JSON.stringify(join(runtimeDir, 'client.tsx'))};
+import { startHonoPages } from ${JSON.stringify(clientRuntimePath)};
 ${manifest}
 await startHonoPages({ components, layoutTree, routeMeta, matchRoute });
 `;
