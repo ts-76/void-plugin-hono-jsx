@@ -12,6 +12,7 @@ export default defineRender((c, assetTags) => {
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>Void × Hono JSX PoC</title>
+        <link rel="icon" href="data:," />
         {raw(assetTags.css)}{raw(assetTags.preloads)}
       </head>
       <body>
