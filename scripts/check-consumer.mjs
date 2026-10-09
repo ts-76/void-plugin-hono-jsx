@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { parseSync } from 'vite';
 import { checkDeferredConsumer } from './check-deferred-consumer.mjs';
+import { checkStaticConsumer } from './check-static-consumer.mjs';
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
 const npmCli = process.env.npm_execpath;
@@ -180,6 +181,7 @@ try {
     }
     console.log('Static-only client assets: no executable statements or framework imports.');
     await smoke('preview', browser, true);
+    await checkStaticConsumer({ repo, consumer, browser, env });
   } finally { await browser.close(); }
   console.log(`Package audit passed: ${entries.length} intended files; declarations and locked clean-consumer checks passed.`);
 } catch (error) {

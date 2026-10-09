@@ -168,7 +168,7 @@ The plugin rejects unverified Void versions. A successful smoke test establishes
 
 The example supports initial SSR of TSX/JSX pages with loader props, file-based routes, client-only pages, browser mounting, local interaction, SPA navigation, and full-document reloads. Browser mounting redraws the page; reuse of the existing SSR DOM is not guaranteed.
 
-Load-policy island pages are supported. Island layouts, explicit prerendering, and static output are rejected with diagnostics. Single deferred props use Void streaming and Hono loading/value/error state. Page-file discovery during HMR is not implemented. Head behavior is covered by the dedicated SSR and navigation checks. Follow-up work is tracked in [Issues #3 through #13](https://github.com/ts-76/void-hono-jsx-poc/issues).
+Load-policy island pages are supported. Island layouts are rejected with diagnostics. Static output and explicit prerender settings use Void generation. Single deferred props use Void streaming and Hono loading/value/error state. Page-file discovery during HMR is not implemented. Head behavior is covered by the dedicated SSR and navigation checks. Follow-up work is tracked in [Issues #3 through #13](https://github.com/ts-76/void-hono-jsx-poc/issues).
 
 The loader deliberately includes a string containing closing script tags, an ampersand, and Unicode line separators. The HTTP check verifies safe JSON embedding and an exact props round trip. Browser checks additionally confirm that the string remains text and never executes.
 
@@ -292,3 +292,11 @@ Issue #9 connects Void's deferred registry to Hono page state. Immediate props a
 The packed consumer uses controlled server gates to prove shell rendering before completion, success/error UI, retained page/layout state and stale-result rejection. It also delays the initial component module and verifies that a result arriving during that delay survives initialization. `scripts/check-deferred-consumer.mjs` runs these checks through `npm run check:consumer` in development and production preview.
 
 The public `Deferred<T>` export uses Void's discriminated loading/value/error state. The verified contract covers single deferred props on GET document requests and SPA navigation. Grouping, deferred prefetch, mutation-driven deferred refresh and islands are excluded. Void 0.26.0 forwards deferred resolver messages in production; the Hono adapter exposes that message as an `Error`. See the [package deferred documentation](packages/hono-pages/README.md#deferred-loader-props).
+
+### Static output
+
+Issue #10 enables `output: "static"` and explicit `prerender` exports. The adapter reuses Void's route and dynamic-path collection, renders loader-backed HTML, and enables static JSON navigation in the shared router. `fixtures/static` covers a root counter, declared `/users/alice` and `/users/bob` paths, an explicitly included page and an excluded page.
+
+`npm run check:consumer` installs the tarball, builds the static fixture with Void, and serves `dist/client` using a file-only server. It verifies generated HTML and JSON, assets, safe props, direct access, reload, counter updates and SPA navigation. Excluded and undeclared paths return 404. Actions fail static discovery; deferred props fail rendering, and Void warns and omits their generated HTML while continuing the build. The check asserts these expected diagnostics and fails on unexpected missing output.
+
+See the [package static output documentation](packages/hono-pages/README.md#static-output-and-prerendering) for configuration, clean URL serving and limitations.

@@ -48,6 +48,24 @@ import { useForm } from 'void-plugin-hono-jsx/form';
 
 Head resolution and escaping follow Void. The adapter synchronizes document attributes and inert script metadata; navigation does not execute newly inserted scripts. Raw `script.innerHTML` is authored content. Serialize dynamic JSON-LD and escape `<` before assigning it.
 
+## Static output and prerendering
+
+Set `output: 'static'` in `void.config.ts`, then run `vite build`. Void collects known page routes and dynamic `getPrerenderPaths()` results and generates HTML plus `/_void/pages/*.json` under `dist/client`. The Hono adapter supplies its renderer and enables the shared router's static-data mode. It adds no route crawler.
+
+```ts
+// pages/users/[id].server.ts
+import { defineHandler } from 'void';
+export const prerender = true;
+export const getPrerenderPaths = () => [{ id: 'alice' }, { id: 'bob' }];
+export const loader = defineHandler((c) => ({ id: c.req.param('id') }));
+```
+
+Known routes auto-prerender in static output. `prerender = true` explicitly selects a route; `prerender = false` excludes it. Excluded routes and undeclared dynamic paths have no generated HTML or page-data file and require a server to work. Serve `dist/client` with clean URL mapping such as `/users/alice` to `users/alice.html`, including the generated assets and `/_void/pages` JSON files. Direct requests, reload and counters use the generated output; Pages links fetch the static JSON and keep the document.
+
+Actions and named actions require a server. The plugin rejects them during static discovery. Deferred props are unsupported in static output and produce an explicit renderer error. Void 0.26.0 reports failed prerender paths as warnings, continues the build, and omits that path's HTML; verify the expected file set before release. The consumer check exercises both diagnostics and rejects any unexpected prerender failures in the supported fixture.
+
+`fixtures/static` demonstrates loader-backed counters, declared dynamic paths and true/false overrides. `scripts/check-static-consumer.mjs`, called by `npm run check:consumer`, builds with Void's own collection and serves only generated files. ISR, CDN configuration and managed deployment are separate follow-up work.
+
 ## Deferred loader props
 
 Return `defer(() => slowOperation())` from a Void loader. The public Hono `Deferred<T>` type is Void's `DeferredState<T>` discriminated union. Read its readonly `loading`, `error` and `value` fields:
@@ -83,13 +101,13 @@ export default function Page() {
 
 Place the counter outside the pages directory. It can use Hono hooks and event handlers normally. The adapter renders its initial HTML inside Void's `data-island`, `data-hydrate` and `data-props` markers, then uses `initIslands` to load and mount only interactive components. Props must be JSON-serializable values. Hono escapes the JSON attribute; parsed browser props match the server values. Mounting redraws the island contents. It does not reuse the server DOM.
 
-A static-only island page emits no client script or module preload tags. Static page modules stay outside the normal Pages browser manifest. A project containing only static island pages builds empty client entry modules with no framework code. Void's own automatic prerender policy still applies to eligible island pages. Full static output and explicit prerender configuration remain pending in Issue #10.
+A static-only island page emits no client script or module preload tags. Static page modules stay outside the normal Pages browser manifest. A project containing only static island pages builds empty client entry modules with no framework code. Void's own automatic prerender policy still applies to eligible island pages. Full static output and explicit prerender configuration follow the static output contract below.
 
 Only the `load` policy, a single default relative TSX/JSX import, and attributes directly in the island page are supported. Other policies and malformed imports fail during discovery. Island layouts, nested attributed imports and island form helpers are unsupported. Direct imports of `void-plugin-hono-jsx/form` in an island page or component fail with a diagnostic; `useForm` also requires a full Pages provider at runtime. Use ordinary document links in static island pages. Pages navigation falls back to a document request for island routes. Static layouts remain server content and do not retain interactive state.
 
 ## Experimental limitations
 
-The virtual renderer/client entries follow version-specific conventions observed in Void's official adapter rather than a documented third-party registration API. Browser mounting redraws the SSR page; DOM reuse is not guaranteed. Explicit prerender/static output, ISR and page-file HMR still require the corresponding follow-up issues. Unsupported modes fail clearly. Package publication and repository visibility are separate maintainer decisions.
+The virtual renderer/client entries follow version-specific conventions observed in Void's official adapter rather than a documented third-party registration API. Browser mounting redraws the SSR page; DOM reuse is not guaranteed. ISR and page-file HMR still require the corresponding follow-up issues. Unsupported modes fail clearly. Package publication and repository visibility are separate maintainer decisions.
 
 ## Verification
 
