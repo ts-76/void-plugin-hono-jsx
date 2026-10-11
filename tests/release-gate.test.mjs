@@ -13,7 +13,7 @@ function fixture() {
   const artifactRoot = path.join(root, 'artifacts');
   const candidate = path.join(root, 'candidate/package');
   for (const directory of [pkgRoot, artifactRoot, candidate]) mkdirSync(directory, { recursive: true });
-  const policy = { repository: 'ts-76/void-hono-jsx-poc', packageName: 'void-plugin-hono-jsx', packagePath: 'packages/hono-pages', tagPrefix: 'v', releaseNode: '24.21.0', nodeVersions: ['24.21.0'], distTag: 'next', stageEnabled: false, publicPackageEnabled: false, provenance: true, historyDisclosureApproved: false, npmOwner: '', reviewers: [], preventSelfReview: true };
+  const policy = { repository: 'ts-76/void-hono-jsx-poc', packageName: 'void-plugin-hono-jsx', packagePath: 'packages/hono-pages', tagPrefix: 'v', releaseNode: '24.21.0', pnpmVersion: '12.11.2', nodeVersions: ['24.21.0'], distTag: 'next', stageEnabled: false, publicPackageEnabled: false, provenance: true, historyDisclosureApproved: false, npmOwner: '', reviewers: [], preventSelfReview: true };
   const pkg = { name: policy.packageName, version: '0.1.0-alpha.0', private: true, license: 'MIT', repository: { url: 'https://github.com/' + policy.repository + '.git' }, publishConfig: { access: 'public', registry: 'https://registry.npmjs.org/', tag: 'next' }, exports: { './plugin': { types: './dist/plugin.d.ts', import: './dist/plugin.js' } } };
   writeFileSync(path.join(root, 'release-policy.json'), JSON.stringify(policy));
   writeFileSync(path.join(pkgRoot, 'package.json'), JSON.stringify(pkg));

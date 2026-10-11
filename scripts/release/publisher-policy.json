@@ -1,0 +1,57 @@
+{
+  "schema": 1,
+  "manager": "pnpm",
+  "version": "12.11.2",
+  "target": "x86_64-unknown-linux-gnu",
+  "sourceCommit": "1e37c514f247e89da8725afb8b96969996d9b409",
+  "sourceArchiveSha256": "d61640c358a708a34494510f1e4c58b17fa5d0905a40f9a000250af9194109af",
+  "cargoLockSha256": "c3b77a0f7a6567a3aee2612651cd0552201c0fcd3aa39f98c2bae76c2707332a",
+  "inventorySha256": "3dddbc3a1329d899a40cec6342eeea731788f2c1811fc5b010991e2a51ac6f91",
+  "distribution": {
+    "name": "@pnpm/exe.linux-x64",
+    "url": "https://registry.npmjs.org/@pnpm/exe.linux-x64/-/exe.linux-x64-12.11.2.tgz",
+    "integrity": "sha512-FK7QKe24AYgppJwO3mpooYptduuvIGqKJPi5ac7MdnWkjUy46JBfYhCW0grnkWKC8YOf0x+vGviuQqJEj3SpQQ==",
+    "binarySha256": "87191f7a097efa1ff87d3e502a2b7d2a67e9c7d146b3b87a10390498845af58d",
+    "files": [
+      "package/LICENSE",
+      "package/pnpm",
+      "package/package.json",
+      "package/THIRD-PARTY-NOTICES.md"
+    ]
+  },
+  "acceptedRustFindings": [
+    {
+      "name": "anyhow",
+      "version": "1.0.102",
+      "id": "RUSTSEC-2026-0190",
+      "modified": "2026-06-29T14:15:03.650725453Z",
+      "advisorySha256": "db91857554af6ce5088f723f1b433c179fd35694c0232298f05553e6478704e8",
+      "reason": "No anyhow::Error::downcast_mut caller in publisher path; other downcast methods are distinct implementations."
+    },
+    {
+      "name": "proc-macro-error2",
+      "version": "2.0.1",
+      "id": "RUSTSEC-2026-0173",
+      "modified": "2026-06-07T21:00:04.318567692Z",
+      "advisorySha256": "56e97b096cf3ea441fd4067214ea40407e9ac8d91841c9573ae52b289bf7f3a1",
+      "reason": "Build-time macro; unmaintained information, no reported attack primitive in runtime."
+    },
+    {
+      "name": "rsa",
+      "version": "0.9.10",
+      "id": "RUSTSEC-2023-0071",
+      "modified": "2026-09-14T09:45:02.996132556Z",
+      "advisorySha256": "3579545695e1e306fdc5d2390ddc201b3b1d884865705ad3f72f2df432a37531",
+      "reason": "No RSA private key/decryption in fixed-tarball stage; Sigstore signs with ephemeral ECDSA P-256."
+    },
+    {
+      "name": "xxhash-rust",
+      "version": "0.8.15",
+      "id": "GHSA-6g2r-675j-hx59",
+      "modified": "2026-10-02T18:45:04.881140605Z",
+      "advisorySha256": "36111fd04f113b37198725c3492d00be831b4ca6a7713aef4a9caa073729babc",
+      "reason": "Publisher uses SHA512; ssri uses default Xxh3 only in other modes, with no short custom-secret caller."
+    }
+  ],
+  "scope": "Linux x64 pnpm stage publish; exact accepted tgz; no install/runtime download/query/server; explicit provenance; isolated config/cache; mandatory OIDC preflight."
+}

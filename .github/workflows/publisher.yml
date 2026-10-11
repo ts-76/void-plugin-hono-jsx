@@ -1,0 +1,35 @@
+name: Publisher validation
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  rust:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24.21.0'
+          package-manager-cache: false
+      - name: Resolve the exact publisher's Linux build dependencies
+        run: python3 scripts/release/inspect-publisher-rust.py
+      - name: Verify the exact native distribution
+        run: node scripts/release/install-publisher.mjs
+      - name: Audit the reviewed Rust inventory against current advisories
+        run: node scripts/release/check-publisher.mjs
+      - name: Verify the publisher's OIDC, isolation and failure gates
+        run: node --test tests/publisher.test.mjs
+      - name: Exercise the native protocol with external networking disabled
+        run: sudo unshare --net python3 scripts/release/probe-publisher.py "$PNPM_RELEASE_CLI" "$RUNNER_TEMP/publisher-rust-report"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: publisher-rust-${{ github.sha }}
+          path: ${{ runner.temp }}/publisher-rust-report/
+          retention-days: 7
+          if-no-files-found: error
