@@ -8,9 +8,9 @@
 | --- | --- |
 | Package | `void-plugin-hono-jsx` |
 | 公開された npm 生成 placeholder | `0.0.0-stage`、`latest` tag、maintainer `ts-76` |
-| 非公開の bootstrap 候補 | `0.0.0-bootstrap.0` / `bootstrap` |
+| 公開済みの登録専用 bootstrap | `0.0.0-bootstrap.0` / `bootstrap` |
 | stage ID | `f4d6bcd7-16c8-45b9-b65f-76f23c84b6fd` |
-| Registry stage status | `staged` |
+| Registry status | owner が npm サイトで approve、公開 version が存在 |
 | 候補の SHA256 | `19d01c767d8626de49ec3294684c2305c9202b2881a8e22d8ade9eb11b9be27e` |
 | 候補の integrity | `sha512-PS3/lLzqlZu9JIe2yaPxz9TzPn8pHfb2zzXGQ/yGMWmvDbyCyjyucEQcELColWr2dXB+TgsM9XEWvqGpifPesA==` |
 | 候補の内容 | package.json、README.md、MIT LICENSE の3ファイル、1170 bytes。アダプターコード・依存・scripts なし |
@@ -18,7 +18,7 @@
 | 実送信 | 固定 tgz、ignore-scripts、access public、tag bootstrap、provenance false |
 | 再取得 | owner の stage download で同じ SHA256 と integrity を確認 |
 
-bootstrap は登録専用の候補です。**approve してはいけません。** alpha の `0.1.0-alpha.0 / next` は別の候補として GitHub Actions の pnpm 12.11.2 / Node 24.21.0 / OIDC / provenance 経路で検証します。bootstrap の成功はその経路の成功を証明しません。
+bootstrap は登録専用です。maintainer が npm サイトで bootstrap と alpha を approve したと確認しました。公開 bootstrap の再取得でも同じ digest を確認しています。bootstrap はアダプター実装を含まず、利用対象は `void-plugin-hono-jsx@next` です。alpha は GitHub Actions の pnpm 12.11.2 / Node 24.21.0 / OIDC / provenance 経路で別途 stage し、公開後の署名検証にも成功しました。bootstrap の成功をその経路の証拠に置き換えません。
 
 新規 stage は公開 placeholder を作りますが、候補の内容は承認まで非公開です。[npm staged publishing](https://docs.npmjs.com/staged-publishing/)
 
@@ -30,10 +30,8 @@ npm 12.2.0 の再監査は High 3 / Moderate 2 の5 leaf package、独立した1
 
 http-cache-semantics は constructor / storable を各2回使用しました。未使用とは扱わず、新規の専用 cache、専用 user/global config、proxy や既存設定を渡さない環境、固定した registry を条件として限定評価しました。owner 認証はこの操作の専用設定だけに保持し、CI secret・成果物・Git には含めません。
 
-Trusted Publisher の保存は別の2FAを必要とします。指定は `ts-76/void-plugin-hono-jsx`、workflow `npm-stage.yml`、environment `npm-stage`、permission `createStagedPackage` のみです。直接 publish 権限を追加しません。追加2FA後、npm の保存応答で trust ID `f0e05f69-46bb-411c-b1b8-b79f7991af6e` と上記の全項目・stage 専用 permission を確認しました。実 OIDC stage の成功は別途確認します。
+Trusted Publisher の保存は別の2FAを必要とします。指定は `ts-76/void-plugin-hono-jsx`、workflow `npm-stage.yml`、environment `npm-stage`、permission `createStagedPackage` のみです。直接 publish 権限を追加しません。追加2FA後、npm の保存応答で trust ID `f0e05f69-46bb-411c-b1b8-b79f7991af6e` と上記の全項目・stage 専用 permission を確認しました。実 OIDC stage の成功は別途確認済みです。owner 専用 credential は logout で失効させ、専用 config を削除しました。
 
-## 残る検証
+## alpha の検証結果
 
-main `3ecda4d542bc37418e47799456f43c35e4891fcd` の Package CI と Publisher CI は成功しました。[Package CI](https://github.com/ts-76/void-plugin-hono-jsx/actions/runs/38153662943)、[Publisher CI](https://github.com/ts-76/void-plugin-hono-jsx/actions/runs/38153662942)。有効化後の commit と tag は別途 CI / 同一 run の prepare artifact を必要とします。
-
-Trusted Publisher の設定保存は確認済みです。policy の stage フラグを有効化し、変更後の CI 成功を待って repository variable と release tag を設定します。その後の GitHub environment 承認と実 OIDC/provenance stage は成功しました。[実検証結果](stage-validation-result.md)で source / run / digest と残る独立署名検証を区別しています。署名 bundle 自体と検証結果がなければ、receipt だけで暗号検証完了とはしません。alpha の最終 npm approve はこの stage 検証に含めません。
+設定保存後、source `1805f4f` / tag `v0.1.0-alpha.0` の実 stage が成功しました。npm サイトでの owner 承認後、公開 tarball、next tag、独立した provenance / registry signature 検証、registry からのインストールを確認しています。[実検証結果](stage-validation-result.md)で bootstrap と alpha、公開前と公開後の証拠を区別しています。
