@@ -5,7 +5,7 @@ import { json } from './gate.mjs';
 
 // Explicit dispatch works with GITHUB_TOKEN without a long-lived PAT. Validate
 // every PR before making any write request; never dispatch npm-stage here.
-export async function dispatchReleaseChecks(prs, { repository, defaultBranch, api }) {
+export async function dispatchReleaseChecks(prs, { repository, defaultBranch, packageName, api }) {
   assert.ok(Array.isArray(prs) && prs.length === 1, 'Expected the single configured release PR');
   const number = prs[0]?.number;
   assert.ok(Number.isSafeInteger(number) && number > 0, 'Invalid release PR number');
@@ -15,7 +15,7 @@ export async function dispatchReleaseChecks(prs, { repository, defaultBranch, ap
   assert.equal(pr.base?.repo?.full_name, repository, 'Unexpected base repository');
   assert.equal(pr.base?.ref, defaultBranch, 'Unexpected base branch');
   assert.equal(pr.head?.repo?.full_name, repository, 'Fork release PR is not allowed');
-  assert.equal(pr.head?.ref, `release-please--branches--${defaultBranch}`, 'Unexpected release branch');
+  assert.equal(pr.head?.ref, `release-please--branches--${defaultBranch}--components--${packageName}`, 'Unexpected release branch');
   assert.ok(pr.labels?.some(label => label.name === 'autorelease: pending'), 'Release label missing');
   assert.match(pr.head?.sha ?? '', /^[0-9a-f]{40}$/, 'Release PR head SHA missing');
   for (const workflow of ['package.yml', 'publisher.yml']) {
@@ -31,6 +31,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const result = await dispatchReleaseChecks(JSON.parse(process.env.RELEASE_PLEASE_PRS || '[]'), {
     repository: policy.repository,
     defaultBranch: policy.defaultBranch,
+    packageName: policy.packageName,
     api(method, endpoint, body) {
       const args = ['api', '--method', method, endpoint];
       if (body) args.push('--input', '-');
