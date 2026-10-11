@@ -1,6 +1,6 @@
 # Third-party notices
 
-The renderer/client entry conventions and provider integration were adapted from the published `@void/react` 0.26.0 adapter and Void 0.26.0. Both distributions include the following MIT notice. Hono is a peer dependency; its notice is included for reference. These notices do not select a license for this project.
+The renderer/client entry conventions and provider integration were adapted from the published `@void/react` 0.26.0 adapter and Void 0.26.0. Both distributions include the following MIT notice. Hono is a peer dependency; its notice is included for reference. The project is separately licensed under MIT; these notices preserve upstream copyright attribution.
 
 ## Void and @void/react
 

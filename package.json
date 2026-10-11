@@ -17,6 +17,7 @@
     "preview:pages": "npm --prefix examples/pages run preview",
     "build:package": "node scripts/build-package.mjs",
     "check:consumer": "node scripts/check-consumer.mjs",
+    "check:source": "node scripts/check-source.mjs",
     "audit:release": "node scripts/audit-release.mjs"
   },
   "dependencies": {
@@ -28,5 +29,6 @@
     "typescript": "7.0.2",
     "@types/node": "^24.0.0",
     "playwright": "1.64.0"
-  }
+  },
+  "license": "MIT"
 }

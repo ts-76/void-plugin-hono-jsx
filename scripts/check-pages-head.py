@@ -1,3 +1,4 @@
+import os
 # Requires Python 3 and the documented agent-browser Chrome session.
 import html
 import json
@@ -8,7 +9,7 @@ import urllib.request
 
 
 def browser(*arguments):
-    return subprocess.run(['agent-browser', '--session', 'void-hono-pages', *arguments], capture_output=True, text=True, check=True).stdout.strip()
+    return subprocess.run(['agent-browser', '--session', os.environ.get('VOID_HONO_BROWSER_SESSION', 'void-hono-pages'), *arguments], capture_output=True, text=True, check=True).stdout.strip()
 
 
 def expect(condition):
@@ -30,7 +31,7 @@ def page_head(name):
     expect('document.querySelectorAll("#page-data").length===1 && JSON.parse(document.querySelector("#page-data").textContent).name === ' + json.dumps(name))
 
 
-for port in [5174, 4174]:
+for port in [int(os.environ.get('VOID_HONO_DEV_PORT', '5174')), int(os.environ.get('VOID_HONO_PREVIEW_PORT', '4174'))]:
     base = f'http://127.0.0.1:{port}'
     for name in ['one', 'two']:
         with urllib.request.urlopen(base + '/head/' + name) as response:
