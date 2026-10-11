@@ -1,8 +1,9 @@
+import os
 # Requires Python 3, agent-browser 0.19.0, and a running Chrome session named void-hono-pages.
 import subprocess,json,time
 
 def browser(*args):
- r=subprocess.run(['agent-browser','--session','void-hono-pages',*args],capture_output=True,text=True,check=True)
+ r=subprocess.run(['agent-browser','--session',os.environ.get('VOID_HONO_BROWSER_SESSION', 'void-hono-pages'),*args],capture_output=True,text=True,check=True)
  return r.stdout.strip()
 def evaluate(code): return browser('eval',code)
 def expect(condition): evaluate('if(!('+condition+')) throw new Error('+json.dumps(condition)+'); true')
@@ -10,7 +11,7 @@ def idle():
  browser('wait','#app[data-navigation="idle"]')
  time.sleep(.1)
 def click(id): browser('click','#'+id); idle()
-for port in [5174,4174]:
+for port in [int(os.environ.get('VOID_HONO_DEV_PORT', '5174')), int(os.environ.get('VOID_HONO_PREVIEW_PORT', '4174'))]:
  browser('open',f'http://127.0.0.1:{port}/users/alice')
  browser('wait','#app[data-hono-pages="mounted"]')
  browser('errors','--clear');browser('console','--clear')

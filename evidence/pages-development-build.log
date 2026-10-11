@@ -1,0 +1,95 @@
+
+> void-hono-jsx-poc@0.0.0 build:pages
+> npm --prefix examples/pages run build
+
+
+> build
+> vite build
+
+vite v8.3.3 building void_worker environment for production...
+transforming...
+✓ 116 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/ssr/wrangler.json                          1.45 kB │ gzip:  0.72 kB
+dist/ssr/.vite/manifest.json                   10.29 kB │ gzip:  1.38 kB
+dist/ssr/assets/pages-qH6BVaG2.css              0.25 kB │ gzip:  0.20 kB
+dist/ssr/islands-client.js                      0.00 kB │ gzip:  0.02 kB
+dist/ssr/assets/edit.server-CWF2TIX3.js         0.07 kB │ gzip:  0.08 kB
+dist/ssr/assets/browser.server-CCc2NgxA.js      0.20 kB │ gzip:  0.17 kB
+dist/ssr/assets/edit-nt5LsQYM.js                0.26 kB │ gzip:  0.20 kB
+dist/ssr/assets/index.server-B9bCQJcL.js        0.27 kB │ gzip:  0.22 kB
+dist/ssr/assets/one-BUxu-UV-.js                 0.27 kB │ gzip:  0.21 kB
+dist/ssr/assets/two-BcTC-tLg.js                 0.27 kB │ gzip:  0.21 kB
+dist/ssr/assets/named-pPy8b3CC.js               0.28 kB │ gzip:  0.21 kB
+dist/ssr/assets/_id_-BunSWKAz.js                0.30 kB │ gzip:  0.23 kB
+dist/ssr/assets/bare-CozOhH-0.js                0.30 kB │ gzip:  0.22 kB
+dist/ssr/assets/about-DlP97zPn.js               0.30 kB │ gzip:  0.23 kB
+dist/ssr/assets/named-DU9Rs-Hb.js               0.31 kB │ gzip:  0.23 kB
+dist/ssr/assets/_...slug_-BOUmnYuV.js           0.31 kB │ gzip:  0.23 kB
+dist/ssr/assets/exclusive-BPwCNgnp.js           0.31 kB │ gzip:  0.23 kB
+dist/ssr/assets/layout-DrJ8vvtN.js              0.31 kB │ gzip:  0.23 kB
+dist/ssr/assets/contact-CuCOsKdk.js             0.32 kB │ gzip:  0.24 kB
+dist/ssr/assets/shell-DDLFYFee.js               0.33 kB │ gzip:  0.23 kB
+dist/ssr/assets/layout-BwJJmo1B.js              0.33 kB │ gzip:  0.23 kB
+dist/ssr/assets/_...slug_.server--FwZHiKj.js    0.34 kB │ gzip:  0.25 kB
+dist/ssr/assets/named.server-MIeugE3l.js        0.51 kB │ gzip:  0.31 kB
+dist/ssr/assets/_id_.server-BFZi0kAy.js         0.56 kB │ gzip:  0.35 kB
+dist/ssr/assets/edit.server-D_AXidxs.js         0.65 kB │ gzip:  0.40 kB
+dist/ssr/assets/LayoutPage-DUETElSc.js          0.67 kB │ gzip:  0.38 kB
+dist/ssr/assets/RoutePage-C10ZZKpH.js           0.73 kB │ gzip:  0.37 kB
+dist/ssr/assets/browser-DY74Jp_H.js             0.82 kB │ gzip:  0.42 kB
+dist/ssr/assets/_id_-DXqsqN51.js                0.83 kB │ gzip:  0.39 kB
+dist/ssr/assets/LayoutCounter-BU_MTpbb.js       1.00 kB │ gzip:  0.46 kB
+dist/ssr/assets/_id_.server-DJwgMOHT.js         1.01 kB │ gzip:  0.50 kB
+dist/ssr/assets/defer-YsYDUoii-Dd3kc-aM.js      1.16 kB │ gzip:  0.58 kB
+dist/ssr/assets/pages-BaRT0PCt.js               1.31 kB │ gzip:  0.54 kB
+dist/ssr/assets/pages-CnlP48B6.js               1.68 kB │ gzip:  0.75 kB
+dist/ssr/assets/http-exception-a5eiAzNH.js      1.73 kB │ gzip:  0.73 kB
+dist/ssr/assets/Navigation-DBEMJtdm.js          1.77 kB │ gzip:  0.57 kB
+dist/ssr/assets/head-D_QRR5Yd-CvbqHhZ0.js       4.41 kB │ gzip:  1.38 kB
+dist/ssr/assets/handler-B9_9BA3i.js             5.49 kB │ gzip:  2.04 kB
+dist/ssr/assets/EditPage-DXwedr6P.js            5.71 kB │ gzip:  1.69 kB
+dist/ssr/pages-client.js                        8.99 kB │ gzip:  2.99 kB
+dist/ssr/assets/client-DibF3Szk.js             47.38 kB │ gzip: 12.00 kB
+dist/ssr/assets/jsx-dev-runtime-CgwlJ_gW.js    67.27 kB │ gzip: 17.57 kB
+dist/ssr/index.js                             136.22 kB │ gzip: 35.81 kB
+
+✓ built in 93ms
+vite v8.3.3 building client environment for production...
+transforming...
+✓ 62 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/client/.assetsignore                       0.02 kB
+dist/client/.vite/manifest.json                 8.20 kB │ gzip:  1.11 kB
+dist/client/assets/pages-qH6BVaG2.css           0.25 kB │ gzip:  0.20 kB
+dist/client/assets/islands-client-BvRk9kiK.js   0.00 kB │ gzip:  0.02 kB
+dist/client/assets/edit-Dgawy11-.js             0.13 kB │ gzip:  0.12 kB
+dist/client/assets/one-Deo4Ptw7.js              0.13 kB │ gzip:  0.13 kB
+dist/client/assets/two-DK-RS2Z5.js              0.13 kB │ gzip:  0.13 kB
+dist/client/assets/named-Cn30tB3A.js            0.13 kB │ gzip:  0.13 kB
+dist/client/assets/_id_-BhjznZCa.js             0.15 kB │ gzip:  0.14 kB
+dist/client/assets/_...slug_-BXvuauOD.js        0.15 kB │ gzip:  0.14 kB
+dist/client/assets/about-CAa5tw13.js            0.16 kB │ gzip:  0.15 kB
+dist/client/assets/bare-izFxUPqe.js             0.16 kB │ gzip:  0.15 kB
+dist/client/assets/contact-BCpMiBZ0.js          0.16 kB │ gzip:  0.15 kB
+dist/client/assets/layout-B8AzIuII.js           0.16 kB │ gzip:  0.15 kB
+dist/client/assets/shell-D-okvnYm.js            0.16 kB │ gzip:  0.15 kB
+dist/client/assets/layout-bLsNV1zf.js           0.16 kB │ gzip:  0.15 kB
+dist/client/assets/named-Y3YcbaoD.js            0.16 kB │ gzip:  0.15 kB
+dist/client/assets/exclusive-PUumLLvI.js        0.17 kB │ gzip:  0.16 kB
+dist/client/assets/RoutePage-qg6yODx2.js        0.35 kB │ gzip:  0.24 kB
+dist/client/assets/LayoutPage-Br2CKhTs.js       0.35 kB │ gzip:  0.26 kB
+dist/client/assets/browser-BRvh8kcl.js          0.41 kB │ gzip:  0.29 kB
+dist/client/assets/_id_-eFv8iql2.js             0.45 kB │ gzip:  0.27 kB
+dist/client/assets/LayoutCounter-BF8qWBP7.js    0.47 kB │ gzip:  0.30 kB
+dist/client/assets/pages-D0cDnIhO.js            0.69 kB │ gzip:  0.39 kB
+dist/client/assets/Navigation-DBrD0HNl.js       0.98 kB │ gzip:  0.43 kB
+dist/client/assets/pages-BDkbb5wp.js            0.98 kB │ gzip:  0.55 kB
+dist/client/assets/EditPage-ByJzDHg0.js         2.93 kB │ gzip:  1.23 kB
+dist/client/assets/pages-client-D_BYrK-9.js     8.92 kB │ gzip:  3.39 kB
+dist/client/assets/client-Cw-4sK9B.js          21.09 kB │ gzip:  7.34 kB
+dist/client/assets/jsx-DPTbd1RJ.js             28.25 kB │ gzip: 11.14 kB
+
+✓ built in 55ms
