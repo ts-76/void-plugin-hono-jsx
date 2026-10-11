@@ -2,14 +2,14 @@
 
 An experimental Hono JSX adapter for Void Pages. It renders pages with `hono/jsx` on the server and mounts them with `hono/jsx/dom` in the browser. Void owns route discovery, loaders, actions, navigation, head metadata and prerender collection.
 
-The package is private and unpublished. Maintainers selected `void-plugin-hono-jsx` as its name and the [MIT license](LICENSE) for the project. This is not an official Void adapter. Publication and repository visibility require separate maintainer decisions.
+The package is unpublished. The initial candidate is `0.1.0-alpha.0` on the `next` dist-tag. Source metadata remains private; release preparation creates an isolated publishable candidate. Maintainers selected `void-plugin-hono-jsx` as its name and the [MIT license](LICENSE) for the project. This is not an official Void adapter. Publication and repository visibility require separate maintainer decisions.
 
 ## Compatibility
 
 | Component | Verified baseline |
 | --- | --- |
 | Node.js | 24.21.0 |
-| Void | 0.26.0 |
+| Void | 0.26.1 |
 | Hono | 4.13.13 |
 | Vite | 8.3.3 |
 | TypeScript | 7.0.2 |
@@ -29,8 +29,8 @@ npm pack ./packages/hono-pages
 In a separate project, install the resulting tarball:
 
 ```sh
-npm install ./void-plugin-hono-jsx-0.0.0.tgz hono@4.13.13
-npm install --save-dev void@0.26.0 vite@8.3.3 typescript@7.0.2
+npm install ./void-plugin-hono-jsx-0.1.0-alpha.0.tgz hono@4.13.13
+npm install --save-dev void@0.26.1 vite@8.3.3 typescript@7.0.2
 ```
 
 Configure the Vite plugins in `vite.config.ts`:
@@ -66,7 +66,7 @@ The repository separates the publishable adapter, runnable examples and automate
 
 | Directory | Purpose |
 | --- | --- |
-| `packages/hono-pages` | Package metadata, user guide, adapter source and build configuration. Only `dist`, the guide and license/notices are packed. |
+| `packages/hono-pages` | Package metadata, user guide, adapter source and build configuration. Only `dist`, the guide, changelog and license/notices are packed. |
 | `examples/pages` | Full Pages example using the adapter source, including navigation, layouts, forms and head metadata. |
 | `examples/custom-ssr` | Original minimal Custom SSR counter, kept as a separate example. |
 | `fixtures` | Isolated packed-consumer, static-output and local ISR test inputs. |
@@ -84,4 +84,4 @@ npm run check:source
 
 The consumer check installs the packed artifact in a temporary project and exercises development, production preview, islands, deferred data, static output and local ISR in a browser. The source check starts its own servers and covers HTTP contracts, server-only bundle isolation and Pages browser behavior. Install Playwright Chromium first with `npx playwright install chromium`, or set `PLAYWRIGHT_CHANNEL=chrome` to use installed Google Chrome. The [package workflow](.github/workflows/package.yml) runs on pushes and pull requests with Node 24.21.0. It checks types, adapter tests, release content, both example builds and the packed browser consumer. Check the actual GitHub Actions result for the commit being reviewed; enabling the workflow alone does not establish a passing result.
 
-[Contribution guidance](CONTRIBUTING.md) explains local checks and bug reports. [Architecture](docs/architecture.md) describes the framework boundary and development renderer. [Release checklist](docs/release-checklist.md) records remaining release decisions. [Third-party notices](THIRD_PARTY_NOTICES.md) document upstream adapter references and dependency licenses.
+[Contribution guidance](CONTRIBUTING.md) explains local checks and bug reports. [Architecture](docs/architecture.md) describes the framework boundary and development renderer. [Release preparation](docs/releasing.md) explains exact-artifact verification, security gates and staged publishing. [Release checklist](docs/release-checklist.md) records remaining release decisions. [Third-party notices](THIRD_PARTY_NOTICES.md) document upstream adapter references and dependency licenses.

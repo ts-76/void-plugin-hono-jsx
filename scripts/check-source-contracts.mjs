@@ -50,7 +50,9 @@ export async function checkSourceContracts(base, checkBuild) {
   assert.deepEqual(payload(browserHtml).props, { initialCount: 11 });
   assert.match(browserHtml, /<script type="module"[^>]*src=/);
   for (const path of ['/missing', '/marketing/contact']) {
-    assert.equal((await fetch(new URL(path, base))).status, 404);
+    const response = await fetch(new URL(path, base));
+    await response.text();
+    assert.equal(response.status, 404);
   }
 
   for (const [name, chain] of Object.entries({ one: ['root', 'nested'], two: ['root', 'nested'], named: ['root', 'named'], exclusive: ['named'], bare: [] })) {
@@ -68,8 +70,8 @@ export async function checkSourceContracts(base, checkBuild) {
   }
   assert.ok((await (await fetch(base + '/users/alice')).text()).includes('&quot;id&quot;:&quot;alice&quot;'));
 
-  async function action(path, method = 'POST', name = 'Test') {
-    return fetch(base + path, { method, headers: { 'X-VoidPages': 'true', Accept: 'application/json', 'Content-Type': 'application/json' }, body: JSON.stringify({ name }), redirect: 'manual' });
+  async function action(path, method = 'POST', name = 'Test', headers = {}) {
+    return fetch(base + path, { method, headers: { 'X-VoidPages': 'true', Accept: 'application/json', 'Content-Type': 'application/json', ...headers }, body: JSON.stringify({ name }), redirect: 'manual' });
   }
   for (const path of ['/edit', '/named?save']) {
     for (const method of ['POST', 'PUT', 'PATCH', 'DELETE']) {
@@ -84,10 +86,17 @@ export async function checkSourceContracts(base, checkBuild) {
     assert.equal(invalid.props.name, 'Original');
   }
   const redirect = await action('/named?redirect');
+  await redirect.text();
   assert.equal(redirect.status, 302);
   assert.equal(redirect.headers.get('location'), '/users/saved?redirect');
-  assert.equal((await action('/named?unknown')).status, 404);
-  assert.equal((await action('/named?fail')).status, 500);
+  // Isolate the deliberately unhandled POST body from the next assertion.
+  // Workerd's dev transport can close its upstream connection after this 404.
+  const unknown = await action('/named?unknown', 'POST', 'Test', { Connection: 'close' });
+  await unknown.text();
+  assert.equal(unknown.status, 404);
+  const failure = await action('/named?fail');
+  assert.match(await failure.text(), /Example action failed\./);
+  assert.equal(failure.status, 500);
 
   for (const name of ['one', 'two']) {
     const response = await fetch(base + '/head/' + name);

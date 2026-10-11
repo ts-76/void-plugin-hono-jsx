@@ -10,7 +10,7 @@ import { assertSupportedFrameworks } from './compatibility.ts';
 const rendererId = 'virtual:void-pages-renderer';
 const clientId = 'virtual:void-pages-client';
 
-/** Experimental Pages contract verified against Void 0.26.0. */
+/** Experimental Pages contract verified against Void 0.26.1. */
 export function voidHonoPages(): Plugin[] {
   const root = process.cwd();
   const pagesDir = resolvePagesDir(root);

@@ -1,35 +1,38 @@
 # Release checklist
 
-No release is authorized by this checklist. The package remains `private: true`, version `0.0.0`, with MIT license metadata until maintainers finish the remaining release decisions below.
+The initial candidate is **`void-plugin-hono-jsx@0.1.0-alpha.0`**, **`next`**, MIT. It is unpublished. Source metadata remains `private: true`; preparation changes only `private` in an isolated candidate. Registry upload, npm approval and repository visibility changes require separate authorization.
 
-## Decisions and access
+## Selected policy
 
-- [x] Maintainer selected the package name `void-plugin-hono-jsx`.
-- [x] Maintainer selected the MIT license. The license attributes project copyright to its contributors.
-- [x] Add matching root/package MIT license files and package metadata.
-- [x] Review upstream adaptation notices and include them in the tarball.
-- [ ] Confirm npm name availability, publisher identity, ownership and account security.
-- [ ] Choose an initial experimental version and release support policy.
-- [ ] Decide repository visibility explicitly and review its full Git history before making it public.
+- [x] Package name, MIT license, notices and experimental version/dist-tag selected by the maintainer.
+- [x] Upgrade the baseline to Void 0.26.1; retain Hono 4.13.13, Vite 8.3.3 and Node 24.21.0.
+- [x] Document supported behavior and unsupported modes; managed deployment remains unverified.
+- [x] Keep automatic publication disabled in `release-policy.json`.
+- [x] Add exact-artifact preparation, checksum verification, clean-consumer validation, full-history audits and CI artifact retention.
 
-## Verification
+## Evidence for each candidate
 
-- [x] Activate `.github/workflows/package.yml` for pushes and pull requests using the pinned Node/framework baseline.
-- [ ] Obtain a successful GitHub Actions run on the final release commit.
-- [ ] Run typecheck, tests, Pages production build, packed-consumer checks and `npm run audit:release`.
-- [ ] Review the packed file list, declarations, exports, peer versions, notices and license.
-- [ ] Scan tracked content and Git history for credentials, personal paths and unintended artifacts. The automated audit covers the current tracked tree only; it cannot certify history or detect every secret.
-- [ ] Confirm documentation matches the tested compatibility and unsupported modes. Record managed deployment validation separately.
+- [ ] Obtain a successful full `npm run release:prepare` on the final clean commit and passing GitHub Actions for that exact commit.
+- [ ] Review `artifacts/evidence.json`, tarball contents, declarations, exports, license/notices, release notes and checksums.
+- [ ] Review root and locked-consumer dependency audit reports separately from publisher tooling.
+- [ ] Review `artifacts/history-audit.json` and Gitleaks output; automated scans cannot certify every secret or approve disclosure.
+- [ ] Confirm `npm run release:plan` reports expected blockers until remaining decisions are approved.
 
-## Publish only with explicit authorization
+## Remaining decisions and setup
 
-- [ ] Obtain maintainer approval for the exact release version and artifact.
-- [ ] Set package publication metadata deliberately; verify registry and experimental dist-tag.
-- [ ] Pack the artifact, record its checksum and perform a final dry run.
-- [ ] Publish the reviewed artifact and verify installation from npm in a fresh consumer.
-- [ ] Create the approved tag/release with validation evidence and limitations.
-- [ ] Change repository visibility only if separately approved.
+- [ ] Review the known macOS local development connection-reset limitation after an undefined-action POST before approving the first alpha (see releasing).
+
+- [ ] Confirm npm owner identity, package-name availability, account access and personal 2FA. The name returned 404 during preparation; this does not reserve it. Local npm authentication returned 401.
+- [ ] Resolve or explicitly assess the remaining Void → drizzle-kit → esbuild advisory before setting `dependencySecurityApproved`; record any accepted advisory URL in `approvedDependencyAdvisories`. New unreviewed advisories block staging.
+- [ ] Select and audit a suitable publisher CLI. The tested npm 11.21.0 has bundled dependency findings; the stage job blocks Moderate or higher findings before upload.
+- [ ] Decide repository visibility and full-history disclosure. This repository is private. Preparation found deleted evidence artifacts in history; public provenance requires a public repository and public package.
+- [ ] Select `npm-stage` environment reviewers and decide self-review policy. Configure required reviewers, disable administrator bypass and allow only `v*` tags. The default `preventSelfReview: true` needs another reviewer.
+- [ ] Set up the first package through owner-controlled staged publishing, then configure a stage-only trusted publisher for this repository, workflow and environment.
+- [ ] After separate authorization, update publication flags, repository variable `NPM_STAGING_ENABLED`, approved version tag and environment policy. Re-run preparation on that exact commit.
+- [ ] Review the staged artifact and approve with npm owner personal 2FA; verify registry metadata, dist-tags, provenance and installation in a fresh consumer.
+
+See [releasing](releasing.md) for artifact commands, first-package setup and support policy. This checklist records work and decisions; it does not authorize an upload or visibility change.
 
 ## Recovery
 
-A failed validation blocks release. After publication, remove the affected dist-tag or deprecate the bad version with a concrete message, publish a corrected version, and repeat the clean-consumer checks. Preserve the last verified artifact and commit so consumers can pin them. Document affected versions and recovery commands; do not assume an npm version can be overwritten or unpublished.
+A failed validation blocks release. After publication, remove the affected dist-tag or deprecate the bad version with a concrete message, publish a corrected version, and repeat clean-consumer checks. Preserve the reviewed artifact and source commit. Do not assume an npm version can be overwritten or unpublished.

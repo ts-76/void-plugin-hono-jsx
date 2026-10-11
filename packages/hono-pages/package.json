@@ -1,8 +1,8 @@
 {
   "name": "void-plugin-hono-jsx",
-  "version": "0.0.0",
+  "version": "0.1.0-alpha.0",
   "private": true,
-  "description": "Experimental Hono JSX Pages adapter for Void 0.26.0",
+  "description": "Experimental Hono JSX Pages adapter for Void 0.26.1",
   "type": "module",
   "license": "MIT",
   "engines": {
@@ -12,7 +12,8 @@
     "dist",
     "README.md",
     "THIRD_PARTY_NOTICES.md",
-    "LICENSE"
+    "LICENSE",
+    "CHANGELOG.md"
   ],
   "exports": {
     "./plugin": {
@@ -30,12 +31,28 @@
   },
   "peerDependencies": {
     "hono": "4.13.13",
-    "void": "0.26.0",
+    "void": "0.26.1",
     "vite": "8.3.3"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/ts-76/void-hono-jsx-poc.git",
     "directory": "packages/hono-pages"
-  }
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/",
+    "tag": "next"
+  },
+  "bugs": {
+    "url": "https://github.com/ts-76/void-hono-jsx-poc/issues"
+  },
+  "homepage": "https://github.com/ts-76/void-hono-jsx-poc#readme",
+  "keywords": [
+    "void",
+    "hono",
+    "jsx",
+    "vite",
+    "ssr"
+  ]
 }

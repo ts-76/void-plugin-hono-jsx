@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
 export async function checkCompatibilityConsumer({ consumer, env }) {
-  for (const [name, version] of [['void', '0.26.0'], ['hono', '4.13.13'], ['vite', '8.3.3']]) {
+  for (const [name, version] of [['void', '0.26.1'], ['hono', '4.13.13'], ['vite', '8.3.3']]) {
     const path = join(consumer, 'node_modules', name, 'package.json');
     const original = await readFile(path, 'utf8');
     try {
