@@ -1,0 +1,50 @@
+# 実 OIDC / provenance 付き stage の準備
+
+確認日: 2026-10-12 JST。maintainer が repository を `void-plugin-hono-jsx` に改名・公開しました。元の開発・マージ履歴を復元し、2026-10-09 の別アカウントの作者・コミッター情報だけを現在のアカウントへ修正する方針です。改名と公開準備の変更は追加 commit として維持します。公開候補は復元後の最終 commit で再検証します。npm 有効化・送信・最終承認は未実施です。
+
+## 現状と必要な判断
+
+| 対象 | 確認した状態 | 次に必要なこと |
+| --- | --- | --- |
+| GitHub repository | `ts-76/void-plugin-hono-jsx` として public | repository metadata / policy を改名に揃えた。Trusted Publisher は新しい名前で設定 |
+| Git 履歴 | 元の 46 commit とマージ構造を維持し、Oct 9 の 17 commit の別アカウント情報だけを修正 | 最終 commit で全履歴を再監査。過去の成果物 15 パスが履歴に残る。親 SHA の変更と無効な署名の除去が必要。旧 PR refs・cached commit・外部 clone は別に残り得る |
+| npm package | package と alpha.0 の registry GET はともに 404 | npm owner、名前の最終確認、account access、個人 2FA。404 は予約ではない |
+| 初回登録 | まだ未実施 | owner の手動 bootstrap stage を検討。新規 package の初回 stage は公開の `0.0.0-stage` placeholder を作るため、その公開も判断対象 |
+| GitHub environment | environment は 0 件 | `npm-stage` を作成、required reviewers、admin bypass 禁止、tag `v*` のみ許可 |
+| 承認者 | policy の reviewers は空、preventSelfReview は true | 別の承認者を指定。単独運用で self-review を許可する場合は明示的な policy 変更と environment の一致が必要 |
+| Trusted Publisher | package 未作成で設定未確認 | 下記の正確な値で stage のみに許可。直接 publish と dist-tag 管理は許可しない |
+| 有効化 | stageEnabled / publicPackageEnabled は false、historyDisclosureApproved は true。repository variables は未設定、tag はなし | 残る判断後に policy と GitHub 設定を一致させ、`NPM_STAGING_ENABLED=true`、承認済み commit の release tag を設定 |
+
+公開 provenance は public source repository が必要です。Sigstore の透明性ログに署名情報が記録されることも公開判断に含めます。[npm provenance](https://docs.npmjs.com/generating-provenance-statements/)
+
+## 初回登録と alpha stage の分離
+
+現在の `stage.mjs` は既存 package の metadata が 200 で、maintainers に `npmOwner` が含まれることを要求します。未登録 package の初回 OIDC bootstrap は実装していません。
+
+推奨は、owner が手動 bootstrap stage で package を初期登録し、その後 Trusted Publisher を設定して alpha の OIDC stage を検証する順序です。最初の手動 stage を即座に approve する必要はありません。新規 stage による公開 placeholder と、候補の contents が承認まで非公開である点を区別します。[npm staged publishing](https://docs.npmjs.com/staged-publishing/)
+
+bootstrap の CLI・認証方法・対象 version は事前に決めます。別の bootstrap version を使えば alpha.0 の pending stage との衝突を避けられます。同じ alpha.0 を使う場合は、owner が pending stage を確認し、取り下げ・再登録の扱いと registry 状態を確認してから OIDC stage を行います。pnpm の限定受入は Linux x64 の固定 tgz 経路であり、未検証の bootstrap 操作へ自動的に広げません。
+
+## Trusted Publisher の設定値
+
+| npm 設定項目 | 値 |
+| --- | --- |
+| Provider | GitHub Actions |
+| Organization or user | `ts-76` |
+| Repository | `void-plugin-hono-jsx` |
+| Workflow filename | `npm-stage.yml`（フルパスではない） |
+| Environment name | `npm-stage` |
+| Allowed actions | stage のみ。直接 publish / dist-tag 管理を追加しない |
+
+workflow の GitHub-hosted Ubuntu runner、id-token: write、明示的 provenance、OIDC 事前交換、隔離設定、監査ゲートは実装済みです。長期 npm token の CI secret は追加しません。npm に保存した設定の正しさは実際の stage 操作で確認します。`npm whoami` は Trusted Publisher の権限検証にはなりません。[npm Trusted Publishers](https://docs.npmjs.com/trusted-publishers/)
+
+## 実行順序と合格条件
+
+1. owner / bootstrap の対象 version と認証、repository と履歴の公開、reviewer / self-review、透明性ログへの記録を判断する。
+2. 公開・保護設定、owner の初回登録、stage-only Trusted Publisher を設定し、実際の API 状態と policy を照合する。
+3. policy 変更を main に反映して最終 commit の CI を通す。候補 tgz、audit / history evidence と既知の開発 transport 制約を確認し、その commit の `v0.1.0-alpha.0` tag を承認する。別の候補 version を採用する場合は manifest / policy / tag を一緒に更新する。
+4. tag に対して `npm-stage.yml` を手動 dispatch。同じ run / attempt の prepare artifact を stage が使用し、GitHub environment の承認後に送信する。過去の Package CI artifact は新 run の証跡を代替しない。
+5. 実 OIDC exchange、Fulcio / Rekor 署名、registry stage 受理と実 stageId を確認。owner が stage を閲覧・download し、tgz の digest と source/run/tag を照合する。署名 bundle の取得・検証経路も確認し、署名・issuer / workflow identity・source commit・SHA512 subject・transparency inclusion を検証する。現在の stage receipt は bundle 自体を保存しないため、receipt だけで暗号検証完了とはしない。
+6. この検証は最終 approve の手前で止める。失敗や曖昧な応答では owner が registry の pending state を確認してから再送する。成功後に、alpha を公開承認するか取り下げるかを別途判断する。
+
+stage list / view / download / approve / reject の owner 操作は対話認証を使います。OIDC job に owner の最終承認を委譲しません。最終公開を承認した場合は、registry version、next tag、provenance と fresh consumer を別途確認します。

@@ -1,5 +1,5 @@
 {
-  "repository": "ts-76/void-hono-jsx-poc",
+  "repository": "ts-76/void-plugin-hono-jsx",
   "packageName": "void-plugin-hono-jsx",
   "packagePath": "packages/hono-pages",
   "defaultBranch": "main",
@@ -17,7 +17,7 @@
   "environment": "npm-stage",
   "reviewers": [],
   "preventSelfReview": true,
-  "historyDisclosureApproved": false,
+  "historyDisclosureApproved": true,
   "dependencySecurityApproved": true,
   "approvedDependencyAdvisories": [
     "https://github.com/advisories/GHSA-67mh-4wv8-2f99"

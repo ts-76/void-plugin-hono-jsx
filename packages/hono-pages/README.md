@@ -121,7 +121,7 @@ The package adds no overrides and does not force changes to Void's internal depe
 
 `npm run check:consumer` packs the package, audits its file list, copies a fixture into a temporary directory, installs locked peer dependencies and the tarball, and checks types, development rendering, production build, preview rendering and browser interaction. The consumer uses only the documented package exports and does not import repository source files.
 
-Repository: https://github.com/ts-76/void-hono-jsx-poc
+Repository: https://github.com/ts-76/void-plugin-hono-jsx
 
 ### Development reload and compatibility
 

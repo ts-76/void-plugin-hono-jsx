@@ -1,11 +1,11 @@
 {
   "version": 1,
   "source": {
-    "name": "void-hono-jsx-poc"
+    "name": "void-plugin-hono-jsx"
   },
   "resolved": {
-    "name": "void-hono-jsx-poc",
+    "name": "void-plugin-hono-jsx",
     "compatibility_date": "2026-02-24"
   },
-  "text": "{\n  \"name\": \"void-hono-jsx-poc\",\n  \"compatibility_date\": \"2026-02-24\"\n}\n"
+  "text": "{\n  \"name\": \"void-plugin-hono-jsx\",\n  \"compatibility_date\": \"2026-02-24\"\n}\n"
 }
