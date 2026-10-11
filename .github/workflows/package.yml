@@ -16,11 +16,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      WRANGLER_LOG_PATH: ${{ runner.temp }}/void-hono-logs
       WRANGLER_SEND_METRICS: 'false'
       VOID_INSPECTOR_PORT: 'false'
       CLOUDFLARE_CF_FETCH_ENABLED: 'false'
     steps:
+      - name: Configure local runtime logs
+        run: echo "WRANGLER_LOG_PATH=$RUNNER_TEMP/void-hono-logs" >> "$GITHUB_ENV"
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
