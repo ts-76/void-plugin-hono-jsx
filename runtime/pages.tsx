@@ -1,6 +1,7 @@
 import { createContext, useContext, type JSX } from 'hono/jsx';
 import type { VoidRouter } from 'void/pages-client';
 import type { PageObject } from 'void/pages-protocol';
+export type { DeferredState as Deferred } from 'void';
 
 export const RouterContext = createContext<VoidRouter | null>(null);
 export const PageContext = createContext<PageObject | null>(null);
