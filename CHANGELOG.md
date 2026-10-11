@@ -2,6 +2,7 @@
 
 ## 0.1.0-alpha.0 (release candidate; unpublished)
 
+- Accept the upstream esbuild development-server advisory GHSA-67mh-4wv8-2f99 as a documented limitation of the pinned alpha baseline, without dependency overrides. New unreviewed advisories and publisher-tooling findings remain blocked by the release gates.
 - Verify Void 0.26.1 production deferred errors remain generic while development preserves diagnostic messages.
 - Record the macOS development transport limitation after an undefined-action POST; the adapter does not repair this upstream edge case.
 

@@ -60,6 +60,8 @@ See the [package guide](packages/hono-pages/README.md) for public exports, confi
 
 Browser mounting redraws SSR content; it does not promise DOM reuse. Development reloads reset local state. Island layouts, other island policies, grouped deferred props, deferred prefetch and mutation-driven deferred refresh are unsupported. [ISR validation](docs/isr.md) covers the local direct-worker runtime. Managed deployment has not been verified.
 
+The initial alpha accepts one upstream esbuild advisory as a [known dependency limitation](docs/dependency-security.md), without overrides. Five Moderate audit entries reflect that one advisory in the pinned Void/Drizzle dependency tree. New unreviewed advisories still block the release plan; publisher tooling is assessed separately.
+
 ## Examples and checks
 
 The repository separates the publishable adapter, runnable examples and automated fixtures:
