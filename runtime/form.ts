@@ -1,6 +1,6 @@
-import { useRef, useState } from 'hono/jsx';
+import { useContext, useRef, useState } from 'hono/jsx';
 import { isAbortError, submitAction, VoidActionError, type FormMethod } from 'void/pages-client';
-import { useErrors, useRouter } from './pages';
+import { RouterContext, useErrors, useRouter } from './pages.tsx';
 
 function fieldErrors(error: VoidActionError): Record<string, string> {
   const body = error.body;
@@ -9,6 +9,7 @@ function fieldErrors(error: VoidActionError): Record<string, string> {
 }
 
 export function useForm<T extends Record<string, unknown>>(initialData: T) {
+  if (!useContext(RouterContext)) throw new Error('Hono Pages: useForm requires the full Pages renderer; island form helpers are unsupported.');
   const router = useRouter();
   const initialErrors = useErrors();
   const [data, updateData] = useState(initialData);
