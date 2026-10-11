@@ -17,7 +17,7 @@ release-please は標準 `GITHUB_TOKEN` を使い、追加PATやnpm tokenは不�
 
 GitHubではGITHUB_TOKEN由来のPR用CIが手動承認待ちになる場合があり、通常のpushで次のworkflowが起動するとは限りません。release jobは作成・更新したPRのauthor、repository、base、branch、pending labelを検証し、そのbranchに `package.yml` と `publisher.yml` を明示dispatchします。長期tokenを追加せず、main保護の必須チェックを生成したheadで実行します。失敗はworkflowを失敗にし、CI成功として扱いません。[GitHubのworkflow起動仕様](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow)
 
-CI失敗時はrelease PRを修正・更新して両チェックを再実行してください。必要なら `gh workflow run package.yml --ref release-please--branches--main` と `gh workflow run publisher.yml --ref release-please--branches--main` で実行できます。GitHub側に承認待ちのPR workflowが表示される場合は、内容を確認してownerが承認します。latest mainへの追従と未解決コメントの解消も必要です。
+CI失敗時はrelease PRを修正・更新して両チェックを再実行してください。必要なら `gh workflow run package.yml --ref release-please--branches--main--components--void-plugin-hono-jsx` と `gh workflow run publisher.yml --ref release-please--branches--main--components--void-plugin-hono-jsx` で実行できます。GitHub側に承認待ちのPR workflowが表示される場合は、内容を確認してownerが承認します。latest mainへの追従と未解決コメントの解消も必要です。
 
 ## リリースの順序
 
