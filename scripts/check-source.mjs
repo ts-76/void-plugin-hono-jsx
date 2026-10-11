@@ -45,6 +45,9 @@ async function smoke(mode, browser) {
     const mounted = () => page.locator('#app[data-hono-pages="mounted"]').waitFor();
     const waitText = (selector, value) => page.waitForFunction(({ selector, value }) => document.querySelector(selector)?.textContent === value, { selector, value });
     async function click(selector) {
+      if (selector.startsWith('#nav-') && !(await page.locator(selector).isVisible())) {
+        await page.locator('#navigation-tools > summary').click();
+      }
       await page.locator(selector).click();
       await page.locator('#app[data-navigation="idle"]').waitFor();
     }
@@ -181,7 +184,7 @@ async function smoke(mode, browser) {
       assert.equal(await page.locator('meta[name="middleware-only"]').getAttribute('content'), 'Middleware value');
       assert.equal(await page.locator('html').getAttribute('data-level'), 'page');
       assert.equal(await page.locator('body').getAttribute('data-level'), 'page');
-      assert.equal(await page.locator('html').getAttribute('lang'), 'en');
+      assert.equal(await page.locator('html').getAttribute('lang'), 'ja');
       assert.equal(await page.locator('link[rel="canonical"]').getAttribute('href'), '/head/' + name);
     }
     await checkHead('one');
