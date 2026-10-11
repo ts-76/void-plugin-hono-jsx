@@ -1,0 +1,113 @@
+import assert from 'node:assert/strict';
+
+export async function checkDeferredConsumer({ origin, page, mode }) {
+  const control = async (token, fail = false) => {
+    const response = await fetch(origin + '/api/deferred-control', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token, fail }) });
+    assert.equal(response.status, 200);
+    assert.equal((await response.json()).released, true);
+  };
+  const waitForCompletion = async (token) => {
+    const deadline = Date.now() + 5000;
+    while (Date.now() < deadline) {
+      const state = await (await fetch(origin + '/api/deferred-control?token=' + token)).json();
+      if (state.completions >= state.requests && state.requests > 0) return;
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+    throw new Error(`Deferred producer did not complete: ${token}`);
+  };
+  const stream = await fetch(origin + '/deferred?token=html-stream');
+  assert.equal(stream.status, 200);
+  const reader = stream.body.getReader();
+  const first = new TextDecoder().decode((await reader.read()).value);
+  assert.match(first, /Immediate html-stream/);
+  assert.match(first, /Loading slow value/);
+  assert.match(first, /<script async type="module"/);
+  const pending = await (await fetch(origin + '/api/deferred-control?token=html-stream')).json();
+  assert.equal(pending.result.state, 'pending');
+  await control('html-stream');
+  let rest = '';
+  while (true) { const chunk = await reader.read(); if (chunk.done) break; rest += new TextDecoder().decode(chunk.value); }
+  assert.match(rest, /__resolveDeferred/);
+  assert.match(rest, /\\u003c\/script\\u003e/);
+  await page.locator('#consumer-layout-increment').click();
+  await page.waitForFunction(() => document.querySelector('#consumer-layout-count')?.textContent === '1');
+  await page.evaluate(() => { window.consumerLayout = document.querySelector('#consumer-layout-count'); });
+  await page.locator('#deferred-link').click();
+  await page.waitForURL('**/deferred?token=spa');
+  assert.equal(await page.locator('#deferred-immediate').textContent(), 'Immediate spa');
+  assert.equal(await page.locator('#deferred-state').textContent(), 'Loading slow value');
+  await page.locator('#deferred-local-increment').click();
+  await page.waitForFunction(() => document.querySelector('#deferred-local')?.textContent === '1');
+  await control('spa');
+  await page.waitForFunction(() => document.querySelector('#deferred-state')?.textContent?.startsWith('Resolved spa:'));
+  assert.equal(await page.locator('#deferred-local').textContent(), '1');
+  assert.equal(await page.locator('#consumer-layout-count').textContent(), '1');
+  assert.equal(await page.evaluate(() => window.consumerLayout === document.querySelector('#consumer-layout-count')), true);
+  await page.locator('#deferred-next').click();
+  await page.waitForURL('**/deferred?token=spa-next');
+  assert.equal(await page.locator('#deferred-state').textContent(), 'Loading slow value');
+  await page.locator('#deferred-away').click();
+  await page.waitForURL('**/other');
+  await control('spa-next');
+  await waitForCompletion('spa-next');
+  await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  assert.equal(await page.locator('#other-heading').textContent(), 'Other page');
+  assert.equal(await page.locator('#deferred-state').count(), 0);
+  assert.equal(await page.locator('#consumer-layout-count').textContent(), '1');
+  assert.equal(await page.evaluate(() => window.consumerLayout === document.querySelector('#consumer-layout-count')), true);
+  await page.goto(origin + '/deferred?token=direct', { waitUntil: 'commit' });
+  await page.locator('#app[data-hono-pages="mounted"]').waitFor();
+  assert.equal(await page.locator('#deferred-state').textContent(), 'Loading slow value');
+  await control('direct');
+  await page.waitForFunction(() => document.querySelector('#deferred-state')?.textContent?.startsWith('Resolved direct:'));
+  await page.goto(origin + '/deferred?token=failure', { waitUntil: 'commit' });
+  await page.locator('#app[data-hono-pages="mounted"]').waitFor();
+  assert.equal(await page.locator('#deferred-state').textContent(), 'Loading slow value');
+  await control('failure', true);
+  await page.waitForFunction(() => document.querySelector('#deferred-state')?.textContent === 'Deferred example unavailable.');
+  assert.equal(await page.locator('#deferred-state').getAttribute('role'), 'alert');
+  let allowModule;
+  const held = new Promise((resolve) => { allowModule = resolve; });
+  let sawModule;
+  const requested = new Promise((resolve) => { sawModule = resolve; });
+  const componentUrl = /\/(?:pages\/deferred\.tsx|assets\/deferred-[^/]+\.js)(?:\?.*)?$/;
+  await page.route(componentUrl, async (route) => { sawModule(); await held; await route.continue(); });
+  try {
+    await page.goto(origin + '/deferred?token=early', { waitUntil: 'commit' });
+    await Promise.race([requested, new Promise((_, reject) => setTimeout(() => reject(new Error('Initial deferred component was not requested')), 5000))]);
+    await page.waitForFunction(() => typeof window.__resolveDeferred === 'function');
+    await control('early');
+    await page.waitForFunction(() => window.__deferredQueue?.some((entry) => entry[0] === 'slow'));
+    assert.equal(await page.locator('#deferred-state').textContent(), 'Loading slow value');
+    allowModule();
+    await page.locator('#app[data-hono-pages="mounted"]').waitFor();
+    await page.waitForFunction(() => document.querySelector('#deferred-state')?.textContent?.startsWith('Resolved early:'));
+  } finally {
+    allowModule();
+    await page.unroute(componentUrl);
+  }
+  await page.goto(origin);
+  await page.locator('#app[data-hono-pages="mounted"]').waitFor();
+  let allowPendingModule;
+  const pendingHeld = new Promise((resolve) => { allowPendingModule = resolve; });
+  let sawPendingModule;
+  const pendingRequested = new Promise((resolve) => { sawPendingModule = resolve; });
+  await page.route(componentUrl, async (route) => { sawPendingModule(); await pendingHeld; await route.continue(); });
+  try {
+    await page.locator('#deferred-link').click();
+    await Promise.race([pendingRequested, new Promise((_, reject) => setTimeout(() => reject(new Error('Pending deferred component was not requested')), 5000))]);
+    await waitForCompletion('spa');
+    await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    assert.equal(await page.locator('#initial-prop').textContent(), '5');
+    assert.equal(await page.locator('#deferred-state').count(), 0);
+    allowPendingModule();
+    await page.waitForURL('**/deferred?token=spa');
+    await page.waitForFunction(() => document.querySelector('#deferred-state')?.textContent?.startsWith('Resolved spa:'));
+  } finally {
+    allowPendingModule();
+    await page.unroute(componentUrl);
+  }
+  await page.goto(origin);
+  await page.locator('#app[data-hono-pages="mounted"]').waitFor();
+  console.log(`Deferred ${mode}: immediate streamed shell, HTML/NDJSON completion, typed errors, early completion queue, page/layout retention, pending-page isolation and stale navigation discard passed.`);
+}
