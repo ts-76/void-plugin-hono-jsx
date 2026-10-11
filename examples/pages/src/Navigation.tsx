@@ -1,4 +1,4 @@
-import { Link, useRouter } from '../../../runtime/pages';
+import { Link, useRouter } from '../../../packages/hono-pages/src/runtime/pages';
 
 export function Navigation() {
   const router = useRouter();

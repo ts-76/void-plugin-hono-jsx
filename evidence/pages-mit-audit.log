@@ -1,4 +1,0 @@
-MIT adoption verified: matching root/package LICENSE and license metadata.
-Actual tarball audit passed: 28 intended files, including exact LICENSE and upstream notices.
-Current-tree release audit passed; no configured credential, personal-path or accidental-artifact patterns found.
-CI authentication still lacks workflow scope; no publication or visibility change performed.

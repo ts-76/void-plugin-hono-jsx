@@ -1,4 +1,4 @@
-import { useForm } from '../../../runtime/form';
+import { useForm } from '../../../packages/hono-pages/src/runtime/form';
 import { Navigation } from './Navigation';
 
 export function EditPage({ name, submissions, named = false }: { name: string; submissions: number; named?: boolean }) {

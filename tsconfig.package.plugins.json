@@ -1,5 +1,0 @@
-{
-  "extends": "./tsconfig.package.json",
-  "compilerOptions": { "rootDir": "plugins", "outDir": "packages/hono-pages/dist/plugins" },
-  "include": ["plugins"]
-}

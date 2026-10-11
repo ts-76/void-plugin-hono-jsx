@@ -62,7 +62,18 @@ Browser mounting redraws SSR content; it does not promise DOM reuse. Development
 
 ## Examples and checks
 
-`examples/pages` demonstrates the source adapter. `fixtures/consumer` uses only packaged exports. `fixtures/static` demonstrates generated HTML and JSON served without a worker. The original Custom SSR demonstration is available through `npm run dev` and `npm run build`.
+The repository separates the publishable adapter, runnable examples and automated fixtures:
+
+| Directory | Purpose |
+| --- | --- |
+| `packages/hono-pages` | Package metadata, user guide, adapter source and build configuration. Only `dist`, the guide and license/notices are packed. |
+| `examples/pages` | Full Pages example using the adapter source, including navigation, layouts, forms and head metadata. |
+| `examples/custom-ssr` | Original minimal Custom SSR counter, kept as a separate example. |
+| `fixtures` | Isolated packed-consumer, static-output and local ISR test inputs. |
+| `scripts` and `tests` | Build, release-content audit and automated behavioral checks. |
+| `docs` | Architecture, testing, local ISR and release guidance. |
+
+`npm run dev`, `npm run build` and `npm run preview` now run the Pages example. The explicit `dev:pages`, `build:pages` and `preview:pages` commands also remain available. Use `dev:custom-ssr`, `build:custom-ssr` and `preview:custom-ssr` for the minimal example. See [testing guidance](docs/testing.md) for local environment settings and check coverage.
 
 ```sh
 npm run typecheck
@@ -71,6 +82,6 @@ npm run check:consumer
 npm run check:source
 ```
 
-The consumer check installs the packed artifact in a temporary project and exercises development, production preview, islands, deferred data, static output and local ISR in a browser. Install Playwright Chromium first with `npx playwright install chromium`, or set `PLAYWRIGHT_CHANNEL=chrome` to use installed Google Chrome. The [package workflow](.github/workflows/package.yml) runs on pushes and pull requests with Node 24.21.0. It checks types, adapter tests, release content, both source-example builds and the packed browser consumer. Check the actual GitHub Actions result for the commit being reviewed; enabling the workflow alone does not establish a passing result.
+The consumer check installs the packed artifact in a temporary project and exercises development, production preview, islands, deferred data, static output and local ISR in a browser. The source check starts its own servers and covers HTTP contracts, server-only bundle isolation and Pages browser behavior. Install Playwright Chromium first with `npx playwright install chromium`, or set `PLAYWRIGHT_CHANNEL=chrome` to use installed Google Chrome. The [package workflow](.github/workflows/package.yml) runs on pushes and pull requests with Node 24.21.0. It checks types, adapter tests, release content, both example builds and the packed browser consumer. Check the actual GitHub Actions result for the commit being reviewed; enabling the workflow alone does not establish a passing result.
 
-[Contribution guidance](CONTRIBUTING.md) explains local checks and bug reports. [Implementation notes](docs/implementation-notes.md) preserve the original PoC record and detailed feature checks. [Release checklist](docs/release-checklist.md) records remaining release decisions. [Third-party notices](THIRD_PARTY_NOTICES.md) document upstream adapter references and dependency licenses.
+[Contribution guidance](CONTRIBUTING.md) explains local checks and bug reports. [Architecture](docs/architecture.md) describes the framework boundary and development renderer. [Release checklist](docs/release-checklist.md) records remaining release decisions. [Third-party notices](THIRD_PARTY_NOTICES.md) document upstream adapter references and dependency licenses.
