@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 
-const files = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard', '-z'], { encoding: 'utf8' }).split('\0').filter(Boolean);
+// Audit the working tree, including proposed files and excluding pending deletions.
+const files = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard', '-z'], { encoding: 'utf8' }).split('\0').filter((file) => file && existsSync(file));
 const patterns = [
   ['personal paths', /\/(?:Users|home)\/[^/\s]+\/|\/private\/var\/|\/var\/folders\//],
   ['GitHub credentials', /gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,}/],
@@ -12,7 +13,7 @@ const patterns = [
 ];
 const failures = [];
 for (const file of files) {
-  if (/(^|\/)(?:node_modules|dist|\.runtime|\.void|\.wrangler)\/|\.tgz$|(?:^|\/)\.env(?:\.|$)/.test(file) && !file.endsWith('.env.example')) failures.push(`${file}: accidental artifact`);
+  if (/(^|\/)(?:node_modules|dist|evidence|\.runtime|\.void|\.wrangler)\/|\.(?:tgz|log)$|(?:^|\/)\.env(?:\.|$)/.test(file) && !file.endsWith('.env.example')) failures.push(`${file}: accidental artifact`);
   const content = readFileSync(file, 'utf8');
   for (const [category, pattern] of patterns) if (pattern.test(content)) failures.push(`${file}: ${category}`);
 }

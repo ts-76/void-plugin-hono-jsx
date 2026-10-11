@@ -1,4 +1,4 @@
-import { Link } from '../../../runtime/pages';
+import { Link } from '../../../packages/hono-pages/src/runtime/pages';
 import { RoutePage } from './RoutePage';
 export function LayoutPage({ label }: { label: string }) {
   return <><nav aria-label="Layouts">
