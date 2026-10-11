@@ -1,5 +1,5 @@
 import { useState, type Child } from 'hono/jsx';
-import { useShared, useParams } from '../../../runtime/pages';
+import { useShared, useParams } from '../../../packages/hono-pages/src/runtime/pages';
 
 export function LayoutCounter({ name, children }: { name: string; children: Child }) {
   const [count, setCount] = useState(0);

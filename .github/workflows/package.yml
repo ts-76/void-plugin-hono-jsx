@@ -36,7 +36,7 @@ jobs:
       - name: Audit release content
         run: npm run audit:release
       - name: Build Custom SSR example
-        run: npm run build
+        run: npm run build:custom-ssr
       - name: Install browser runtime
         run: npx playwright install --with-deps chromium
       - name: Build and verify Pages source example

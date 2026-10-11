@@ -3,7 +3,7 @@ import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { voidHonoPages } from '../plugins/hono-pages.ts';
+import { voidHonoPages } from '../packages/hono-pages/src/plugins/hono-pages.ts';
 
 async function withPages(files, check) {
   const previous = process.cwd();

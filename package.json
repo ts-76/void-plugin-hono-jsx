@@ -7,9 +7,9 @@
     "node": ">=24.21.0"
   },
   "scripts": {
-    "dev": "vite --host 127.0.0.1 --port 5173 --strictPort",
-    "build": "vite build",
-    "preview": "vite preview --host 127.0.0.1 --port 4173 --strictPort",
+    "dev": "npm run dev:pages",
+    "build": "npm run build:pages",
+    "preview": "npm run preview:pages",
     "typecheck": "tsc --noEmit",
     "test": "node --test tests/*.test.mjs",
     "dev:pages": "npm --prefix examples/pages run dev",
@@ -18,7 +18,10 @@
     "build:package": "node scripts/build-package.mjs",
     "check:consumer": "node scripts/check-consumer.mjs",
     "check:source": "node scripts/check-source.mjs",
-    "audit:release": "node scripts/audit-release.mjs"
+    "audit:release": "node scripts/audit-release.mjs",
+    "dev:custom-ssr": "npm --prefix examples/custom-ssr run dev",
+    "build:custom-ssr": "npm --prefix examples/custom-ssr run build",
+    "preview:custom-ssr": "npm --prefix examples/custom-ssr run preview"
   },
   "dependencies": {
     "hono": "4.13.13"

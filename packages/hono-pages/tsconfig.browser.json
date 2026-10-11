@@ -1,0 +1,5 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "rootDir": "src/runtime", "outDir": "dist/browser", "jsxImportSource": "hono/jsx/dom" },
+  "include": ["src/runtime"]
+}

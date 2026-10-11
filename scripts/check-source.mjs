@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
+import { checkSourceContracts } from './check-source-contracts.mjs';
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
 const temporary = await mkdtemp(join(tmpdir(), 'hono-pages-source-'));
@@ -35,6 +36,7 @@ async function smoke(mode, browser) {
       await delay(100);
     }
     assert.ok(ready, `${mode} did not start: ${logs}`);
+    await checkSourceContracts(origin, mode === 'preview');
     page = await browser.newPage();
     page.setDefaultTimeout(15000);
     const errors = [];
@@ -65,6 +67,17 @@ async function smoke(mode, browser) {
     await waitText('#route-count', '1');
     await click('#nav-refresh');
     assert.equal(await text('#route-count'), '1');
+    // Observe the router's decision before preventing native browser navigation.
+    for (const [selector, modified] of [['#nav-bob', true], ['#nav-external', false], ['#nav-download', false], ['#nav-reload', false]]) {
+      const intercepted = await page.evaluate(({ selector, modified }) => {
+        let intercepted;
+        document.addEventListener('click', (event) => { intercepted = event.defaultPrevented; }, { once: true });
+        window.addEventListener('click', (event) => event.preventDefault(), { once: true });
+        document.querySelector(selector).dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, ctrlKey: modified }));
+        return intercepted;
+      }, { selector, modified });
+      assert.equal(intercepted, false, `Native link ${selector}`);
+    }
     await page.evaluate(() => { document.querySelector('#nav-slow').click(); setTimeout(() => document.querySelector('#nav-bob').click(), 40); });
     await waitText('#route-value', 'bob');
     await delay(800);
@@ -77,10 +90,17 @@ async function smoke(mode, browser) {
     await page.locator('#browser-agent').waitFor();
     assert.ok((await text('#browser-agent')).length > 0);
     assert.equal(await page.evaluate(() => window.sourceDocument), 123);
+    await page.goBack();
+    await page.locator('#app[data-navigation="idle"]').waitFor();
+    await click('#nav-reload');
+    await mounted();
+    assert.equal(new URL(page.url()).pathname, '/about');
+    assert.equal(await page.evaluate(() => window.sourceDocument), undefined);
     console.log(`Source ${mode}: navigation, history, refresh, cancellation, failure recovery and client-only mounting passed.`);
 
     await page.goto(origin + '/layouts/one');
     await mounted();
+    await page.evaluate(() => { window.layoutDocument = 123; });
     await page.locator('#root-increment').click();
     await page.locator('#nested-increment').click();
     await page.locator('#route-count + button').click();
@@ -93,20 +113,25 @@ async function smoke(mode, browser) {
     await click('#layout-named');
     assert.equal(await text('#root-count'), '1');
     assert.equal(await page.locator('#nested-count').count(), 0);
+    assert.equal(await text('#named-count'), '0');
     await click('#layout-one');
     assert.equal(await text('#nested-count'), '0');
+    assert.equal(await page.locator('#named-count').count(), 0);
     await click('#layout-exclusive');
     assert.equal(await page.locator('#root-count').count(), 0);
     await click('#layout-bare');
     assert.equal(await page.locator('[data-layout]').count(), 0);
     await click('#layout-one');
     assert.equal(await text('#root-count'), '0');
+    assert.equal(await text('#nested-count'), '0');
+    assert.equal(await page.evaluate(() => window.layoutDocument), 123);
     await click('#nav-alice');
     assert.equal(await text('[data-params="root"]'), JSON.stringify({ id: 'alice' }));
     console.log(`Source ${mode}: surviving layout state, page reset, named/exclusive/disabled layouts, shared data and params passed.`);
 
     await page.goto(origin + '/edit');
     await mounted();
+    await page.evaluate(() => { window.actionDocument = 123; });
     await page.locator('#name').fill('');
     await click('#save');
     await waitText('#name-error', 'Name is required.');
@@ -118,6 +143,7 @@ async function smoke(mode, browser) {
       await waitText('#saved-name', `${method} value`);
       assert.equal(await page.locator('#name').inputValue(), `${method} value`);
       assert.equal(await text('#form-success'), 'true');
+      assert.equal(await page.evaluate(() => window.actionDocument), 123);
     }
     await click('#delete');
     await waitText('#saved-name', 'Original');
@@ -147,10 +173,23 @@ async function smoke(mode, browser) {
 
     await page.goto(origin + '/head/one');
     await mounted();
+    async function checkHead(name) {
+      assert.equal(await page.title(), name + ' | Hono Pages');
+      assert.equal(await page.locator('meta[name="description"]').getAttribute('content'), name);
+      for (const selector of ['meta[name="description"]', 'meta[charset]', 'meta[name="viewport"]', 'link[rel="icon"]', '#page-data']) assert.equal(await page.locator(selector).count(), 1, selector);
+      assert.equal(await page.locator('meta[name="project-only"]').getAttribute('content'), 'Project value');
+      assert.equal(await page.locator('meta[name="middleware-only"]').getAttribute('content'), 'Middleware value');
+      assert.equal(await page.locator('html').getAttribute('data-level'), 'page');
+      assert.equal(await page.locator('body').getAttribute('data-level'), 'page');
+      assert.equal(await page.locator('html').getAttribute('lang'), 'en');
+      assert.equal(await page.locator('link[rel="canonical"]').getAttribute('href'), '/head/' + name);
+    }
+    await checkHead('one');
     await page.evaluate(() => { window.initialHeadScript = document.querySelector('#project-script'); });
     for (const name of ['two', 'one', 'two']) {
       await click('#head-' + name);
       await page.waitForFunction((name) => document.title === `${name} | Hono Pages`, name);
+      await checkHead(name);
       assert.equal(await page.locator('meta[name="description"]').getAttribute('content'), name);
       assert.equal(await page.locator('meta[name="description"]').count(), 1);
       const other = name === 'one' ? 'two' : 'one';
@@ -160,8 +199,21 @@ async function smoke(mode, browser) {
       assert.equal(await page.evaluate(() => window.initialHeadScript === document.querySelector('#project-script')), true);
       assert.equal(await page.locator('#page-data').evaluate((node) => JSON.parse(node.textContent).name), name);
     }
+    await page.goBack();
+    await page.waitForFunction(() => document.title === 'one | Hono Pages');
+    await checkHead('one');
+    await page.goForward();
+    await page.waitForFunction(() => document.title === 'two | Hono Pages');
+    await checkHead('two');
+    await click('#head-refresh');
+    await checkHead('two');
     await click('#head-default');
     assert.equal(await page.locator('#page-data').count(), 0);
+    assert.equal(await page.title(), 'Middleware default | Hono Pages');
+    assert.equal(await page.locator('meta[name="description"]').getAttribute('content'), 'Middleware description');
+    assert.equal(await page.locator('html').getAttribute('data-level'), 'middleware');
+    assert.equal(await page.locator('body').getAttribute('data-level'), 'middleware');
+    assert.equal(await page.locator('link[rel="canonical"]').count(), 0);
     await page.goBack();
     await page.locator('#page-data').waitFor({ state: 'attached' });
     assert.equal(await page.evaluate(() => window.pageHeadExecutions), 1);
