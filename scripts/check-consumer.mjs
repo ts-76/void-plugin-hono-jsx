@@ -2,7 +2,10 @@ import assert from 'node:assert/strict';
 import { spawn, execFileSync } from 'node:child_process';
 import { cp, mkdtemp, mkdir, readFile, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
+import { createHash } from 'node:crypto';
+import { inspectTarball } from './release/gate.mjs';
+import { dependencyAudit } from './release/dependency-audit.mjs';
 import { createServer } from 'node:net';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
@@ -146,20 +149,28 @@ async function smoke(mode, browser, staticOnly = false) {
   }
 }
 try {
-  execFileSync(process.execPath, ['scripts/build-package.mjs'], { cwd: repo, stdio: 'inherit' });
-  const packed = JSON.parse(npm(['pack', '--json', '--pack-destination', temporary], join(repo, 'packages/hono-pages')));
-  assert.equal(packed.length, 1);
-  const entries = packed[0].files.map((entry) => entry.path);
-  assert.ok(entries.includes('README.md') && entries.includes('package.json') && entries.includes('THIRD_PARTY_NOTICES.md') && entries.includes('LICENSE'));
-  for (const path of entries) {
-    assert.ok(path === 'package.json' || path === 'README.md' || path === 'THIRD_PARTY_NOTICES.md' || path === 'LICENSE' || /^dist\/.+\.(js|d\.ts)$/.test(path), `Unexpected packed file: ${path}`);
-    const content = await readFile(join(repo, 'packages/hono-pages', path), 'utf8');
-    assert.doesNotMatch(content, /\/Users\/|\/private\/|\/nix\/store\/|\.runtime\//, `Machine-specific content: ${path}`);
+  const args = process.argv.slice(2);
+  assert.ok(args.length === 0 || (args.length === 2 && args[0] === '--tarball'), 'Use --tarball <accepted artifact>');
+  let tarball;
+  if (args.length) {
+    tarball = resolve(args[1]);
+  } else {
+    execFileSync(process.execPath, ['scripts/build-package.mjs'], { cwd: repo, stdio: 'inherit' });
+    const packed = JSON.parse(npm(['pack', '--ignore-scripts', '--json', '--pack-destination', temporary], join(repo, 'packages/hono-pages')));
+    assert.equal(packed.length, 1);
+    tarball = join(temporary, packed[0].filename);
   }
+  const digest = async () => createHash('sha256').update(await readFile(tarball)).digest('hex');
+  const acceptedDigest = await digest();
+  const entries = inspectTarball(tarball);
+  const metadata = JSON.parse(execFileSync('tar', ['-xOzf', tarball, 'package/package.json'], { encoding: 'utf8' }));
+  const expected = JSON.parse(await readFile(join(repo, 'packages/hono-pages/package.json'), 'utf8'));
+  assert.deepEqual(metadata, args.length ? { ...expected, private: false } : expected, 'Unexpected consumer artifact metadata');
   await cp(join(repo, 'fixtures/consumer'), consumer, { recursive: true, filter: (path) => !path.includes('node_modules') && !path.includes('/.void') && !path.includes('/dist') });
   console.log('Tarball audit passed. Installing the locked consumer dependencies.');
   npm(['ci', '--no-audit', '--no-fund'], consumer);
-  npm(['install', '--no-save', '--package-lock=false', '--no-audit', '--no-fund', join(temporary, packed[0].filename)], consumer);
+  npm(['install', '--no-save', '--package-lock=false', '--no-audit', '--no-fund', tarball], consumer);
+  if (env.RELEASE_CONSUMER_AUDIT) dependencyAudit({ npmCli, cwd: consumer, env, output: env.RELEASE_CONSUMER_AUDIT });
   console.log('Checking consumer declarations and browser rendering.');
   execFileSync(process.execPath, ['node_modules/typescript/bin/tsc', '--noEmit'], { cwd: consumer, stdio: 'inherit' });
   const browser = await chromium.launch(process.env.PLAYWRIGHT_CHANNEL ? { channel: process.env.PLAYWRIGHT_CHANNEL } : {});
@@ -189,6 +200,7 @@ try {
     await checkCompatibilityConsumer({ consumer, env });
     await checkIsrConsumer({ repo, consumer, browser, env });
   } finally { await browser.close(); }
+  assert.equal(await digest(), acceptedDigest, 'Accepted artifact changed during validation');
   console.log(`Package audit passed: ${entries.length} intended files; declarations and locked clean-consumer checks passed.`);
 } catch (error) {
   console.error(process.env.KEEP_CONSUMER_FIXTURE ? `Consumer validation failed. Retained workspace: ${consumer}` : 'Consumer validation failed. Set KEEP_CONSUMER_FIXTURE=1 to retain the workspace.');

@@ -31,7 +31,11 @@ async function smoke(mode, browser) {
     const deadline = Date.now() + 60000;
     while (Date.now() < deadline) {
       if (child.exitCode !== null || child.signalCode !== null) throw new Error(logs);
-      try { ready = (await fetch(origin, { signal: AbortSignal.timeout(2000) })).ok; } catch {}
+      try {
+        const response = await fetch(origin, { signal: AbortSignal.timeout(2000) });
+        await response.text();
+        ready = response.ok;
+      } catch {}
       if (ready) break;
       await delay(100);
     }
