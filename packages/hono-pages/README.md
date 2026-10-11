@@ -119,7 +119,7 @@ Repository: https://github.com/ts-76/void-hono-jsx-poc
 
 Page and companion-loader edits reload the document and reset page/layout state. This is not state-preserving HMR. Added and removed page files update Void's route manifest without restarting the server. The adapter clears its discovery cache and uses Void's existing structural reload notifications; sending a second worker reload can mix SSR module instances during a request.
 
-The packed-consumer check edits a page, changes its loader value, adds and removes a route, checks counter interaction after reloading, and asserts that the server stays running. It also verifies actionable diagnostics for unverified Void, Hono and Vite versions. Development and production preview are exercised on the exact baseline above; no additional framework versions are claimed. The prepared CI workflow covers that baseline on Node 24.21.0, but workflow activation and an actual GitHub Actions run remain pending the authentication scope update.
+The packed-consumer check edits a page, changes its loader value, adds and removes a route, checks counter interaction after reloading, and asserts that the server stays running. It also verifies actionable diagnostics for unverified Void, Hono and Vite versions. Development and production preview are exercised on the exact baseline above; no additional framework versions are claimed. The active CI workflow covers that baseline on Node 24.21.0. It also runs `npm run check:source` for navigation, persistent layouts, action forms and head metadata in development and production preview. Inspect the GitHub Actions result on the commit being reviewed.
 
 ## Local ISR
 
