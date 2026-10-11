@@ -5,6 +5,8 @@ await rm('packages/hono-pages/dist', { recursive: true, force: true });
 for (const target of ['plugins', 'server', 'browser']) {
   execFileSync(process.execPath, ['node_modules/typescript/bin/tsc', '-p', `packages/hono-pages/tsconfig.${target}.json`], { stdio: 'inherit' });
 }
+// release-please manages one canonical changelog; pack its exact contents.
+await writeFile('packages/hono-pages/CHANGELOG.md', await readFile('CHANGELOG.md'));
 const { name } = JSON.parse(await readFile('packages/hono-pages/package.json', 'utf8'));
 // Use the same public module identity for providers and hooks in every compiled entry.
 for (const target of ['server/form', 'browser/form', 'browser/client']) {

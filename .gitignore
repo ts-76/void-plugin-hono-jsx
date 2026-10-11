@@ -15,3 +15,6 @@ evidence/
 
 artifacts/
 stage-receipt.json
+
+# Generated from the root release-please changelog during package build.
+/packages/hono-pages/CHANGELOG.md
