@@ -1,0 +1,25 @@
+2026-10-09, Node 24.21.0, Chrome 155, Void 0.26.0, Hono 4.13.13, Vite 8.3.3
+
+
+> void-hono-jsx-poc@0.0.0 check:consumer
+> node scripts/check-consumer.mjs
+
+Tarball audit passed. Installing the locked consumer dependencies.
+Checking consumer declarations and browser rendering.
+Deferred development: immediate streamed shell, HTML/NDJSON completion, typed errors, early completion queue, page/layout retention, pending-page isolation and stale navigation discard passed.
+Packed consumer development: SSR, runtime exports, click, SPA navigation, reset, reload, load-policy islands, safe props and static-only zero-script rendering passed.
+Deferred preview: immediate streamed shell, HTML/NDJSON completion, typed errors, early completion queue, page/layout retention, pending-page isolation and stale navigation discard passed.
+Packed consumer preview: SSR, runtime exports, click, SPA navigation, reset, reload, load-policy islands, safe props and static-only zero-script rendering passed.
+Static-only client assets: no executable statements or framework imports.
+Static-only package consumer preview: server content and zero JavaScript requests passed.
+Package audit passed: 24 intended files; declarations and locked clean-consumer checks passed.
+
+Root typecheck: passed.
+Scanner/diagnostic tests: 11 passed, 0 failed.
+Existing Pages worker/client build: passed.
+Controlled gates prove that the first HTML chunk and loading UI precede resolver completion.
+Deferred updates preserve page count 1 and layout count 1 with the same layout node.
+Producer completion after navigation cannot replace the other page.
+Delayed module tests cover early initial HTML completion and pending SPA page isolation.
+Development and production preview expose the authored message Deferred example unavailable. as an Error state.
+Grouped props, deferred prefetch, mutation-driven deferred refresh and island deferred props are excluded from the verified contract.
