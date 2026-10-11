@@ -21,17 +21,21 @@
     "audit:release": "node scripts/audit-release.mjs",
     "dev:custom-ssr": "npm --prefix examples/custom-ssr run dev",
     "build:custom-ssr": "npm --prefix examples/custom-ssr run build",
-    "preview:custom-ssr": "npm --prefix examples/custom-ssr run preview"
+    "preview:custom-ssr": "npm --prefix examples/custom-ssr run preview",
+    "release:prepare": "node scripts/release/prepare.mjs",
+    "release:plan": "node scripts/release/plan.mjs",
+    "audit:history": "node scripts/audit-history.mjs",
+    "audit:secrets": "bash scripts/gitleaks.sh"
   },
   "dependencies": {
     "hono": "4.13.13"
   },
   "devDependencies": {
-    "void": "0.26.0",
-    "vite": "8.3.3",
-    "typescript": "7.0.2",
     "@types/node": "^24.0.0",
-    "playwright": "1.64.0"
+    "playwright": "1.64.0",
+    "typescript": "7.0.2",
+    "vite": "8.3.3",
+    "void": "0.26.1"
   },
   "license": "MIT"
 }

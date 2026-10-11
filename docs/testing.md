@@ -1,6 +1,6 @@
 # Testing and examples
 
-Use the repository lockfile and Node.js 24.21.0. The verified framework baseline is Void 0.26.0, Hono 4.13.13, Vite 8.3.3 and TypeScript 7.0.2. Other framework versions are rejected by the plugin and are not claimed as supported.
+Use the repository lockfile and Node.js 24.21.0. The verified framework baseline is Void 0.26.1, Hono 4.13.13, Vite 8.3.3 and TypeScript 7.0.2. Other framework versions are rejected by the plugin and are not claimed as supported.
 
 ## Automated checks
 

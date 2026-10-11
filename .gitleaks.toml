@@ -1,0 +1,3 @@
+title = "Default rules, no project allowlist"
+[extend]
+useDefault = true

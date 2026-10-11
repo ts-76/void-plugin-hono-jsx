@@ -2,7 +2,7 @@ import { createRequire } from 'node:module';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
-const supported = { void: '0.26.0', hono: '4.13.13', vite: '8.3.3' };
+const supported = { void: '0.26.1', hono: '4.13.13', vite: '8.3.3' };
 export function assertSupportedFrameworks() {
   const require = createRequire(import.meta.url);
   for (const [name, expected] of Object.entries(supported)) {
@@ -22,6 +22,6 @@ export function assertSupportedFrameworks() {
       if (parent === directory) throw new Error(`Hono Pages: cannot locate ${name} package metadata.`);
       directory = parent;
     }
-    if (version !== expected) throw new Error(`Hono Pages: ${name} ${version} is unverified; install ${name}@${expected}. The adapter requires void@0.26.0, hono@4.13.13 and vite@8.3.3.`);
+    if (version !== expected) throw new Error(`Hono Pages: ${name} ${version} is unverified; install ${name}@${expected}. The adapter requires void@0.26.1, hono@4.13.13 and vite@8.3.3.`);
   }
 }

@@ -12,3 +12,6 @@ evidence/
 
 *.tgz
 *.log
+
+artifacts/
+stage-receipt.json

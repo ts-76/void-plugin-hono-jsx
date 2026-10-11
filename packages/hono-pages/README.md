@@ -1,13 +1,13 @@
 # Experimental Hono Pages adapter for Void
 
-This private validation package integrates Hono JSX with Void Pages. The package name is `void-plugin-hono-jsx`. It is unpublished and distributed under the [MIT license](LICENSE). Publication remains a separate maintainer decision. It is not an official Void adapter.
+This experimental package integrates Hono JSX with Void Pages. The package name is `void-plugin-hono-jsx`. The initial `0.1.0-alpha.0` candidate targets the `next` dist-tag. It is unpublished and distributed under the [MIT license](LICENSE). Publication remains a separate maintainer decision. It is not an official Void adapter.
 
 ## Supported versions
 
 | Dependency | Verified version |
 | --- | --- |
 | Node.js | 24.21.0 or newer |
-| Void | 0.26.0 |
+| Void | 0.26.1 |
 | Hono | 4.13.13 |
 | Vite | 8.3.3 |
 
@@ -18,8 +18,8 @@ Framework packages are exact peer dependencies. Other versions have not been val
 In the repository, run `npm ci`, `npm run build:package`, then `npm pack ./packages/hono-pages`. Install the resulting tarball in your project alongside the supported peer versions:
 
 ```sh
-npm install ./void-plugin-hono-jsx-0.0.0.tgz hono@4.13.13
-npm install --save-dev void@0.26.0 vite@8.3.3 typescript@7.0.2
+npm install ./void-plugin-hono-jsx-0.1.0-alpha.0.tgz hono@4.13.13
+npm install --save-dev void@0.26.1 vite@8.3.3 typescript@7.0.2
 ```
 
 ## Configure
@@ -62,7 +62,7 @@ export const loader = defineHandler((c) => ({ id: c.req.param('id') }));
 
 Known routes auto-prerender in static output. `prerender = true` explicitly selects a route; `prerender = false` excludes it. Excluded routes and undeclared dynamic paths have no generated HTML or page-data file and require a server to work. Serve `dist/client` with clean URL mapping such as `/users/alice` to `users/alice.html`, including the generated assets and `/_void/pages` JSON files. Direct requests, reload and counters use the generated output; Pages links fetch the static JSON and keep the document.
 
-Actions and named actions require a server. The plugin rejects them during static discovery. Deferred props are unsupported in static output and produce an explicit renderer error. Void 0.26.0 reports failed prerender paths as warnings, continues the build, and omits that path's HTML; verify the expected file set before release. The consumer check exercises both diagnostics and rejects any unexpected prerender failures in the supported fixture.
+Actions and named actions require a server. The plugin rejects them during static discovery. Deferred props are unsupported in static output and produce an explicit renderer error. Void 0.26.1 reports failed prerender paths as warnings, continues the build, and omits that path's HTML; verify the expected file set before release. The consumer check exercises both diagnostics and rejects any unexpected prerender failures in the supported fixture.
 
 `fixtures/static` demonstrates loader-backed counters, declared dynamic paths and true/false overrides. `scripts/check-static-consumer.mjs`, called by `npm run check:consumer`, builds with Void's own collection and serves only generated files. ISR, CDN configuration and managed deployment are separate follow-up work.
 
@@ -83,7 +83,7 @@ The server renders immediate props and a loading state before the resolver compl
 
 A resolved value or error updates the current page without resetting page-local state or surviving layouts. Updates from a pending page are ignored until that page commits. Void aborts and disposes old navigation resources; the adapter additionally accepts only updates belonging to the rendered props object.
 
-Void 0.26.0 forwards deferred resolver error messages in development and production streams. The adapter turns that message into an `Error` and exposes it through `error`; server stack traces are not included. Author resolver messages suitable for display to users. This follows the observed streaming error behavior of the pinned Void version.
+Void 0.26.1 forwards deferred resolver error messages in development and production streams. The adapter turns that message into an `Error` and exposes it through `error`; server stack traces are not included. Author resolver messages suitable for display to users. This follows the observed streaming error behavior of the pinned Void version.
 
 The verified contract covers single deferred props during GET document requests and SPA navigation. Grouped deferred props, deferred prefetching, mutation-driven deferred refresh and deferred island pages are excluded. The ordinary Pages action APIs remain documented under runtime exports.
 
