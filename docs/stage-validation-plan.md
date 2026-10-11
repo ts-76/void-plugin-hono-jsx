@@ -1,6 +1,6 @@
 # 実 OIDC / provenance 付き stage の準備
 
-確認日: 2026-10-12 JST。maintainer が repository を `void-plugin-hono-jsx` に改名・公開しました。元の開発・マージ履歴を復元し、2026-10-09 の別アカウントの作者・コミッター情報だけを現在のアカウントへ修正済みです。改名と公開準備の変更を含む main `f8ba812` の CI は通過しました。npm owner は `ts-76`、GitHub は単独承認として maintainer が指定しました。npm 有効化・送信・最終承認は未実施です。
+確認日: 2026-10-12 JST。maintainer が repository を `void-plugin-hono-jsx` に改名・公開しました。元の開発・マージ履歴を復元し、2026-10-09 の別アカウントの作者・コミッター情報だけを現在のアカウントへ修正済みです。改名と公開準備の変更を含む main `f8ba812` の CI は通過しました。npm owner は `ts-76`、GitHub は単独承認として maintainer が指定しました。初回の owner bootstrap stage は実施済みで、npm 生成 placeholder が公開されています。alpha の OIDC stage・最終承認は未実施です。
 
 ## 現状と必要な判断
 
@@ -8,12 +8,12 @@
 | --- | --- | --- |
 | GitHub repository | `ts-76/void-plugin-hono-jsx` として public | repository metadata / policy を改名に揃えた。Trusted Publisher は新しい名前で設定 |
 | Git 履歴 | 元の 46 commit とマージ構造を維持し、Oct 9 の 17 commit の別アカウント情報だけを修正 | 最終 commit で全履歴を再監査。過去の成果物 15 パスが履歴に残る。親 SHA の変更と無効な署名の除去が必要。旧 PR refs・cached commit・外部 clone は別に残り得る |
-| npm package | npm owner は `ts-76` と指定済み。package と alpha.0 の registry GET はともに 404 | 名前の最終確認、account access、個人 2FA。404 は予約ではない |
-| 初回登録 | まだ未実施 | owner の手動 bootstrap stage を検討。新規 package の初回 stage は公開の `0.0.0-stage` placeholder を作るため、その公開も判断対象 |
+| npm package | 実ログイン owner は `ts-76`、2FA は auth-and-writes。package の公開 placeholder は `0.0.0-stage`、maintainer は ts-76 | alpha.0 の存在と pending state を実 stage 直前に再確認 |
+| 初回登録 | `0.0.0-bootstrap.0 / bootstrap` を owner が stage、status staged、download digest 一致 | [登録記録](bootstrap-registration.md)。bootstrap は approve しない。alpha は別の候補 |
 | GitHub environment | `npm-stage` 作成済み。required reviewer は `ts-76`、admin bypass は false、tag `v*` のみ許可。API 状態を stage gate で照合済み | 実際の workflow の承認待ちと手動承認は stage 実行時に確認 |
 | 承認者 | 単独承認を指定済み。policy の reviewers は User `ts-76`、preventSelfReview は false。environment と一致 | policy 変更を commit / main に反映し、最終 commit の CI を確認。npm の最終 approve は別の個人 2FA 操作 |
-| Trusted Publisher | package 未作成で設定未確認 | 下記の正確な値で stage のみに許可。直接 publish と dist-tag 管理は許可しない |
-| 有効化 | stageEnabled / publicPackageEnabled は false、historyDisclosureApproved は true。repository variables は未設定、tag はなし | 残る判断後に policy と GitHub 設定を一致させ、`NPM_STAGING_ENABLED=true`、承認済み commit の release tag を設定 |
+| Trusted Publisher | 追加2FA後の保存応答で指定値と stage 専用 permission を確認。trust ID f0e05f69-46bb-411c-b1b8-b79f7991af6e | 下記の設定を実 OIDC exchange と stage で検証 |
+| 有効化 | stageEnabled / publicPackageEnabled / historyDisclosureApproved は true。repository variable と tag は CI 後に設定 | 最終 commit の CI 成功後に policy と GitHub 設定を一致させ、`NPM_STAGING_ENABLED=true`、承認済み commit の release tag を設定 |
 
 公開 provenance は public source repository が必要です。Sigstore の透明性ログに署名情報が記録されることも公開判断に含めます。[npm provenance](https://docs.npmjs.com/generating-provenance-statements/)
 
