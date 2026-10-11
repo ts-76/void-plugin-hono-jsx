@@ -8,8 +8,8 @@
     "24.21.0"
   ],
   "releaseNode": "24.21.0",
-  "stageEnabled": false,
-  "publicPackageEnabled": false,
+  "stageEnabled": true,
+  "publicPackageEnabled": true,
   "npmOwner": "ts-76",
   "distTag": "next",
   "provenance": true,

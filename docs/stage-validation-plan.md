@@ -12,8 +12,8 @@
 | 初回登録 | `0.0.0-bootstrap.0 / bootstrap` を owner が stage、status staged、download digest 一致 | [登録記録](bootstrap-registration.md)。bootstrap は approve しない。alpha は別の候補 |
 | GitHub environment | `npm-stage` 作成済み。required reviewer は `ts-76`、admin bypass は false、tag `v*` のみ許可。API 状態を stage gate で照合済み | 実際の workflow の承認待ちと手動承認は stage 実行時に確認 |
 | 承認者 | 単独承認を指定済み。policy の reviewers は User `ts-76`、preventSelfReview は false。environment と一致 | policy 変更を commit / main に反映し、最終 commit の CI を確認。npm の最終 approve は別の個人 2FA 操作 |
-| Trusted Publisher | 指定値で CLI dry-run 済み。保存は追加2FAの完了待ち | 下記の正確な値で stage のみに許可。実設定の保存と照合が必要 |
-| 有効化 | stageEnabled / publicPackageEnabled は false、historyDisclosureApproved は true。repository variables は未設定、tag はなし | 残る判断後に policy と GitHub 設定を一致させ、`NPM_STAGING_ENABLED=true`、承認済み commit の release tag を設定 |
+| Trusted Publisher | 追加2FA後の保存応答で指定値と stage 専用 permission を確認。trust ID f0e05f69-46bb-411c-b1b8-b79f7991af6e | 下記の設定を実 OIDC exchange と stage で検証 |
+| 有効化 | stageEnabled / publicPackageEnabled / historyDisclosureApproved は true。repository variable と tag は CI 後に設定 | 最終 commit の CI 成功後に policy と GitHub 設定を一致させ、`NPM_STAGING_ENABLED=true`、承認済み commit の release tag を設定 |
 
 公開 provenance は public source repository が必要です。Sigstore の透明性ログに署名情報が記録されることも公開判断に含めます。[npm provenance](https://docs.npmjs.com/generating-provenance-statements/)
 

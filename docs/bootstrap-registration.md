@@ -30,10 +30,10 @@ npm 12.2.0 の再監査は High 3 / Moderate 2 の5 leaf package、独立した1
 
 http-cache-semantics は constructor / storable を各2回使用しました。未使用とは扱わず、新規の専用 cache、専用 user/global config、proxy や既存設定を渡さない環境、固定した registry を条件として限定評価しました。owner 認証はこの操作の専用設定だけに保持し、CI secret・成果物・Git には含めません。
 
-Trusted Publisher の保存は別の2FAを必要とします。指定は `ts-76/void-plugin-hono-jsx`、workflow `npm-stage.yml`、environment `npm-stage`、permission `createStagedPackage` のみです。直接 publish 権限を追加しません。認証・設定保存と、実 OIDC stage の成功はそれぞれ確認します。
+Trusted Publisher の保存は別の2FAを必要とします。指定は `ts-76/void-plugin-hono-jsx`、workflow `npm-stage.yml`、environment `npm-stage`、permission `createStagedPackage` のみです。直接 publish 権限を追加しません。追加2FA後、npm の保存応答で trust ID `f0e05f69-46bb-411c-b1b8-b79f7991af6e` と上記の全項目・stage 専用 permission を確認しました。実 OIDC stage の成功は別途確認します。
 
 ## 残る検証
 
 main `3ecda4d542bc37418e47799456f43c35e4891fcd` の Package CI と Publisher CI は成功しました。[Package CI](https://github.com/ts-76/void-plugin-hono-jsx/actions/runs/38153662943)、[Publisher CI](https://github.com/ts-76/void-plugin-hono-jsx/actions/runs/38153662942)。有効化後の commit と tag は別途 CI / 同一 run の prepare artifact を必要とします。
 
-Trusted Publisher の実設定、stage フラグと repository variable、release tag、GitHub environment 承認、実 OIDC / Fulcio / Rekor / registry stage の照合が残ります。署名 bundle 自体と検証結果がなければ、receipt だけで暗号検証完了とはしません。alpha の最終 npm approve はこの stage 検証に含めません。
+Trusted Publisher の設定保存は確認済みです。policy の stage フラグを有効化し、変更後の CI 成功を待って repository variable と release tag を設定します。GitHub environment 承認、実 OIDC / Fulcio / Rekor / registry stage の照合が残ります。署名 bundle 自体と検証結果がなければ、receipt だけで暗号検証完了とはしません。alpha の最終 npm approve はこの stage 検証に含めません。
