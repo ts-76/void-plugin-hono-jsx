@@ -1,7 +1,20 @@
 import { createContext, useContext, type JSX } from 'hono/jsx';
 import type { VoidRouter } from 'void/pages-client';
+import type { PageObject } from 'void/pages-protocol';
+export type { DeferredState as Deferred } from 'void';
 
 export const RouterContext = createContext<VoidRouter | null>(null);
+export const PageContext = createContext<PageObject | null>(null);
+
+function usePage() {
+  const page = useContext(PageContext);
+  if (!page) throw new Error('Hono Pages: page data requires a page provider.');
+  return page;
+}
+
+export function useShared() { return usePage().shared; }
+export function useParams() { return usePage().params; }
+export function useErrors() { return usePage().errors ?? {}; }
 
 export function useRouter(): VoidRouter {
   const router = useContext(RouterContext);

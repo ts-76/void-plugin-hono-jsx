@@ -1,0 +1,27 @@
+Navigation, history, query/hash, preserved refresh, native anchors, cancellation, failure recovery, client-only navigation and document reload passed: 5194
+Navigation, history, query/hash, preserved refresh, native anchors, cancellation, failure recovery, client-only navigation and document reload passed: 4194
+SSR layout order, named/exclusive/disabled layouts, persistent layout state, page reset, unmount/remount, shared data and params passed: 5194
+SSR layout order, named/exclusive/disabled layouts, persistent layout state, page reset, unmount/remount, shared data and params passed: 4194
+Form CRUD, named action, validation/input retention, pending/success, failure recovery, duplicate guard, cancellation and redirect passed: 5194
+Form CRUD, named action, validation/input retention, pending/success, failure recovery, duplicate guard, cancellation and redirect passed: 4194
+SSR, direct access, head precedence, metadata/attribute cleanup, script preservation, back/forward, refresh and escaped dynamic values passed: 5194
+SSR, direct access, head precedence, metadata/attribute cleanup, script preservation, back/forward, refresh and escaped dynamic values passed: 4194
+SSR, loader props, safe serialization, client asset, and 404 checks passed: http://127.0.0.1:5194
+SSR and page protocol passed: /about
+SSR and page protocol passed: /users/alice
+SSR and page protocol passed: /users/bob
+SSR and page protocol passed: /docs/guide/start
+SSR and page protocol passed: /contact
+Client-only shell, loader data, and 404 checks passed
+All mutation methods, named actions, field errors, redirect, failures and optional action bundle isolation passed: http://127.0.0.1:5194
+SSR, loader props, safe serialization, client asset, and 404 checks passed: http://127.0.0.1:4194
+SSR and page protocol passed: /about
+SSR and page protocol passed: /users/alice
+SSR and page protocol passed: /users/bob
+SSR and page protocol passed: /docs/guide/start
+SSR and page protocol passed: /contact
+Client-only shell, loader data, and 404 checks passed
+Server-only bundle isolation passed
+All mutation methods, named actions, field errors, redirect, failures and optional action bundle isolation passed: http://127.0.0.1:4194
+Source loader-backed counter 7→8→9→10, reset/reload to 7, safe props and no unhandled browser errors passed: 5194
+Source loader-backed counter 7→8→9→10, reset/reload to 7, safe props and no unhandled browser errors passed: 4194
