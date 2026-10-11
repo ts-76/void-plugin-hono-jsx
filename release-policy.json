@@ -13,7 +13,7 @@
   "npmOwner": "",
   "distTag": "next",
   "provenance": true,
-  "npmVersion": "11.21.0",
+  "pnpmVersion": "12.11.2",
   "environment": "npm-stage",
   "reviewers": [],
   "preventSelfReview": true,

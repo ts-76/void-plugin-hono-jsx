@@ -33,4 +33,4 @@ Do not use the affected esbuild version's own serve feature. Reassess if a consu
 
 No override, forced transitive upgrade, dependency deletion or downgrade to npm audit's suggested Void 0.1.6 is part of this decision. Follow a compatible Void/Drizzle upstream fix instead. Include the limitation in the packed README and release notes so npm consumers receive it.
 
-Publisher tooling is assessed separately. This acceptance does not cover the npm CLI's bundled dependency findings or relax the stage job's Moderate-or-higher publisher audit gate. Publication flags, owner/2FA, protected-environment review and history-disclosure requirements remain unchanged.
+Publisher tooling is assessed separately in the [pnpm publisher assessment](pnpm-publisher-assessment.md), with the earlier npm comparison in [publisher-security.md](publisher-security.md). This esbuild acceptance does not cover publisher findings; the pnpm stage job has its own exact Rust finding ledger and fresh audit gate. Publication flags, owner/2FA, protected-environment review and history-disclosure requirements remain unchanged.

@@ -25,7 +25,8 @@ The initial candidate is **`void-plugin-hono-jsx@0.1.0-alpha.0`**, **`next`**, M
 
 - [ ] Confirm npm owner identity, package-name availability, account access and personal 2FA. The name returned 404 during preparation; this does not reserve it. Local npm authentication returned 401.
 - [ ] Confirm each final candidate's root and consumer audits contain no advisory beyond the accepted GHSA-67mh-4wv8-2f99. Reassess acceptance after peer changes or upstream fixes; new unreviewed advisories block staging.
-- [ ] Select and audit a suitable publisher CLI. The tested npm 11.21.0 has bundled dependency findings; the stage job blocks Moderate or higher findings before upload.
+- [x] Select pnpm 12.11.2 for the stage job only; accept four exact Rust findings within the fixed-tarball scope, pin source/inventory/native distribution and enforce fresh fail-closed auditing. See the [pnpm assessment](pnpm-publisher-assessment.md).
+- [ ] Before enabling staging, verify real Trusted Publisher/OIDC and signed provenance submission; mock protocol and signing-failure checks do not prove registry acceptance.
 - [ ] Decide repository visibility and full-history disclosure. This repository is private. Preparation found deleted evidence artifacts in history; public provenance requires a public repository and public package.
 - [ ] Select `npm-stage` environment reviewers and decide self-review policy. Configure required reviewers, disable administrator bypass and allow only `v*` tags. The default `preventSelfReview: true` needs another reviewer.
 - [ ] Set up the first package through owner-controlled staged publishing, then configure a stage-only trusted publisher for this repository, workflow and environment.

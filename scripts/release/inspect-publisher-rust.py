@@ -9,8 +9,9 @@ import subprocess
 import tarfile
 import urllib.request
 
-COMMIT = '1e37c514f247e89da8725afb8b96969996d9b409'
-ARCHIVE_SHA256 = 'd61640c358a708a34494510f1e4c58b17fa5d0905a40f9a000250af9194109af'
+policy = json.loads(pathlib.Path(__file__).with_name('publisher-policy.json').read_text())
+COMMIT = policy['sourceCommit']
+ARCHIVE_SHA256 = policy['sourceArchiveSha256']
 base = pathlib.Path(os.environ['RUNNER_TEMP'])
 report = base / 'publisher-rust-report'
 report.mkdir()
@@ -21,6 +22,7 @@ source_parent.mkdir()
 with tarfile.open(fileobj=io.BytesIO(archive), mode='r:gz') as tar:
     tar.extractall(source_parent, filter='data')
 source = source_parent / f'pnpm-{COMMIT}'
+assert hashlib.sha256((source / 'Cargo.lock').read_bytes()).hexdigest() == policy['cargoLockSha256']
 env = os.environ.copy()
 env.update(CARGO_HOME=str(base / 'publisher-cargo'), RUSTUP_HOME=str(base / 'publisher-rustup'))
 subprocess.run(['rustup', 'toolchain', 'install', '1.97.0', '--profile', 'minimal'], env=env, check=True)
@@ -36,14 +38,21 @@ selected = {}
 for line in tree.splitlines():
     match = re.match(r'^([\w-]+) v([\w.+-]+)[^|]*\|(.*)$', line)
     if match and (match[1], match[2]) in external:
-        selected.setdefault((match[1], match[2]), set()).update(filter(None, match[3].split(',')))
+        selected.setdefault((match[1], match[2]), set()).update(filter(None, match[3].replace(' (*)', '').split(',')))
 inventory = [dict(name=n, version=v, features=sorted(features)) for (n,v), features in sorted(selected.items())]
-(report / 'inventory.json').write_text(json.dumps(inventory, indent=2) + '\n')
+inventory_text = json.dumps(inventory, indent=2) + '\n'
+(report / 'inventory.json').write_text(inventory_text)
+reviewed = pathlib.Path(__file__).with_name('publisher-rust-inventory.json')
+if reviewed.exists():
+    assert inventory_text == reviewed.read_text(), 'Linux publisher build inventory changed; reassess'
+
 queries = [dict(package=dict(name=p['name'], ecosystem='crates.io'), version=p['version']) for p in inventory]
 request = urllib.request.Request('https://api.osv.dev/v1/querybatch', data=json.dumps(dict(queries=queries)).encode(), headers={'Content-Type': 'application/json'})
 results = json.load(urllib.request.urlopen(request, timeout=60))['results']
+assert len(results) == len(inventory), 'Incomplete publisher audit'
 findings = []
 for package, result in zip(inventory, results):
+    assert not result.get('next_page_token'), 'Publisher audit pagination requires review'
     for item in result.get('vulns', []):
         advisory = json.load(urllib.request.urlopen(f"https://api.osv.dev/v1/vulns/{item['id']}", timeout=30))
         findings.append(dict(package=package, advisory=advisory))

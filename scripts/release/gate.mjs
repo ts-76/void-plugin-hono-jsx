@@ -28,6 +28,7 @@ export function metadataBlockers(pkg, policy, { ref, changelog, license }) {
   require(/^[a-z0-9][a-z0-9._-]*$/.test(policy.npmOwner), 'npm-owner');
   require(/^[a-zA-Z][\w-]*$/.test(policy.distTag) && !(pkg.version.includes('-') && policy.distTag === 'latest'), 'dist-tag');
   require(policy.provenance === true, 'provenance-required');
+  require(/^\d+\.\d+\.\d+$/.test(policy.pnpmVersion), 'publisher-version');
   require(policy.historyDisclosureApproved === true, 'history-disclosure-unapproved');
   require(policy.dependencySecurityApproved === true, 'dependency-security-unapproved');
   require(Array.isArray(policy.reviewers) && policy.reviewers.length > 0 && policy.reviewers.every(r => ['User', 'Team'].includes(r.type) && /^[\w.-]+$/.test(r.login)), 'reviewers-unconfigured');
@@ -79,7 +80,7 @@ export function createPlan(options) {
   return { status: blockers.length ? 'blocked' : 'ready', blockers, commit: options.commit, ref: options.ref,
     package: artifact.evidence.package, tarball: artifact.evidence.tarball, sha256: artifact.evidence.sha256,
     integrity: artifact.integrity, dependencyAudit: dependencyAudit.metadata.vulnerabilities, dependencyAdvisories: advisories,
-    publisherAudit: 'Required in stage job; Moderate or higher findings block upload',
+    publisherAudit: 'Required in stage job; exact reviewed Rust findings only; new or changed findings block upload',
     stage: 'not executed', approval: 'npm maintainer review and personal 2FA' };
 }
 export function requireEnvironmentReview(environment, branches, policy) {
@@ -98,12 +99,14 @@ const compare = (a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b));
 export function stageArguments(plan, policy, tarball) {
   assert.equal(plan.status, 'ready', `Blocked: ${plan.blockers.join(', ')}`);
   return ['stage', 'publish', path.resolve(tarball), '--ignore-scripts', '--json', '--registry', registry,
-    '--access', 'public', '--tag', policy.distTag, '--provenance=true'];
+    '--access', 'public', '--tag', policy.distTag, '--provenance', '--reporter=silent', '--no-git-checks', '--ignore-workspace'];
 }
 export function stageReceipt(stdout, plan) {
   const parsed = JSON.parse(stdout);
   assert.deepEqual(Object.keys(parsed), [plan.package.name]);
   const result = parsed[plan.package.name];
+  assert.equal(result.name, plan.package.name, 'Stage package changed');
+  assert.equal(result.version, plan.package.version, 'Stage version changed');
   assert.equal(result.integrity, plan.integrity, 'Stage integrity changed');
   assert.ok(typeof result.stageId === 'string' && result.stageId.length, 'Stage ID missing: inspect npm before retry');
   return result;

@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
-import { createPlan, inspectArtifact, requireEnvironmentReview, stageArguments, stageReceipt, registry } from './gate.mjs';
+import { createPlan, inspectArtifact, requireEnvironmentReview, registry } from './gate.mjs';
+import { auditPublisher, loadPublisherPolicy, submitWithPublisher, verifyPublisher } from './publisher.mjs';
 // All checks precede the sole remote mutation. Never approve or directly publish here.
 assert.equal(process.env.GITHUB_ACTIONS, 'true');
 assert.equal(process.env.NPM_STAGE_AUTHORIZATION, 'protected-environment');
@@ -37,9 +38,12 @@ assert.equal(version.status, 404, 'Version exists or registry preflight failed')
 const existing = await fetch(`${registry}${encodeURIComponent(plan.package.name)}`, { signal: AbortSignal.timeout(15000) });
 assert.equal(existing.status, 200, 'Bootstrap package and Trusted Publisher manually first');
 assert.ok((await existing.json()).maintainers?.some(m => m.name === policy.npmOwner));
-assert.ok(process.env.NPM_RELEASE_CLI);
-assert.equal(execFileSync(process.execPath, [process.env.NPM_RELEASE_CLI, '--version'], { encoding: 'utf8' }).trim(), policy.npmVersion);
+assert.ok(process.env.PNPM_RELEASE_CLI);
+const publisherPolicy = loadPublisherPolicy();
+assert.equal(policy.pnpmVersion, publisherPolicy.version);
+verifyPublisher(process.env.PNPM_RELEASE_CLI, publisherPolicy);
+const publisherAudit = await auditPublisher();
 // Re-read the accepted bytes immediately before submission; no pack/build command exists here.
 const artifact = inspectArtifact(options);
-const result = stageReceipt(execFileSync(process.execPath, [process.env.NPM_RELEASE_CLI, ...stageArguments(plan, policy, artifact.tarball)], { encoding: 'utf8', timeout: 120000 }), plan);
-writeFileSync('stage-receipt.json', JSON.stringify({ ...plan, stage: 'submitted; awaiting npm maintainer 2FA', stageId: result.stageId }, null, 2) + '\n');
+const result = await submitWithPublisher({ binary: process.env.PNPM_RELEASE_CLI, plan, policy, tarball: artifact.tarball });
+writeFileSync('stage-receipt.json', JSON.stringify({ ...plan, publisherAudit, stage: 'submitted; awaiting npm maintainer 2FA', stageId: result.stageId }, null, 2) + '\n');
