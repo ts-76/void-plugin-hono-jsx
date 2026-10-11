@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "source": {
+    "name": "void-hono-pages-smoke"
+  },
+  "resolved": {
+    "name": "void-hono-pages-smoke",
+    "compatibility_date": "2026-02-24"
+  },
+  "text": "{\n  \"name\": \"void-hono-pages-smoke\",\n  \"compatibility_date\": \"2026-02-24\"\n}\n"
+}
