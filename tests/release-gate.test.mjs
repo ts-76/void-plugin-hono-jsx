@@ -59,13 +59,29 @@ test('artifact checks reject changed bytes, commit, source metadata and validati
   } finally { f.cleanup(); }
 });
 
-test('modified audit evidence and newly unreviewed dependency advisories block staging', () => {
+test('accepted dependency advisory remains reported while new consumer findings block staging', () => {
   const f = fixture(); try {
-    const report = { metadata: { vulnerabilities: { total: 1 } }, vulnerabilities: { esbuild: { via: [{ url: 'https://github.com/advisories/GHSA-example' }] } } };
+    const accepted = 'https://github.com/advisories/GHSA-67mh-4wv8-2f99';
+    const report = { metadata: { vulnerabilities: { total: 1 } }, vulnerabilities: { esbuild: { via: [{ url: accepted }] } } };
     const content = JSON.stringify(report);
     writeFileSync(path.join(f.artifactRoot, 'dependency-audit.json'), content);
     assert.throws(() => inspectArtifact(f.options), /Audit report changed/);
     f.evidence.dependencyReportSha256 = sha256(content);
+    writeFileSync(path.join(f.artifactRoot, 'evidence.json'), JSON.stringify(f.evidence));
+    assert.ok(createPlan(f.options).blockers.includes('dependency-advisories-unreviewed'));
+    writeFileSync(path.join(f.root, 'release-policy.json'), JSON.stringify({ ...f.policy, dependencySecurityApproved: true, approvedDependencyAdvisories: [accepted] }));
+    const plan = createPlan(f.options);
+    assert.deepEqual(plan.dependencyAdvisories, [accepted]);
+    assert.equal(plan.dependencyAudit.total, 1);
+    assert.ok(!plan.blockers.includes('dependency-advisories-unreviewed'));
+    assert.ok(!plan.blockers.includes('dependency-security-unapproved'));
+    assert.equal(plan.status, 'blocked');
+    assert.throws(() => stageArguments(plan, f.policy, f.tarball), /Blocked/);
+
+    const newFinding = JSON.stringify({ metadata: { vulnerabilities: { total: 1 } }, vulnerabilities: { other: { via: [{ url: 'https://github.com/advisories/GHSA-new-finding' }] } } });
+    writeFileSync(path.join(f.artifactRoot, 'consumer-dependency-audit.json'), newFinding);
+    assert.throws(() => inspectArtifact(f.options), /Audit report changed/);
+    f.evidence.consumerDependencyReportSha256 = sha256(newFinding);
     writeFileSync(path.join(f.artifactRoot, 'evidence.json'), JSON.stringify(f.evidence));
     assert.ok(createPlan(f.options).blockers.includes('dependency-advisories-unreviewed'));
   } finally { f.cleanup(); }
