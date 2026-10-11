@@ -1,11 +1,17 @@
 import assert from 'node:assert/strict';
 import { spawn, execFileSync } from 'node:child_process';
-import { cp, mkdtemp, mkdir, readFile, rm } from 'node:fs/promises';
+import { cp, mkdtemp, mkdir, readFile, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createServer } from 'node:net';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
+import { parseSync } from 'vite';
+import { checkDeferredConsumer } from './check-deferred-consumer.mjs';
+import { checkStaticConsumer } from './check-static-consumer.mjs';
+import { checkDevelopmentConsumer } from './check-development-consumer.mjs';
+import { checkCompatibilityConsumer } from './check-compatibility-consumer.mjs';
+import { checkIsrConsumer } from './check-isr-consumer.mjs';
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
 const npmCli = process.env.npm_execpath;
@@ -27,7 +33,7 @@ async function port() {
   await new Promise((resolve) => server.close(resolve));
   return address.port;
 }
-async function smoke(mode, browser) {
+async function smoke(mode, browser, staticOnly = false) {
   const number = await port();
   const args = [join(consumer, 'node_modules/vite/bin/vite.js'), ...(mode === 'preview' ? ['preview'] : []), '--host', '127.0.0.1', '--port', String(number), '--strictPort'];
   const child = spawn(process.execPath, args, { cwd: consumer, env, detached: process.platform !== 'win32', stdio: ['ignore', 'pipe', 'pipe'] });
@@ -44,8 +50,11 @@ async function smoke(mode, browser) {
         const response = await fetch(origin, { signal: AbortSignal.timeout(2000) });
         if (response.ok) {
           const html = await response.text();
-          assert.match(html, /<output[^>]*id="count"[^>]*>5<\/output>/);
-          assert.match(html, /Clean package consumer/);
+          if (staticOnly) assert.match(html, /Static Hono island page/);
+          else {
+            assert.match(html, /<output[^>]*id="count"[^>]*>5<\/output>/);
+            assert.match(html, /Clean package consumer/);
+          }
           ready = true;
           break;
         }
@@ -61,7 +70,17 @@ async function smoke(mode, browser) {
     page.on('pageerror', (error) => errors.push(error.message));
     page.on('console', (message) => { if (message.type() === 'error') errors.push(message.text()); });
     try {
+      const staticScripts = [];
+      if (staticOnly) page.on('request', (request) => { if (request.resourceType() === 'script') staticScripts.push(request.url()); });
       await page.goto(origin);
+      if (staticOnly) {
+        await page.locator('#static-only').waitFor();
+        assert.equal(await page.locator('script[src], link[rel="modulepreload"]').count(), 0);
+        assert.deepEqual(staticScripts, []);
+        assert.deepEqual(errors, []);
+        console.log('Static-only package consumer preview: server content and zero JavaScript requests passed.');
+        return;
+      }
       await page.locator('#app[data-hono-pages="mounted"]').waitFor();
       assert.equal(await page.locator('#count').textContent(), '5');
       assert.equal(await page.locator('#runtime-hooks').textContent(), '/:0:0:0:Consumer');
@@ -78,9 +97,39 @@ async function smoke(mode, browser) {
       await page.reload();
       await page.locator('#app[data-hono-pages="mounted"]').waitFor();
       assert.equal(await page.locator('#count').textContent(), '5');
+      if (mode === 'development') await checkDevelopmentConsumer({ origin, page, consumer, assertRunning: () => { assert.equal(child.exitCode, null); assert.equal(child.signalCode, null); assert.doesNotMatch(logs, /server restarted|restarting server/i); } });
+      await checkDeferredConsumer({ origin, page, mode });
+      const islandResponse = await fetch(origin + '/islands');
+      assert.equal(islandResponse.status, 200);
+      const islandHtml = await islandResponse.text();
+      assert.match(islandHtml, /STATIC_ISLAND_PAGE_SENTINEL/);
+      assert.match(islandHtml, /id="island-count"[^>]*>9<\/output>/);
+      assert.match(islandHtml, /data-hydrate="load"/);
+      await page.evaluate(() => { window.consumerDocument = 321; });
+      await page.locator('#islands-link').click();
+      await page.waitForURL('**/islands');
+      assert.equal(await page.evaluate(() => window.consumerDocument), undefined);
+      await page.locator('[data-hono-island="mounted"]').waitFor();
+      const marker = page.locator('[data-island]');
+      const props = JSON.parse(await marker.getAttribute('data-props'));
+      assert.equal(props.initialCount, 9);
+      assert.equal(await page.locator('#island-message').textContent(), props.message);
+      assert.equal(await page.evaluate(() => window.islandInjected), undefined);
+      await page.locator('#island-increment').click();
+      await page.waitForFunction(() => document.querySelector('#island-count')?.textContent === '10');
+      await page.reload();
+      await page.locator('[data-hono-island="mounted"]').waitFor();
+      assert.equal(await page.locator('#island-count').textContent(), '9');
+      assert.equal(await page.locator('#static-island-content').textContent(), 'STATIC_ISLAND_PAGE_SENTINEL');
+      const scripts = [];
+      page.on('request', (request) => { if (request.resourceType() === 'script') scripts.push(request.url()); });
+      await page.goto(origin + '/static');
+      await page.locator('#static-only').waitFor();
+      assert.equal(await page.locator('script[src], link[rel="modulepreload"]').count(), 0);
+      assert.deepEqual(scripts, []);
       assert.deepEqual(errors, []);
-    } finally { await page.close(); }
-    console.log(`Packed consumer ${mode}: SSR, runtime exports, click, SPA navigation, reset and reload passed.`);
+    } catch (error) { console.error(logs.slice(-5000)); throw error; } finally { await page.close(); }
+    console.log(`Packed consumer ${mode}: SSR, runtime exports, click, SPA navigation, reset, reload, load-policy islands, safe props and static-only zero-script rendering passed.`);
   } finally {
     if (child.pid && child.exitCode === null && child.signalCode === null) {
       const exited = new Promise((resolve) => child.once('exit', resolve));
@@ -101,9 +150,9 @@ try {
   const packed = JSON.parse(npm(['pack', '--json', '--pack-destination', temporary], join(repo, 'packages/hono-pages')));
   assert.equal(packed.length, 1);
   const entries = packed[0].files.map((entry) => entry.path);
-  assert.ok(entries.includes('README.md') && entries.includes('package.json'));
+  assert.ok(entries.includes('README.md') && entries.includes('package.json') && entries.includes('THIRD_PARTY_NOTICES.md') && entries.includes('LICENSE'));
   for (const path of entries) {
-    assert.ok(path === 'package.json' || path === 'README.md' || /^dist\/.+\.(js|d\.ts)$/.test(path), `Unexpected packed file: ${path}`);
+    assert.ok(path === 'package.json' || path === 'README.md' || path === 'THIRD_PARTY_NOTICES.md' || path === 'LICENSE' || /^dist\/.+\.(js|d\.ts)$/.test(path), `Unexpected packed file: ${path}`);
     const content = await readFile(join(repo, 'packages/hono-pages', path), 'utf8');
     assert.doesNotMatch(content, /\/Users\/|\/private\/|\/nix\/store\/|\.runtime\//, `Machine-specific content: ${path}`);
   }
@@ -117,7 +166,28 @@ try {
   try {
     await smoke('development', browser);
     execFileSync(process.execPath, ['node_modules/vite/bin/vite.js', 'build'], { cwd: consumer, env, stdio: ['ignore', 'pipe', 'pipe'] });
+    const assets = join(consumer, 'dist/client/assets');
+    for (const file of await readdir(assets)) {
+      if (!file.endsWith('.js')) continue;
+      const code = await readFile(join(assets, file), 'utf8');
+      assert.doesNotMatch(code, /STATIC_ISLAND_PAGE_SENTINEL|STATIC_ONLY_PAGE_SENTINEL/, `Static page leaked into client bundle: ${file}`);
+    }
     await smoke('preview', browser);
+    await rm(join(consumer, 'pages'), { recursive: true });
+    await mkdir(join(consumer, 'pages'));
+    await cp(join(repo, 'fixtures/consumer/pages/static.island.tsx'), join(consumer, 'pages/index.island.tsx'));
+    execFileSync(process.execPath, ['node_modules/vite/bin/vite.js', 'build'], { cwd: consumer, env, stdio: ['ignore', 'pipe', 'pipe'] });
+    for (const file of await readdir(assets)) {
+      if (!file.endsWith('.js')) continue;
+      const code = await readFile(join(assets, file), 'utf8');
+      const body = parseSync(file, code).program.body;
+      assert.ok(body.every((node) => node.type === 'ExportNamedDeclaration' && !node.declaration && !node.specifiers.length), `Static-only build contains executable client code: ${file}`);
+    }
+    console.log('Static-only client assets: no executable statements or framework imports.');
+    await smoke('preview', browser, true);
+    await checkStaticConsumer({ repo, consumer, browser, env });
+    await checkCompatibilityConsumer({ consumer, env });
+    await checkIsrConsumer({ repo, consumer, browser, env });
   } finally { await browser.close(); }
   console.log(`Package audit passed: ${entries.length} intended files; declarations and locked clean-consumer checks passed.`);
 } catch (error) {
