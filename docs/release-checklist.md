@@ -14,7 +14,7 @@ No release is authorized by this checklist. The package remains `private: true`,
 
 ## Verification
 
-- [ ] Activate `.github/workflow-templates/package.yml` under `.github/workflows/` after GitHub authentication has the required workflow scope.
+- [x] Activate `.github/workflows/package.yml` for pushes and pull requests using the pinned Node/framework baseline.
 - [ ] Obtain a successful GitHub Actions run on the final release commit.
 - [ ] Run typecheck, tests, Pages production build, packed-consumer checks and `npm run audit:release`.
 - [ ] Review the packed file list, declarations, exports, peer versions, notices and license.

@@ -68,8 +68,9 @@ Browser mounting redraws SSR content; it does not promise DOM reuse. Development
 npm run typecheck
 npm test
 npm run check:consumer
+npm run check:source
 ```
 
-The consumer check installs the packed artifact in a temporary project and exercises development, production preview, islands, deferred data, static output and local ISR in a browser. Install Playwright Chromium first with `npx playwright install chromium`, or set `PLAYWRIGHT_CHANNEL=chrome` to use installed Google Chrome. The prepared workflow has not been activated; CI results remain pending.
+The consumer check installs the packed artifact in a temporary project and exercises development, production preview, islands, deferred data, static output and local ISR in a browser. Install Playwright Chromium first with `npx playwright install chromium`, or set `PLAYWRIGHT_CHANNEL=chrome` to use installed Google Chrome. The [package workflow](.github/workflows/package.yml) runs on pushes and pull requests with Node 24.21.0. It checks types, adapter tests, release content, both source-example builds and the packed browser consumer. Check the actual GitHub Actions result for the commit being reviewed; enabling the workflow alone does not establish a passing result.
 
 [Contribution guidance](CONTRIBUTING.md) explains local checks and bug reports. [Implementation notes](docs/implementation-notes.md) preserve the original PoC record and detailed feature checks. [Release checklist](docs/release-checklist.md) records remaining release decisions. [Third-party notices](THIRD_PARTY_NOTICES.md) document upstream adapter references and dependency licenses.

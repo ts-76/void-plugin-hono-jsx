@@ -17,6 +17,7 @@
     "preview:pages": "npm --prefix examples/pages run preview",
     "build:package": "node scripts/build-package.mjs",
     "check:consumer": "node scripts/check-consumer.mjs",
+    "check:source": "node scripts/check-source.mjs",
     "audit:release": "node scripts/audit-release.mjs"
   },
   "dependencies": {
