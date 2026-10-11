@@ -1,0 +1,14 @@
+2026-10-09, Chrome via agent-browser 0.19.0
+Passed on both http://127.0.0.1:5174 and http://127.0.0.1:4174:
+- SSR root/nested order and exact named, exclusive, disabled chains.
+- SSR middleware shared data and dynamic route params.
+- Root and nested counters survive sibling page navigation.
+- Page counter resets independently.
+- Named layout replaces nested layout while root state survives.
+- Returning to a removed nested layout resets its state.
+- Exclusive layout removes root; disabled layout removes the entire chain.
+- Returning after removal resets root and nested state.
+- Browser document survives every SPA visit.
+- Shared data updates with the request path; browser params match SSR.
+- No unhandled browser errors.
+Repeat with scripts/check-pages-layouts.py.

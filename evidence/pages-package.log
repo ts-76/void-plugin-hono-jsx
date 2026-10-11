@@ -1,0 +1,14 @@
+2026-10-09, Node 24.21.0, Chrome 155, Void 0.26.0, Hono 4.13.13, Vite 8.3.3
+Package: void-plugin-hono-jsx, private validation version 0.0.0
+
+npm run check:consumer
+Packed consumer development: SSR, runtime exports, click, SPA navigation, reset and reload passed.
+Packed consumer preview: SSR, runtime exports, click, SPA navigation, reset and reload passed.
+Package audit passed: 20 intended files; declarations and locked clean-consumer checks passed.
+
+npm ci: passed from root lockfile, 179 packages installed.
+TypeScript: passed.
+Scanner and diagnostic tests: 7 passed, 0 failed.
+Existing Pages production build: passed for worker and client environments.
+Existing source Pages development and preview: mounted, 7→8, reload→7, zero browser errors.
+GitHub Actions activation pending: current repository token lacks workflow scope. Prepared definition retained as a workflow template.
