@@ -1,6 +1,6 @@
 # Experimental Hono Pages adapter for Void
 
-This experimental package integrates Hono JSX with Void Pages. The package name is `void-plugin-hono-jsx`. The initial `0.1.0-alpha.0` candidate targets the `next` dist-tag. It is unpublished and distributed under the [MIT license](LICENSE). Publication remains a separate maintainer decision. It is not an official Void adapter.
+This experimental package integrates Hono JSX with Void Pages. The package name is `void-plugin-hono-jsx`. `0.1.0-alpha.0` is published on the `next` dist-tag under the [MIT license](LICENSE). Use `@next`; `latest` remains a registration placeholder. It is not an official Void adapter.
 
 ## Supported versions
 
@@ -13,9 +13,16 @@ This experimental package integrates Hono JSX with Void Pages. The package name 
 
 Framework packages are exact peer dependencies. Other versions have not been validated; configuration fails with an install command when Void, Hono or Vite differs from this baseline.
 
-## Install the validation tarball
+## Install
 
-In the repository, run `npm ci`, `npm run build:package`, then `npm pack ./packages/hono-pages`. Install the resulting tarball in your project alongside the supported peer versions:
+Use Node 24.21.0 or newer:
+
+```sh
+npm install void-plugin-hono-jsx@next hono@4.13.13
+npm install --save-dev void@0.26.1 vite@8.3.3 typescript@7.0.2
+```
+
+For a local validation tarball, in the repository, run `npm ci`, `npm run build:package`, then `npm pack ./packages/hono-pages`. Install the resulting tarball in your project alongside the supported peer versions:
 
 ```sh
 npm install ./void-plugin-hono-jsx-0.1.0-alpha.0.tgz hono@4.13.13

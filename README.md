@@ -2,7 +2,7 @@
 
 An experimental Hono JSX adapter for Void Pages. It renders pages with `hono/jsx` on the server and mounts them with `hono/jsx/dom` in the browser. Void owns route discovery, loaders, actions, navigation, head metadata and prerender collection.
 
-The package is unpublished. The initial candidate is `0.1.0-alpha.0` on the `next` dist-tag. Package manifests retain `private: true`; release preparation creates an isolated publishable candidate. The source repository is public. Maintainers selected `void-plugin-hono-jsx` as its name and the [MIT license](LICENSE) for the project. This is not an official Void adapter. npm publication requires a separate maintainer decision.
+`0.1.0-alpha.0` is published on the `next` dist-tag under the [MIT license](LICENSE). Install `void-plugin-hono-jsx@next`; `latest` still points to the registration placeholder. The maintainer approved the release on npm after OIDC/provenance staging. See the [publication verification](docs/stage-validation-result.md). Repository manifests retain `private: true`; release preparation creates an isolated publishable candidate. This is not an official Void adapter.
 
 ## Compatibility
 
@@ -16,9 +16,16 @@ The package is unpublished. The initial candidate is `0.1.0-alpha.0` on the `nex
 
 Node.js must be at least 24.21.0. The adapter requires the exact framework versions above and rejects other versions with an install command. Its virtual renderer and client entries follow version-specific conventions in Void's official adapter. A local successful check does not establish upstream support or compatibility with newer releases.
 
-## Try the package locally
+## Install the alpha
 
-Use the checked-in lockfile and supported Node version:
+Use Node 24.21.0 or newer in your project:
+
+```sh
+npm install void-plugin-hono-jsx@next hono@4.13.13
+npm install --save-dev void@0.26.1 vite@8.3.3 typescript@7.0.2
+```
+
+For a local source build, use the checked-in lockfile and supported Node version:
 
 ```sh
 npm ci
