@@ -2,7 +2,7 @@
 
 An experimental Hono JSX adapter for Void Pages. It renders pages with `hono/jsx` on the server and mounts them with `hono/jsx/dom` in the browser. Void owns route discovery, loaders, actions, navigation, head metadata and prerender collection.
 
-The package is private and unpublished. Maintainers selected `void-plugin-hono-jsx` as its name; the project license is pending. This is not an official Void adapter. Publication and repository visibility require separate maintainer decisions.
+The package is private and unpublished. Maintainers selected `void-plugin-hono-jsx` as its name and the [MIT license](LICENSE) for the project. This is not an official Void adapter. Publication and repository visibility require separate maintainer decisions.
 
 ## Compatibility
 
@@ -56,8 +56,9 @@ See the [package guide](packages/hono-pages/README.md) for public exports, confi
 - Load-policy Hono islands and zero-script static island pages.
 - Static HTML/page-data output and declared dynamic prerender paths.
 - Development document reloads for page/loader edits and route additions/removals.
+- Local production-preview ISR through Void's KV/Cache API runtime.
 
-Browser mounting redraws SSR content; it does not promise DOM reuse. Development reloads reset local state. Island layouts, other island policies, grouped deferred props, deferred prefetch and mutation-driven deferred refresh are unsupported. ISR validation is tracked in [Issue #13](https://github.com/ts-76/void-hono-jsx-poc/issues/13). Managed deployment has not been verified.
+Browser mounting redraws SSR content; it does not promise DOM reuse. Development reloads reset local state. Island layouts, other island policies, grouped deferred props, deferred prefetch and mutation-driven deferred refresh are unsupported. [ISR validation](docs/isr.md) covers the local direct-worker runtime. Managed deployment has not been verified.
 
 ## Examples and checks
 
@@ -67,8 +68,9 @@ Browser mounting redraws SSR content; it does not promise DOM reuse. Development
 npm run typecheck
 npm test
 npm run check:consumer
+npm run check:source
 ```
 
-The consumer check installs the packed artifact in a temporary project and exercises development, production preview, islands, deferred data and static output in a browser. Install Playwright Chromium first with `npx playwright install chromium`, or set `PLAYWRIGHT_CHANNEL=chrome` to use installed Google Chrome. The prepared workflow has not been activated; CI results remain pending.
+The consumer check installs the packed artifact in a temporary project and exercises development, production preview, islands, deferred data, static output and local ISR in a browser. Install Playwright Chromium first with `npx playwright install chromium`, or set `PLAYWRIGHT_CHANNEL=chrome` to use installed Google Chrome. The [package workflow](.github/workflows/package.yml) runs on pushes and pull requests with Node 24.21.0. It checks types, adapter tests, release content, both source-example builds and the packed browser consumer. Check the actual GitHub Actions result for the commit being reviewed; enabling the workflow alone does not establish a passing result.
 
 [Contribution guidance](CONTRIBUTING.md) explains local checks and bug reports. [Implementation notes](docs/implementation-notes.md) preserve the original PoC record and detailed feature checks. [Release checklist](docs/release-checklist.md) records remaining release decisions. [Third-party notices](THIRD_PARTY_NOTICES.md) document upstream adapter references and dependency licenses.
