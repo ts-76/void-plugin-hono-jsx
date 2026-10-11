@@ -36,4 +36,4 @@ Trusted Publisher の保存は別の2FAを必要とします。指定は `ts-76/
 
 main `3ecda4d542bc37418e47799456f43c35e4891fcd` の Package CI と Publisher CI は成功しました。[Package CI](https://github.com/ts-76/void-plugin-hono-jsx/actions/runs/38153662943)、[Publisher CI](https://github.com/ts-76/void-plugin-hono-jsx/actions/runs/38153662942)。有効化後の commit と tag は別途 CI / 同一 run の prepare artifact を必要とします。
 
-Trusted Publisher の設定保存は確認済みです。policy の stage フラグを有効化し、変更後の CI 成功を待って repository variable と release tag を設定します。GitHub environment 承認、実 OIDC / Fulcio / Rekor / registry stage の照合が残ります。署名 bundle 自体と検証結果がなければ、receipt だけで暗号検証完了とはしません。alpha の最終 npm approve はこの stage 検証に含めません。
+Trusted Publisher の設定保存は確認済みです。policy の stage フラグを有効化し、変更後の CI 成功を待って repository variable と release tag を設定します。その後の GitHub environment 承認と実 OIDC/provenance stage は成功しました。[実検証結果](stage-validation-result.md)で source / run / digest と残る独立署名検証を区別しています。署名 bundle 自体と検証結果がなければ、receipt だけで暗号検証完了とはしません。alpha の最終 npm approve はこの stage 検証に含めません。
