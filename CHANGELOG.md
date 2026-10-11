@@ -2,6 +2,9 @@
 
 ## 0.1.0-alpha.0 (release candidate; unpublished)
 
+- Verify Void 0.26.1 production deferred errors remain generic while development preserves diagnostic messages.
+- Record the macOS development transport limitation after an undefined-action POST; the adapter does not repair this upstream edge case.
+
 Initial experimental Hono JSX Pages adapter for Void 0.26.1.
 
 - Server-rendered Pages, client-only pages, Void navigation and persistent layouts.

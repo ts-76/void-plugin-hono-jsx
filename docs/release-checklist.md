@@ -20,6 +20,8 @@ The initial candidate is **`void-plugin-hono-jsx@0.1.0-alpha.0`**, **`next`**, M
 
 ## Remaining decisions and setup
 
+- [ ] Review the known macOS local development connection-reset limitation after an undefined-action POST before approving the first alpha (see releasing).
+
 - [ ] Confirm npm owner identity, package-name availability, account access and personal 2FA. The name returned 404 during preparation; this does not reserve it. Local npm authentication returned 401.
 - [ ] Resolve or explicitly assess the remaining Void → drizzle-kit → esbuild advisory before setting `dependencySecurityApproved`; record any accepted advisory URL in `approvedDependencyAdvisories`. New unreviewed advisories block staging.
 - [ ] Select and audit a suitable publisher CLI. The tested npm 11.21.0 has bundled dependency findings; the stage job blocks Moderate or higher findings before upload.

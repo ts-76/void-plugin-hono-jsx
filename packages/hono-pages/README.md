@@ -128,3 +128,7 @@ The packed-consumer check edits a page, changes its loader value, adds and remov
 For server output, set `routing.revalidate` in `void.config.ts` and override a page with `export const revalidate` in its companion server module. The adapter uses Void's existing cache runtime. The packed-consumer check verifies fresh and stale HTML, background regeneration, page/global/zero policies, retained valid HTML after regeneration failure, safe props, asset references and browser interaction.
 
 The fixture binds local `ISR_CACHE` storage for Void production preview. Real deployments require Void's cache bindings; the fixture's placeholder ID and test control API are for local checks only. Managed edge, cross-data-center invalidation and production KV behavior remain unverified. ISR requires a worker/cache runtime; static output is served as generated files. See the repository `docs/isr.md` and [Void revalidation guide](https://void.cloud/guide/edge/revalidation).
+
+## Known local development limitation
+
+On the tested macOS Void/Miniflare development runtime, a POST to an undefined named action can reset the next request on a reused connection. Declared-action browser behavior is verified; this transport edge case remains unresolved upstream. Managed runtime behavior for the edge case is unverified. Review this limitation before adopting the initial alpha.

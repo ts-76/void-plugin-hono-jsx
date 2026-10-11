@@ -64,8 +64,15 @@ export async function checkDeferredConsumer({ origin, page, mode }) {
   await page.locator('#app[data-hono-pages="mounted"]').waitFor();
   assert.equal(await page.locator('#deferred-state').textContent(), 'Loading slow value');
   await control('failure', true);
-  await page.waitForFunction(() => document.querySelector('#deferred-state')?.textContent === 'Deferred example unavailable.');
+  const failureMessage = mode === 'development' ? 'Deferred example unavailable.' : 'Internal Server Error';
+  await page.waitForFunction(message => document.querySelector('#deferred-state')?.textContent === message, failureMessage);
   assert.equal(await page.locator('#deferred-state').getAttribute('role'), 'alert');
+  // Void 0.26.1 deliberately hides internal error details in production streams.
+  const rejectedStream = await fetch(origin + '/deferred?token=failure', { headers: { 'X-VoidPages': 'true' } });
+  const rejectedBody = await rejectedStream.text();
+  const rejectedMessages = rejectedBody.trim().split('\n').map(line => JSON.parse(line));
+  assert.equal(rejectedMessages.find(message => message.__deferred === 'slow')?.error, failureMessage);
+  if (mode !== 'development') assert.doesNotMatch(rejectedBody, /Deferred example unavailable\./);
   let allowModule;
   const held = new Promise((resolve) => { allowModule = resolve; });
   let sawModule;
