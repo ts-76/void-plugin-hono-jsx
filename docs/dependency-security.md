@@ -4,7 +4,7 @@ On 2026-10-11, the maintainer accepted the remaining upstream esbuild advisory a
 
 ## Finding and dependency path
 
-The root and locked-consumer audits report five Moderate package entries from one distinct advisory, [GHSA-67mh-4wv8-2f99](https://github.com/advisories/GHSA-67mh-4wv8-2f99). The affected leaf is esbuild 0.18.20:
+The previously reviewed root and locked-consumer audits reported five Moderate package entries from one distinct advisory, [GHSA-67mh-4wv8-2f99](https://github.com/advisories/GHSA-67mh-4wv8-2f99). A root re-audit on 2026-10-11 reported six Moderate entries because the same advisory also propagated through `better-auth`'s Drizzle peer. It contained no additional advisory URL. Use the reports hashed in each candidate's evidence for its exact counts; propagated counts can differ without a change to the affected leaf. The affected leaf is esbuild 0.18.20:
 
 ```text
 void@0.26.1
@@ -14,7 +14,7 @@ void@0.26.1
          └─ esbuild@0.18.20
 ```
 
-The five entries are `void`, `drizzle-kit`, `@esbuild-kit/esm-loader`, `@esbuild-kit/core-utils` and `esbuild`; they do not represent five distinct vulnerabilities. esbuild versions through 0.24.2 are affected, and 0.25.0 contains the advisory's fix.
+The entries are `void`, `drizzle-kit`, `@esbuild-kit/esm-loader`, `@esbuild-kit/core-utils` and `esbuild`, with `better-auth` also present in the refreshed root report; they do not represent independent vulnerabilities. esbuild versions through 0.24.2 are affected, and 0.25.0 contains the advisory's fix.
 
 The adapter archive ships no dependency implementation and has no direct esbuild dependency. Consumers still install the exact Void/Hono/Vite peers and their transitive dependencies. The archive's small dependency surface does not remove the consumer finding.
 

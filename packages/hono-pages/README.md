@@ -111,7 +111,7 @@ The virtual renderer/client entries follow version-specific conventions observed
 
 ## Known upstream dependency advisory
 
-The initial alpha accepts [GHSA-67mh-4wv8-2f99](https://github.com/advisories/GHSA-67mh-4wv8-2f99) as a known limitation on the pinned peer baseline. On 2026-10-11, the root and locked-consumer audits reported five Moderate package entries from this single esbuild advisory. The affected esbuild 0.18.20 is installed through Void 0.26.1 → drizzle-kit 0.31.11 → @esbuild-kit/esm-loader 2.6.5 → @esbuild-kit/core-utils 3.3.2.
+The initial alpha accepts [GHSA-67mh-4wv8-2f99](https://github.com/advisories/GHSA-67mh-4wv8-2f99) as a known limitation on the pinned peer baseline. The reviewed audits on 2026-10-11 reported Moderate findings propagated across multiple package entries from this single esbuild advisory; package-entry counts can differ between audit reports. The affected esbuild 0.18.20 is installed through Void 0.26.1 → drizzle-kit 0.31.11 → @esbuild-kit/esm-loader 2.6.5 → @esbuild-kit/core-utils 3.3.2.
 
 The advisory concerns esbuild's own development server. The adapter uses Vite/Oxc for JSX and TypeScript for package compilation; the inspected upstream loader uses esbuild transforms. No esbuild serve invocation was found in the adapter or these loader modules, but other upstream commands and consumer configurations have not been exhaustively assessed. Avoid the affected esbuild serve feature. This is an accepted audit finding, not a claim of overall security or an audit-zero result.
 
