@@ -1,6 +1,6 @@
 # 実 OIDC / provenance 付き stage の準備
 
-確認日: 2026-10-12 JST。maintainer が repository を `void-plugin-hono-jsx` に改名・公開しました。元の開発・マージ履歴を復元し、2026-10-09 の別アカウントの作者・コミッター情報だけを現在のアカウントへ修正する方針です。改名と公開準備の変更は追加 commit として維持します。公開候補は復元後の最終 commit で再検証します。npm 有効化・送信・最終承認は未実施です。
+確認日: 2026-10-12 JST。maintainer が repository を `void-plugin-hono-jsx` に改名・公開しました。元の開発・マージ履歴を復元し、2026-10-09 の別アカウントの作者・コミッター情報だけを現在のアカウントへ修正済みです。改名と公開準備の変更を含む main `f8ba812` の CI は通過しました。npm owner は `ts-76`、GitHub は単独承認として maintainer が指定しました。npm 有効化・送信・最終承認は未実施です。
 
 ## 現状と必要な判断
 
@@ -8,10 +8,10 @@
 | --- | --- | --- |
 | GitHub repository | `ts-76/void-plugin-hono-jsx` として public | repository metadata / policy を改名に揃えた。Trusted Publisher は新しい名前で設定 |
 | Git 履歴 | 元の 46 commit とマージ構造を維持し、Oct 9 の 17 commit の別アカウント情報だけを修正 | 最終 commit で全履歴を再監査。過去の成果物 15 パスが履歴に残る。親 SHA の変更と無効な署名の除去が必要。旧 PR refs・cached commit・外部 clone は別に残り得る |
-| npm package | package と alpha.0 の registry GET はともに 404 | npm owner、名前の最終確認、account access、個人 2FA。404 は予約ではない |
+| npm package | npm owner は `ts-76` と指定済み。package と alpha.0 の registry GET はともに 404 | 名前の最終確認、account access、個人 2FA。404 は予約ではない |
 | 初回登録 | まだ未実施 | owner の手動 bootstrap stage を検討。新規 package の初回 stage は公開の `0.0.0-stage` placeholder を作るため、その公開も判断対象 |
-| GitHub environment | environment は 0 件 | `npm-stage` を作成、required reviewers、admin bypass 禁止、tag `v*` のみ許可 |
-| 承認者 | policy の reviewers は空、preventSelfReview は true | 別の承認者を指定。単独運用で self-review を許可する場合は明示的な policy 変更と environment の一致が必要 |
+| GitHub environment | `npm-stage` 作成済み。required reviewer は `ts-76`、admin bypass は false、tag `v*` のみ許可。API 状態を stage gate で照合済み | 実際の workflow の承認待ちと手動承認は stage 実行時に確認 |
+| 承認者 | 単独承認を指定済み。policy の reviewers は User `ts-76`、preventSelfReview は false。environment と一致 | policy 変更を commit / main に反映し、最終 commit の CI を確認。npm の最終 approve は別の個人 2FA 操作 |
 | Trusted Publisher | package 未作成で設定未確認 | 下記の正確な値で stage のみに許可。直接 publish と dist-tag 管理は許可しない |
 | 有効化 | stageEnabled / publicPackageEnabled は false、historyDisclosureApproved は true。repository variables は未設定、tag はなし | 残る判断後に policy と GitHub 設定を一致させ、`NPM_STAGING_ENABLED=true`、承認済み commit の release tag を設定 |
 
@@ -40,7 +40,7 @@ workflow の GitHub-hosted Ubuntu runner、id-token: write、明示的 provenanc
 
 ## 実行順序と合格条件
 
-1. owner / bootstrap の対象 version と認証、repository と履歴の公開、reviewer / self-review、透明性ログへの記録を判断する。
+1. owner `ts-76` と単独承認の判断を policy に反映済み。残る bootstrap の対象 version と認証、公開 placeholder、透明性ログへの記録を判断する。
 2. 公開・保護設定、owner の初回登録、stage-only Trusted Publisher を設定し、実際の API 状態と policy を照合する。
 3. policy 変更を main に反映して最終 commit の CI を通す。候補 tgz、audit / history evidence と既知の開発 transport 制約を確認し、その commit の `v0.1.0-alpha.0` tag を承認する。別の候補 version を採用する場合は manifest / policy / tag を一緒に更新する。
 4. tag に対して `npm-stage.yml` を手動 dispatch。同じ run / attempt の prepare artifact を stage が使用し、GitHub environment の承認後に送信する。過去の Package CI artifact は新 run の証跡を代替しない。
