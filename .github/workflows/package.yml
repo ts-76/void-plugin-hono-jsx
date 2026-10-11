@@ -1,0 +1,45 @@
+name: Package and clean consumer
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  consumer:
+    name: Pinned framework baseline on Node ${{ matrix.node }}
+    strategy:
+      matrix:
+        node: ['24.21.0']
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      WRANGLER_SEND_METRICS: 'false'
+      VOID_INSPECTOR_PORT: 'false'
+      CLOUDFLARE_CF_FETCH_ENABLED: 'false'
+    steps:
+      - name: Configure local runtime logs
+        run: echo "WRANGLER_LOG_PATH=$RUNNER_TEMP/void-hono-logs" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Test adapter contracts
+        run: npm test
+      - name: Audit release content
+        run: npm run audit:release
+      - name: Build Custom SSR example
+        run: npm run build
+      - name: Install browser runtime
+        run: npx playwright install --with-deps chromium
+      - name: Build and verify Pages source example
+        run: npm run check:source
+      - name: Verify packed consumer in development and production
+        run: npm run check:consumer
