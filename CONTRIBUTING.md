@@ -13,6 +13,7 @@ npm test
 npm run build:pages
 npx playwright install chromium
 npm run check:consumer
+npm run check:source
 npm run audit:release
 ```
 
