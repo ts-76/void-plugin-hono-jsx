@@ -1,5 +1,5 @@
 import type { Props } from './[id].server';
-import { Link, useRouter } from '../../../../runtime/pages';
+import { Link, useRouter } from '../../../../packages/hono-pages/src/runtime/pages';
 export default function Page({ id }: Props) {
   const router = useRouter();
   return <main><h1>Head page {id}</h1>

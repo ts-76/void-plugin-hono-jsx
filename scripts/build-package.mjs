@@ -3,7 +3,7 @@ import { readFile, rm, writeFile } from 'node:fs/promises';
 
 await rm('packages/hono-pages/dist', { recursive: true, force: true });
 for (const target of ['plugins', 'server', 'browser']) {
-  execFileSync(process.execPath, ['node_modules/typescript/bin/tsc', '-p', `tsconfig.package.${target}.json`], { stdio: 'inherit' });
+  execFileSync(process.execPath, ['node_modules/typescript/bin/tsc', '-p', `packages/hono-pages/tsconfig.${target}.json`], { stdio: 'inherit' });
 }
 const { name } = JSON.parse(await readFile('packages/hono-pages/package.json', 'utf8'));
 // Use the same public module identity for providers and hooks in every compiled entry.
