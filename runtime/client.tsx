@@ -7,7 +7,7 @@ import { PageContext, RouterContext } from './pages.tsx';
 import { createDocumentHead } from './document-head.ts';
 import { createDeferred, resolveDeferred, rejectDeferred, isLoading, bufferInitialDeferred } from './deferred.ts';
 
-type Manifest = Pick<VoidRouterConfig, 'components' | 'layoutTree' | 'routeMeta' | 'matchRoute'>;
+type Manifest = Pick<VoidRouterConfig, 'components' | 'layoutTree' | 'routeMeta' | 'matchRoute' | 'staticPageData' | 'staticPageDataFastPath'>;
 
 function pageComponent(component: unknown) {
   if (typeof component !== 'function') throw new Error('Hono Pages: a page must export a component function.');

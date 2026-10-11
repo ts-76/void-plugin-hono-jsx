@@ -1,3 +1,4 @@
+import os
 # Requires Python 3 and the documented agent-browser Chrome session.
 import json
 import subprocess
@@ -5,7 +6,7 @@ import time
 
 
 def browser(*arguments):
-    return subprocess.run(['agent-browser', '--session', 'void-hono-pages', *arguments], capture_output=True, text=True, check=True).stdout.strip()
+    return subprocess.run(['agent-browser', '--session', os.environ.get('VOID_HONO_BROWSER_SESSION', 'void-hono-pages'), *arguments], capture_output=True, text=True, check=True).stdout.strip()
 
 
 def expect(condition):
@@ -18,7 +19,7 @@ def idle():
     expect('document.querySelector("#form-pending").textContent === "false"')
 
 
-for port in [5174, 4174]:
+for port in [int(os.environ.get('VOID_HONO_DEV_PORT', '5174')), int(os.environ.get('VOID_HONO_PREVIEW_PORT', '4174'))]:
     browser('open', f'http://127.0.0.1:{port}/edit')
     browser('wait', '#app[data-hono-pages="mounted"]')
     browser('errors', '--clear')

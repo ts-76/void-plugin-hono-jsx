@@ -1,0 +1,19 @@
+
+> void-hono-jsx-poc@0.0.0 check:consumer
+> node scripts/check-consumer.mjs
+
+Tarball audit passed. Installing the locked consumer dependencies.
+Checking consumer declarations and browser rendering.
+Development: page/loader edits, state reset, page add/remove, current manifests and single browser initialization passed without a server restart.
+Deferred development: immediate streamed shell, HTML/NDJSON completion, typed errors, early completion queue, page/layout retention, pending-page isolation and stale navigation discard passed.
+Packed consumer development: SSR, runtime exports, click, SPA navigation, reset, reload, load-policy islands, safe props and static-only zero-script rendering passed.
+Deferred preview: immediate streamed shell, HTML/NDJSON completion, typed errors, early completion queue, page/layout retention, pending-page isolation and stale navigation discard passed.
+Packed consumer preview: SSR, runtime exports, click, SPA navigation, reset, reload, load-policy islands, safe props and static-only zero-script rendering passed.
+Static-only client assets: no executable statements or framework imports.
+Static-only package consumer preview: server content and zero JavaScript requests passed.
+Static output: native HTML/JSON collection, declared paths, overrides, safe loader props, direct access, refresh, interaction and static-data SPA navigation passed.
+Static diagnostics: actions fail discovery; deferred prerender warns and emits no HTML according to Void build behavior.
+Compatibility: pinned Void/Hono/Vite baseline verified; unverified package versions fail with install instructions.
+ISR local preview: native KV/Cache API MISS, fresh HIT, expired STALE, background regeneration, per-page/global/zero overrides, safe props/assets and browser mounting passed.
+ISR failure: failed regeneration retained stale valid HTML and recovered after the loader succeeded. Managed edge behavior remains unverified.
+Package audit passed: 27 intended files; declarations and locked clean-consumer checks passed.

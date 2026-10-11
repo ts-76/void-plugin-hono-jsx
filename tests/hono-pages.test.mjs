@@ -16,6 +16,7 @@ async function withPages(files, check) {
     }
     process.chdir(root);
     const plugin = voidHonoPages().find((plugin) => plugin.name === 'void-hono:pages');
+    plugin.environment = { mode: 'build' };
     await check(plugin, voidHonoPages());
   } finally {
     process.chdir(previous);
@@ -24,6 +25,27 @@ async function withPages(files, check) {
 }
 
 const page = 'export default function Page() { return <p>Example</p>; }';
+
+test('development SSR captures page/layout modules with providers and excludes browser-only components', async () => {
+  await withPages({
+    'index.tsx': page,
+    'layout.tsx': 'export default function Layout({ children }) { return <main>{children}</main>; }',
+    'browser.tsx': 'const browser = window.location; export default function Page() { return <p>{browser.pathname}</p>; }',
+    'browser.server.ts': 'export const ssr = false;',
+  }, async (plugin) => {
+    await plugin.buildStart();
+    const id = plugin.resolveId('virtual:void-pages-renderer');
+    plugin.environment.mode = 'dev';
+    const development = await plugin.load(id);
+    assert.match(development, /import \* as __honoPageSnapshot\d+ from .*index\.tsx/);
+    assert.match(development, /import \* as __honoPageSnapshot\d+ from .*layout\.tsx/);
+    assert.doesNotMatch(development, /browser\.tsx|\(\) => import\(/);
+    plugin.environment.mode = 'build';
+    const production = await plugin.load(id);
+    assert.match(production, /\(\) => import\(/);
+    assert.doesNotMatch(production, /__honoPageSnapshot/);
+  });
+});
 
 test('Void discovers a loader-backed page and the adapter generates both entries', async () => {
   await withPages({
@@ -44,7 +66,6 @@ test('Void discovers a loader-backed page and the adapter generates both entries
 
 for (const [name, files, error] of [
   ['island layouts', { 'index.tsx': page, '_layouts/shell.island.tsx': page }, /only standard TSX\/JSX layouts/],
-  ['explicit prerendering', { 'index.tsx': page, 'index.server.ts': 'export const prerender = true;' }, /prerendering is not supported/],
 ]) {
   test(`rejects unsupported ${name} after scanning real page files`, async () => {
     await withPages(files, async (plugin) => {
@@ -134,5 +155,16 @@ test('malformed island imports fail instead of silently rendering static compone
   }, async (_plugin, plugins) => {
     const islands = plugins.find((plugin) => plugin.name === 'void-hono:islands');
     await assert.rejects(() => islands.buildStart(), /one default import with exactly one island/);
+  });
+});
+
+test('explicit prerender pages and declared dynamic paths remain in the Void manifest', async () => {
+  await withPages({
+    'index.tsx': page, 'index.server.ts': 'export const prerender = true;',
+    'users/[id].tsx': page, 'users/[id].server.ts': 'export const prerender = true; export const getPrerenderPaths = () => [{ id: "alice" }];',
+  }, async (plugin) => {
+    await plugin.buildStart();
+    const renderer = await plugin.load(plugin.resolveId('virtual:void-pages-renderer'));
+    assert.match(renderer, /users\/\[id\]\.tsx/);
   });
 });
