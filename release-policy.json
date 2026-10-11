@@ -10,13 +10,18 @@
   "releaseNode": "24.21.0",
   "stageEnabled": false,
   "publicPackageEnabled": false,
-  "npmOwner": "",
+  "npmOwner": "ts-76",
   "distTag": "next",
   "provenance": true,
   "pnpmVersion": "12.11.2",
   "environment": "npm-stage",
-  "reviewers": [],
-  "preventSelfReview": true,
+  "reviewers": [
+    {
+      "type": "User",
+      "login": "ts-76"
+    }
+  ],
+  "preventSelfReview": false,
   "historyDisclosureApproved": true,
   "dependencySecurityApproved": true,
   "approvedDependencyAdvisories": [

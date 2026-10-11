@@ -23,12 +23,14 @@ The initial candidate is **`void-plugin-hono-jsx@0.1.0-alpha.0`**, **`next`**, M
 
 - [ ] Review the known macOS local development connection-reset limitation after an undefined-action POST before approving the first alpha (see releasing).
 
-- [ ] Confirm npm owner identity, package-name availability, account access and personal 2FA. The name returned 404 during preparation; this does not reserve it. Local npm authentication returned 401.
+- [x] Set npm owner to `ts-76`, as selected by the maintainer.
+- [ ] Verify that account access, personal 2FA and package-name availability are ready. The name returned 404 during preparation; this does not reserve it. Previous local npm authentication returned 401; authentication has not been refreshed.
 - [ ] Confirm each final candidate's root and consumer audits contain no advisory beyond the accepted GHSA-67mh-4wv8-2f99. Reassess acceptance after peer changes or upstream fixes; new unreviewed advisories block staging.
 - [x] Select pnpm 12.11.2 for the stage job only; accept four exact Rust findings within the fixed-tarball scope, pin source/inventory/native distribution and enforce fresh fail-closed auditing. See the [pnpm assessment](pnpm-publisher-assessment.md).
 - [ ] After authorized setup and enablement, verify real Trusted Publisher/OIDC and signed provenance staging, stopping before final npm approval; mock protocol and signing-failure checks do not prove registry acceptance. See the [live stage plan](stage-validation-plan.md).
 - [x] Rename the public repository to `void-plugin-hono-jsx`; restore the original development and merge history, correcting only the alternate-account author/committer identities on 2026-10-09, as requested on 2026-10-12. Preserve naming/release preparation in an additional commit and validate the full history for each candidate; prior PR refs/cached views and external clones can retain previous commits.
-- [ ] Select `npm-stage` environment reviewers and decide self-review policy. Configure required reviewers, disable administrator bypass and allow only `v*` tags. The default `preventSelfReview: true` needs another reviewer.
+- [x] Select single-person review: required reviewer User `ts-76`, `preventSelfReview: false`. Configure `npm-stage`, disable administrator bypass and allow only `v*` tags; verify the live API state against the stage gate.
+- [ ] Commit the selected owner/reviewer policy and obtain CI evidence for the final main commit before enabling staging.
 - [ ] Authorize the public `0.0.0-stage` placeholder from owner-controlled bootstrap staging and decide its CLI/auth/version, then configure a stage-only trusted publisher. Immediate alpha approval is not required for bootstrap; inspect pending state before subsequent staging.
 - [ ] After separate authorization, update publication flags, repository variable `NPM_STAGING_ENABLED`, approved version tag and environment policy. Re-run preparation on that exact commit.
 - [ ] Review the staged artifact and approve with npm owner personal 2FA; verify registry metadata, dist-tags, provenance and installation in a fresh consumer.
