@@ -5,6 +5,6 @@ useDefault = true
 [[allowlists]]
 description = "Public xxhash API identifier in the Rust reachability search; includes history"
 condition = "AND"
-paths = ['''^scripts/release/inspect-publisher-rust\.py$''']
+paths = ['''(^|/)scripts/release/inspect-publisher-rust\.py$''']
 regexTarget = "secret"
 regexes = ['''^xxh3_128_with_secret$''']
