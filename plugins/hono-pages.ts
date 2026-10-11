@@ -59,11 +59,16 @@ export function voidHonoPages(): Plugin[] {
       server.watcher.on('unlink', clear);
       server.httpServer?.once('close', () => { server.watcher.off('add', clear); server.watcher.off('unlink', clear); });
     },
-    async hotUpdate({ file, type }) {
+    async hotUpdate({ file, type, modules, timestamp }) {
       if (!normalizePath(file).startsWith(normalizePath(pagesDir) + '/')) return;
       await rescan();
       if (type !== 'update') return [];
-      this.environment.moduleGraph.invalidateAll();
+      const invalidated = new Set<(typeof modules)[number]>();
+      for (const module of modules) this.environment.moduleGraph.invalidateModule(module, invalidated, timestamp, true);
+      for (const id of [rendererId, clientId]) {
+        const module = this.environment.moduleGraph.getModuleById(`\0${id}`);
+        if (module) this.environment.moduleGraph.invalidateModule(module, invalidated, timestamp, true);
+      }
       this.environment.hot.send({ type: 'full-reload' });
       return [];
     },
@@ -76,7 +81,24 @@ export function voidHonoPages(): Plugin[] {
     async load(id) {
       if (id !== `\0${rendererId}` && id !== `\0${clientId}`) return;
       const currentScan = scan ?? await rescan();
-      const manifest = generateComponentManifest(id === `\0${clientId}` ? { ...currentScan, pages: currentScan.pages.filter((page) => !page.island) } : currentScan, pagesDir);
+      const serverSnapshot = id === `\0${rendererId}` && this.environment.mode === 'dev';
+      const manifestScan = id === `\0${clientId}`
+        ? { ...currentScan, pages: currentScan.pages.filter((page) => !page.island) }
+        : serverSnapshot ? { ...currentScan, pages: currentScan.pages.filter((page) => page.renderMode !== 'client') } : currentScan;
+      let manifest = generateComponentManifest(manifestScan, pagesDir);
+      if (serverSnapshot) {
+        // A request can retain the old renderer while the worker module runner
+        // reloads. Capture components with its providers instead of importing
+        // a new generation into an in-flight render. Browser-only pages remain
+        // absent from this server graph; production keeps lazy imports.
+        const imports: string[] = [];
+        manifest = manifest.replace(/\(\) => import\(("(?:[^"\\]|\\.)*")\)/g, (_, path: string) => {
+          const name = `__honoPageSnapshot${imports.length}`;
+          imports.push(`import * as ${name} from ${path};`);
+          return `() => ${name}`;
+        });
+        manifest = imports.join('\n') + '\n' + manifest;
+      }
       if (id === `\0${clientId}` && !currentScan.pages.some((page) => !page.island)) return 'export {};';
       if (id === `\0${rendererId}`) {
         return `
