@@ -1,3 +1,4 @@
+import os
 # Requires Python 3 and the documented agent-browser Chrome session.
 import json
 import subprocess
@@ -6,7 +7,7 @@ import urllib.request
 
 
 def browser(*arguments):
-    result = subprocess.run(['agent-browser', '--session', 'void-hono-pages', *arguments], capture_output=True, text=True, check=True)
+    result = subprocess.run(['agent-browser', '--session', os.environ.get('VOID_HONO_BROWSER_SESSION', 'void-hono-pages'), *arguments], capture_output=True, text=True, check=True)
     return result.stdout.strip()
 
 
@@ -21,7 +22,7 @@ def visit(name):
 
 
 chains = {'one': ['root', 'nested'], 'two': ['root', 'nested'], 'named': ['root', 'named'], 'exclusive': ['named'], 'bare': []}
-for port in [5174, 4174]:
+for port in [int(os.environ.get('VOID_HONO_DEV_PORT', '5174')), int(os.environ.get('VOID_HONO_PREVIEW_PORT', '4174'))]:
     base = f'http://127.0.0.1:{port}'
     for name, chain in chains.items():
         with urllib.request.urlopen(base + '/layouts/' + name) as response:
