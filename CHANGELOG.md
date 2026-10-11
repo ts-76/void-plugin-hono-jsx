@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.0-alpha.0 (release candidate; unpublished)
+## 0.1.0-alpha.0 (2026-10-12)
 
 - Accept the upstream esbuild development-server advisory GHSA-67mh-4wv8-2f99 as a documented limitation of the pinned alpha baseline, without dependency overrides. New unreviewed advisories and publisher-tooling findings remain blocked by the release gates.
 - Verify Void 0.26.1 production deferred errors remain generic while development preserves diagnostic messages.
@@ -15,4 +15,4 @@ Initial experimental Hono JSX Pages adapter for Void 0.26.1.
 
 Browser mounting redraws server content. Managed edge deployment is unverified.
 See the package guide for unsupported modes and the pinned compatibility policy.
-This entry records the candidate scope; it does not claim an npm publication.
+Published on npm with the `next` tag after maintainer approval. Public bytes and provenance are recorded in `docs/stage-validation-result.md`.

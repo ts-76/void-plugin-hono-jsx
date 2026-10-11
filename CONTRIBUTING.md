@@ -1,6 +1,6 @@
 # Contributing
 
-This adapter is experimental and unpublished. The project uses the [MIT license](LICENSE). Follow the release checklist before publishing a release.
+This adapter is experimental; alpha.0 is published on npm with the `next` tag. The project uses the [MIT license](LICENSE). Follow the release checklist before publishing a release.
 
 ## Setup and checks
 
@@ -35,6 +35,8 @@ Include exact Node/Void/Hono/Vite versions, configuration, a minimal reproductio
 Do not post credentials or private data in a public issue. For sensitive findings, use a private maintainer contact once one is documented. No private reporting channel is configured yet.
 
 ## Release changes
+
+Use Conventional Commit titles for squash merges: `feat:`, `fix:`, `perf:`, `docs:` and `ci:` appear in release notes; `!` marks a breaking change. Release Please maintains the release PR and version metadata. Do not manually bump one manifest or duplicate the changelog. See [the release automation guide](docs/release-please.md).
 
 Package publication, repository visibility and npm ownership are maintainer decisions. Contributors can prepare artifacts and evidence; they must not infer publication approval from a merged code change. Follow the [release checklist](docs/release-checklist.md).
 

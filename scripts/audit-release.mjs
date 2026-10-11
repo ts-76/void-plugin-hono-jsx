@@ -27,7 +27,13 @@ assert.equal(JSON.parse(readFileSync('package.json', 'utf8')).license, 'MIT');
 assert.equal(readFileSync('packages/hono-pages/LICENSE', 'utf8'), readFileSync('LICENSE', 'utf8'));
 assert.ok(pkg.files.includes('LICENSE'));
 assert.ok(pkg.files.includes('CHANGELOG.md'));
-assert.equal(readFileSync('packages/hono-pages/CHANGELOG.md', 'utf8'), readFileSync('CHANGELOG.md', 'utf8'));
+// Package changelog is generated at build time; the root is the release source.
+assert.ok(readFileSync('CHANGELOG.md', 'utf8').includes(pkg.version));
+assert.equal(JSON.parse(readFileSync('package.json', 'utf8')).version, pkg.version);
+const lock = JSON.parse(readFileSync('package-lock.json', 'utf8'));
+assert.equal(lock.version, pkg.version);
+assert.equal(lock.packages[''].version, pkg.version);
+assert.equal(JSON.parse(readFileSync('.release-please-manifest.json', 'utf8'))['.'], pkg.version);
 assert.deepEqual(pkg.publishConfig, { access: 'public', registry: 'https://registry.npmjs.org/', tag: 'next' });
 if (failures.length) throw new Error(`Release audit failed:\n${failures.join('\n')}`);
 console.log(`Release audit passed for ${files.length} tracked/proposed files; no configured path, credential or accidental-artifact patterns found. Upstream notices match.`);

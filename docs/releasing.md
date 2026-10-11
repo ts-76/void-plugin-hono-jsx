@@ -2,6 +2,10 @@
 
 The first candidate is `void-plugin-hono-jsx@0.1.0-alpha.0` with the `next` tag. Only the exact peer versions in its manifest are supported. A future Void/Hono/Vite upgrade requires another complete consumer run and candidate release; do not broaden peer ranges based on a build alone. Managed deployment is unverified, browser mounting redraws SSR content, and unsupported features are listed in the package guide.
 
+## Release PR, version and tag
+
+[Release Please](release-please.md) manages release PRs, synchronized private manifest versions, the root changelog, `v<version>` tags and GitHub prereleases. Merge its PR only after the required checks succeed. GitHub Release creation does not publish to npm: dispatch the existing stage workflow on the accepted tag and retain environment/owner approval. `NPM_STAGING_ENABLED` remains false until an authorized stage.
+
 ## Prepare and review
 
 Use Node 24.21.0 and the locked npm dependencies. Commit the source first: preparation rejects a dirty checkout and any source change during validation.
@@ -12,6 +16,8 @@ npx playwright install chromium
 npm run release:prepare
 npm run release:plan
 ```
+
+Package build copies the release-please-managed root `CHANGELOG.md` into the ignored package changelog; artifact validation requires identical packed notes.
 
 Preparation runs current-tree, full-history and Gitleaks scans, locked dependency audits, types, tests, both example builds, source browser checks and an external packed consumer. It creates an isolated manifest differing only in `private: false`; repository metadata stays private. The exact archive is installed in the consumer and passed to `npm publish --dry-run --ignore-scripts --provenance=false`. The dry run performs no registry upload and does not prove authentication or provenance.
 
