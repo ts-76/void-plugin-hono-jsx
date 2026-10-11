@@ -11,6 +11,7 @@ import { checkDeferredConsumer } from './check-deferred-consumer.mjs';
 import { checkStaticConsumer } from './check-static-consumer.mjs';
 import { checkDevelopmentConsumer } from './check-development-consumer.mjs';
 import { checkCompatibilityConsumer } from './check-compatibility-consumer.mjs';
+import { checkIsrConsumer } from './check-isr-consumer.mjs';
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
 const npmCli = process.env.npm_execpath;
@@ -149,9 +150,9 @@ try {
   const packed = JSON.parse(npm(['pack', '--json', '--pack-destination', temporary], join(repo, 'packages/hono-pages')));
   assert.equal(packed.length, 1);
   const entries = packed[0].files.map((entry) => entry.path);
-  assert.ok(entries.includes('README.md') && entries.includes('package.json') && entries.includes('THIRD_PARTY_NOTICES.md'));
+  assert.ok(entries.includes('README.md') && entries.includes('package.json') && entries.includes('THIRD_PARTY_NOTICES.md') && entries.includes('LICENSE'));
   for (const path of entries) {
-    assert.ok(path === 'package.json' || path === 'README.md' || path === 'THIRD_PARTY_NOTICES.md' || /^dist\/.+\.(js|d\.ts)$/.test(path), `Unexpected packed file: ${path}`);
+    assert.ok(path === 'package.json' || path === 'README.md' || path === 'THIRD_PARTY_NOTICES.md' || path === 'LICENSE' || /^dist\/.+\.(js|d\.ts)$/.test(path), `Unexpected packed file: ${path}`);
     const content = await readFile(join(repo, 'packages/hono-pages', path), 'utf8');
     assert.doesNotMatch(content, /\/Users\/|\/private\/|\/nix\/store\/|\.runtime\//, `Machine-specific content: ${path}`);
   }
@@ -186,6 +187,7 @@ try {
     await smoke('preview', browser, true);
     await checkStaticConsumer({ repo, consumer, browser, env });
     await checkCompatibilityConsumer({ consumer, env });
+    await checkIsrConsumer({ repo, consumer, browser, env });
   } finally { await browser.close(); }
   console.log(`Package audit passed: ${entries.length} intended files; declarations and locked clean-consumer checks passed.`);
 } catch (error) {

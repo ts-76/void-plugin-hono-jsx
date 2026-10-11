@@ -21,6 +21,10 @@ assert.equal(readFileSync('packages/hono-pages/THIRD_PARTY_NOTICES.md', 'utf8'),
 const pkg = JSON.parse(readFileSync('packages/hono-pages/package.json', 'utf8'));
 assert.equal(pkg.name, 'void-plugin-hono-jsx');
 assert.ok(pkg.files.includes('THIRD_PARTY_NOTICES.md'));
+assert.equal(pkg.license, 'MIT');
+assert.equal(JSON.parse(readFileSync('package.json', 'utf8')).license, 'MIT');
+assert.equal(readFileSync('packages/hono-pages/LICENSE', 'utf8'), readFileSync('LICENSE', 'utf8'));
+assert.ok(pkg.files.includes('LICENSE'));
 if (failures.length) throw new Error(`Release audit failed:\n${failures.join('\n')}`);
 console.log(`Release audit passed for ${files.length} tracked/proposed files; no configured path, credential or accidental-artifact patterns found. Upstream notices match.`);
-console.log('This scans the current tree, not Git history, and does not certify the absence of every secret. License, CI and publication decisions remain release gates.');
+console.log('This scans the current tree, not Git history, and does not certify the absence of every secret. MIT license files and metadata match; CI and publication decisions remain release gates.');
