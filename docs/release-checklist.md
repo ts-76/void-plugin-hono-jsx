@@ -1,20 +1,20 @@
 # Release checklist
 
-No release is authorized by this checklist. The package remains `private: true`, version `0.0.0`, with `UNLICENSED` metadata until maintainers finish the decisions below.
+No release is authorized by this checklist. The package remains `private: true`, version `0.0.0`, with MIT license metadata until maintainers finish the remaining release decisions below.
 
 ## Decisions and access
 
 - [x] Maintainer selected the package name `void-plugin-hono-jsx`.
-- [ ] Maintainer selected the project license and copyright attribution.
-- [ ] Add the chosen root/package license files and matching package metadata.
-- [ ] Review upstream adaptation notices and include them in the tarball.
+- [x] Maintainer selected the MIT license. The license attributes project copyright to its contributors.
+- [x] Add matching root/package MIT license files and package metadata.
+- [x] Review upstream adaptation notices and include them in the tarball.
 - [ ] Confirm npm name availability, publisher identity, ownership and account security.
 - [ ] Choose an initial experimental version and release support policy.
 - [ ] Decide repository visibility explicitly and review its full Git history before making it public.
 
 ## Verification
 
-- [ ] Activate `.github/workflow-templates/package.yml` under `.github/workflows/` after GitHub authentication has the required workflow scope.
+- [x] Activate `.github/workflows/package.yml` for pushes and pull requests using the pinned Node/framework baseline.
 - [ ] Obtain a successful GitHub Actions run on the final release commit.
 - [ ] Run typecheck, tests, Pages production build, packed-consumer checks and `npm run audit:release`.
 - [ ] Review the packed file list, declarations, exports, peer versions, notices and license.
