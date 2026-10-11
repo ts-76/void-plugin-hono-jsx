@@ -9,6 +9,7 @@ The initial candidate is **`void-plugin-hono-jsx@0.1.0-alpha.0`**, **`next`**, M
 - [x] Document supported behavior and unsupported modes; managed deployment remains unverified.
 - [x] Keep automatic publication disabled in `release-policy.json`.
 - [x] Add exact-artifact preparation, checksum verification, clean-consumer validation, full-history audits and CI artifact retention.
+- [x] Accept only GHSA-67mh-4wv8-2f99 as a known upstream limitation for the pinned alpha baseline, without overrides; disclose it in the packed README and release notes. See the [dependency assessment](dependency-security.md).
 
 ## Evidence for each candidate
 
@@ -23,7 +24,7 @@ The initial candidate is **`void-plugin-hono-jsx@0.1.0-alpha.0`**, **`next`**, M
 - [ ] Review the known macOS local development connection-reset limitation after an undefined-action POST before approving the first alpha (see releasing).
 
 - [ ] Confirm npm owner identity, package-name availability, account access and personal 2FA. The name returned 404 during preparation; this does not reserve it. Local npm authentication returned 401.
-- [ ] Resolve or explicitly assess the remaining Void → drizzle-kit → esbuild advisory before setting `dependencySecurityApproved`; record any accepted advisory URL in `approvedDependencyAdvisories`. New unreviewed advisories block staging.
+- [ ] Confirm each final candidate's root and consumer audits contain no advisory beyond the accepted GHSA-67mh-4wv8-2f99. Reassess acceptance after peer changes or upstream fixes; new unreviewed advisories block staging.
 - [ ] Select and audit a suitable publisher CLI. The tested npm 11.21.0 has bundled dependency findings; the stage job blocks Moderate or higher findings before upload.
 - [ ] Decide repository visibility and full-history disclosure. This repository is private. Preparation found deleted evidence artifacts in history; public provenance requires a public repository and public package.
 - [ ] Select `npm-stage` environment reviewers and decide self-review policy. Configure required reviewers, disable administrator bypass and allow only `v*` tags. The default `preventSelfReview: true` needs another reviewer.

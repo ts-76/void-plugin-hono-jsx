@@ -18,6 +18,8 @@
   "reviewers": [],
   "preventSelfReview": true,
   "historyDisclosureApproved": false,
-  "dependencySecurityApproved": false,
-  "approvedDependencyAdvisories": []
+  "dependencySecurityApproved": true,
+  "approvedDependencyAdvisories": [
+    "https://github.com/advisories/GHSA-67mh-4wv8-2f99"
+  ]
 }

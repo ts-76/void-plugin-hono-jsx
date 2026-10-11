@@ -83,7 +83,7 @@ The server renders immediate props and a loading state before the resolver compl
 
 A resolved value or error updates the current page without resetting page-local state or surviving layouts. Updates from a pending page are ignored until that page commits. Void aborts and disposes old navigation resources; the adapter additionally accepts only updates belonging to the rendered props object.
 
-Void 0.26.1 forwards deferred resolver error messages in development and production streams. The adapter turns that message into an `Error` and exposes it through `error`; server stack traces are not included. Author resolver messages suitable for display to users. This follows the observed streaming error behavior of the pinned Void version.
+Void 0.26.1 forwards ordinary deferred resolver error messages in development; production streams use `Internal Server Error`. Deliberate HTTP exception messages may be forwarded in production. The adapter turns the received message into an `Error` and exposes it through `error`; server stack traces are not included. Author deliberate HTTP exception messages suitable for display to users. This follows the verified streaming error behavior of the pinned Void version.
 
 The verified contract covers single deferred props during GET document requests and SPA navigation. Grouped deferred props, deferred prefetching, mutation-driven deferred refresh and deferred island pages are excluded. The ordinary Pages action APIs remain documented under runtime exports.
 
@@ -108,6 +108,14 @@ Only the `load` policy, a single default relative TSX/JSX import, and attributes
 ## Experimental limitations
 
 The virtual renderer/client entries follow version-specific conventions observed in Void's official adapter rather than a documented third-party registration API. Browser mounting redraws the SSR page; DOM reuse is not guaranteed. Local ISR uses Void's native direct-worker KV/Cache API runtime; managed edge behavior remains unverified. Unsupported modes fail clearly. Package publication and repository visibility are separate maintainer decisions.
+
+## Known upstream dependency advisory
+
+The initial alpha accepts [GHSA-67mh-4wv8-2f99](https://github.com/advisories/GHSA-67mh-4wv8-2f99) as a known limitation on the pinned peer baseline. The reviewed audits on 2026-10-11 reported Moderate findings propagated across multiple package entries from this single esbuild advisory; package-entry counts can differ between audit reports. The affected esbuild 0.18.20 is installed through Void 0.26.1 → drizzle-kit 0.31.11 → @esbuild-kit/esm-loader 2.6.5 → @esbuild-kit/core-utils 3.3.2.
+
+The advisory concerns esbuild's own development server. The adapter uses Vite/Oxc for JSX and TypeScript for package compilation; the inspected upstream loader uses esbuild transforms. No esbuild serve invocation was found in the adapter or these loader modules, but other upstream commands and consumer configurations have not been exhaustively assessed. Avoid the affected esbuild serve feature. This is an accepted audit finding, not a claim of overall security or an audit-zero result.
+
+The package adds no overrides and does not force changes to Void's internal dependencies. Consumers install the framework peers and their dependencies even though this archive contains no dependency implementation. Follow compatible upstream fixes; a peer upgrade requires renewed validation. New unreviewed advisories continue to block release preparation policy.
 
 ## Verification
 
