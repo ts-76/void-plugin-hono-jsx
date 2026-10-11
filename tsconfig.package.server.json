@@ -1,0 +1,5 @@
+{
+  "extends": "./tsconfig.package.json",
+  "compilerOptions": { "rootDir": "runtime", "outDir": "packages/hono-pages/dist/server" },
+  "include": ["runtime/pages.tsx", "runtime/form.ts"]
+}
