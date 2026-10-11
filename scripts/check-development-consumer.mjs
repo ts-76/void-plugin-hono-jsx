@@ -36,6 +36,31 @@ export async function checkDevelopmentConsumer({ page, origin, consumer, assertR
     await mountedOnce();
     await page.locator('#increment').click();
     await page.waitForFunction(() => document.querySelector('#count')?.textContent === '13');
+    // Requests may arrive while the module runner is replacing a page/loader.
+    // Every response must retain the matching JSX and Pages provider identity.
+    for (let revision = 0; revision < 6; revision++) {
+      const heading = `Reload revision ${revision}`;
+      await Promise.all([
+        writeFile(source, originalSource.replace('Clean package consumer', heading)),
+        writeFile(loader, originalLoader.replace('initialCount: 5', `initialCount: ${20 + revision}`)),
+      ]);
+      const deadline = Date.now() + 10000;
+      let current = false;
+      while (Date.now() < deadline) {
+        const responses = await Promise.all(Array.from({ length: 4 }, () => fetch(origin)));
+        for (const response of responses) {
+          assert.equal(response.status, 200, `SSR lost its provider during revision ${revision}`);
+          const html = await response.text();
+          assert.match(html, /id="runtime-hooks"/);
+          if (html.includes(heading) && html.includes(`>${20 + revision}</output>`)) current = true;
+        }
+        if (current) break;
+      }
+      assert.ok(current, `SSR did not pick up revision ${revision}`);
+      await page.getByRole('heading', { name: heading }).waitFor();
+      await page.waitForFunction((count) => document.querySelector('#count')?.textContent === String(count), 20 + revision);
+      await mountedOnce();
+    }
     await writeFile(added, "import { Link } from 'void-plugin-hono-jsx/pages'; export default function Page() { return <main><h1 id=\"added-page\">Added page</h1><Link id=\"added-home\" href=\"/\">Home</Link></main>; }");
     const deadline = Date.now() + 10000;
     let ready = false;
@@ -58,7 +83,7 @@ export async function checkDevelopmentConsumer({ page, origin, consumer, assertR
     assert.ok(removed, 'Removed page route stayed active');
     await mountedOnce();
     assertRunning();
-    console.log('Development: page/loader edits, state reset, page add/remove, current manifests and single browser initialization passed without a server restart.');
+    console.log('Development: concurrent SSR during page/loader edits, state reset, page add/remove, current manifests and single browser initialization passed without a server restart.');
   } catch (error) { failed = true; throw error; } finally {
     await rm(added, { force: true });
     await writeFile(source, originalSource);
