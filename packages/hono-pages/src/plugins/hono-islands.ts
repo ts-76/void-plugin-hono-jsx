@@ -1,7 +1,7 @@
 import { readFileSync, realpathSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { normalizePath, parseSync, type Plugin } from 'vite';
-import { scanPages, resolvePagesDir, type PageScanResult } from 'void/pages';
+import { scanPages, resolveEffectiveLayoutChain, resolvePagesDir, type PageScanResult } from 'void/pages';
 import { findIslandImports, editIslandSource, resolveSpecifier, computePagesNeedingClientJS, ISLANDS_RENDERER_ID, ISLANDS_CLIENT_ENTRY_ID } from 'void/pages-islands-plugin';
 
 /** Hono mounting through Void's shared island scheduler. */
@@ -10,6 +10,9 @@ export function honoIslands(): Plugin {
   const pagesDir = resolvePagesDir(root);
   const islands = new Map<string, string>();
   const pageFiles = new Set<string>();
+  const graph = new Map<string, Set<string>>();
+  const directlyInteractive = new Set<string>();
+  const interactivePages = new Set<string>();
   let scan: PageScanResult | undefined;
 
   function islandImports(code: string, filename: string) {
@@ -40,12 +43,54 @@ export function honoIslands(): Plugin {
 
   async function rescan() {
     scan = await scanPages(root, { pagesDir });
-    islands.clear();
-    pageFiles.clear();
+    islands.clear(); pageFiles.clear(); graph.clear(); directlyInteractive.clear(); interactivePages.clear();
+    const visit = (filename: string) => {
+      const canonical = realpathSync(filename);
+      if (graph.has(canonical)) return;
+      const dependencies = new Set<string>(); graph.set(canonical, dependencies); pageFiles.add(canonical);
+      const code = readFileSync(canonical, 'utf8');
+      const found = imports(code, canonical);
+      if (found.length) {
+        if (!/\.[jt]sx$/.test(canonical)) throw new Error('Hono islands: attributed imports require a static TSX/JSX module.');
+        directlyInteractive.add(canonical);
+      }
+      for (const node of parseSync(canonical, code).program.body) {
+        const source = node.type === 'ImportDeclaration' ? node.source : node.type === 'ExportNamedDeclaration' || node.type === 'ExportAllDeclaration' ? node.source : undefined;
+        const typeOnly = node.type === 'ImportDeclaration' ? node.importKind === 'type' || (node.specifiers.length > 0 && node.specifiers.every((entry) => entry.type === 'ImportSpecifier' && entry.importKind === 'type')) : (node.type === 'ExportNamedDeclaration' || node.type === 'ExportAllDeclaration') && node.exportKind === 'type';
+        if (!source || typeOnly || !source.value.startsWith('.') || found.some((entry) => entry.specifier === source.value)) continue;
+        const target = resolveSpecifier(source.value, join(canonical, '..'), ['.tsx', '.jsx', '.ts', '.js']);
+        if (!target || !/\.[jt]sx?$/.test(target)) continue;
+        dependencies.add(realpathSync(target)); visit(target);
+      }
+
+    };
+    for (const entry of [...scan.pages.filter((page) => page.island).map((page) => page.componentPath), ...scan.layouts.filter((layout) => layout.island).map((layout) => layout.filePath), ...scan.namedLayouts.filter((layout) => layout.island).map((layout) => layout.filePath)]) visit(join(pagesDir, entry));
+    const validateInteractive = (filename: string, seen = new Set<string>()) => {
+      const canonical = realpathSync(filename);
+      if (seen.has(canonical)) return; seen.add(canonical);
+      const code = readFileSync(canonical, 'utf8');
+      if (islandImports(code, canonical).length) throw new Error('Hono islands: attributed imports inside an interactive component are unsupported; use ordinary component imports there.');
+      for (const node of parseSync(canonical, code).program.body) {
+        const source = node.type === 'ImportDeclaration' ? node.source : node.type === 'ExportNamedDeclaration' || node.type === 'ExportAllDeclaration' ? node.source : undefined;
+        const typeOnly = node.type === 'ImportDeclaration' ? node.importKind === 'type' || (node.specifiers.length > 0 && node.specifiers.every((entry) => entry.type === 'ImportSpecifier' && entry.importKind === 'type')) : (node.type === 'ExportNamedDeclaration' || node.type === 'ExportAllDeclaration') && node.exportKind === 'type';
+        if (!source || typeOnly || !source.value.startsWith('.')) continue;
+        const target = resolveSpecifier(source.value, join(canonical, '..'), ['.tsx', '.jsx', '.ts', '.js']);
+        if (target && /\.[jt]sx?$/.test(target)) validateInteractive(target, seen);
+      }
+    };
+    for (const target of islands.values()) validateInteractive(target);
+    for (const page of scan.pages.filter((page) => !page.island)) {
+      for (const file of [page.componentPath, ...resolveEffectiveLayoutChain(page, scan.layouts, scan.namedLayouts).map((layout) => layout.filePath)]) validateInteractive(join(pagesDir, file));
+    }
+    const needsJS = new Set(directlyInteractive);
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (const [file, dependencies] of graph) if (!needsJS.has(file) && [...dependencies].some((target) => needsJS.has(target))) { needsJS.add(file); changed = true; }
+    }
     for (const page of scan.pages.filter((page) => page.island)) {
-      const filename = realpathSync(join(pagesDir, page.componentPath));
-      pageFiles.add(filename);
-      imports(readFileSync(filename, 'utf8'), filename);
+      const files = [page.componentPath, ...resolveEffectiveLayoutChain(page, scan.layouts, scan.namedLayouts).map((layout) => layout.filePath)];
+      if (files.some((file) => needsJS.has(realpathSync(join(pagesDir, file))))) interactivePages.add(page.componentId);
     }
   }
 
@@ -53,8 +98,16 @@ export function honoIslands(): Plugin {
     name: 'void-hono:islands',
     enforce: 'pre',
     buildStart: rescan,
-    async hotUpdate({ file }) {
-      if (normalizePath(file).startsWith(normalizePath(pagesDir) + '/')) await rescan();
+    async hotUpdate({ file, modules, timestamp }) {
+      const inPages = normalizePath(file).startsWith(normalizePath(pagesDir) + '/');
+      if (!inPages && ![...pageFiles, ...islands.values()].some((path) => normalizePath(path) === normalizePath(file))) return;
+      await rescan();
+      const invalidated = new Set<(typeof modules)[number]>();
+      for (const id of [ISLANDS_RENDERER_ID, ISLANDS_CLIENT_ENTRY_ID, 'virtual:void-pages-renderer']) {
+        const module = this.environment.moduleGraph.getModuleById(`\0${id}`);
+        if (module) this.environment.moduleGraph.invalidateModule(module, invalidated, timestamp, true);
+      }
+      if (!inPages && this.environment.config.consumer === 'client') this.environment.hot.send({ type: 'full-reload' });
     },
     config() {
       return { build: { rollupOptions: { input: { 'islands-client': ISLANDS_CLIENT_ENTRY_ID } } } };
@@ -71,8 +124,12 @@ export function honoIslands(): Plugin {
       }
       const found = islandImports(code, filename);
       if (!found.length) return;
-      if (!pageFiles.has(realpathSync(filename))) throw new Error('Hono islands: attributed imports are supported only directly in .island.tsx/.island.jsx pages.');
+      if (!pageFiles.has(canonical)) throw new Error('Hono islands: attributed imports require a static island page, layout or component graph; use ordinary imports inside interactive components.');
       imports(code, filename);
+      // Void requests static modules in the client environment to collect CSS.
+      // Actual interactive entry graphs were validated above; strip attributes
+      // for that traversal rather than generating server-only marker wrappers.
+      if (this.environment?.config.consumer === 'client') return editIslandSource(code, found.map((entry) => ({ start: entry.start, end: entry.end, text: `import ${entry.importName} from ${entry.specifierRaw};` })));
       return editIslandSource(code, found.map((entry) => {
         const path = resolveSpecifier(entry.specifier, join(filename, '..'), ['.tsx', '.jsx']);
         if (!path) throw new Error(`Hono islands: missing component ${entry.specifier}.`);
@@ -85,7 +142,7 @@ const ${entry.importName} = (props) => __honoIslandJsx('div', { 'data-island': $
     load(id) {
       if (id === `\0${ISLANDS_RENDERER_ID}`) {
         if (!scan) throw new Error('Hono islands: page discovery has not completed.');
-        const interactive = [...computePagesNeedingClientJS(scan, pagesDir, null)];
+        const interactive = [...new Set([...computePagesNeedingClientJS(scan, pagesDir, null), ...interactivePages])];
         return `import { renderPage } from 'virtual:void-pages-renderer';
 const interactive = new Set(${JSON.stringify(interactive)});
 export function renderIslandPage(page, assets) {
@@ -94,7 +151,7 @@ export function renderIslandPage(page, assets) {
 }`;
       }
       if (id === `\0${ISLANDS_CLIENT_ENTRY_ID}`) {
-        if (!islands.size) return 'export {};';
+        if (!islands.size || !interactivePages.size) return 'export {};';
         const loaders = [...islands].map(([name, path]) => `${JSON.stringify(name)}: () => import(${JSON.stringify(path)})`).join(',\n');
         return `import { initIslands } from 'void/pages-client';
 import { jsx } from 'hono/jsx/dom/jsx-runtime';

@@ -21,7 +21,7 @@ export function voidHonoPages(): Plugin[] {
   async function rescan() {
     scan = await scanPages(root, { pagesDir });
     for (const layout of [...scan.layouts, ...scan.namedLayouts]) {
-      if (layout.island || !/\.[jt]sx$/.test(layout.filePath)) throw new Error('Hono Pages: only standard TSX/JSX layouts are supported.');
+      if (!/\.[jt]sx$/.test(layout.filePath)) throw new Error('Hono Pages: only standard TSX/JSX layouts are supported.');
     }
     for (const page of scan.pages) {
       if (!/\.[jt]sx$/.test(page.componentPath)) {
@@ -84,7 +84,7 @@ export function voidHonoPages(): Plugin[] {
       const currentScan = scan ?? await rescan();
       const serverSnapshot = id === `\0${rendererId}` && this.environment.mode === 'dev';
       const manifestScan = id === `\0${clientId}`
-        ? { ...currentScan, pages: currentScan.pages.filter((page) => !page.island) }
+        ? { ...currentScan, pages: currentScan.pages.filter((page) => !page.island), layouts: currentScan.layouts.filter((layout) => !layout.island), namedLayouts: currentScan.namedLayouts.filter((layout) => !layout.island) }
         : serverSnapshot ? { ...currentScan, pages: currentScan.pages.filter((page) => page.renderMode !== 'client') } : currentScan;
       let manifest = generateComponentManifest(manifestScan, pagesDir);
       if (serverSnapshot) {

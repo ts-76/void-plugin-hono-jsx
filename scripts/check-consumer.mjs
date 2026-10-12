@@ -16,6 +16,7 @@ import { checkStaticConsumer } from './check-static-consumer.mjs';
 import { checkDevelopmentConsumer } from './check-development-consumer.mjs';
 import { checkCompatibilityConsumer } from './check-compatibility-consumer.mjs';
 import { consumerStack, launcherArgs } from './consumer-launcher.mjs';
+import { checkIslandGraph } from './check-island-graph.mjs';
 import { checkIslandPolicies } from './check-island-policies.mjs';
 import { checkFormConsumer } from './check-form-consumer.mjs';
 import { checkLinkConsumer } from './check-link-consumer.mjs';
@@ -109,6 +110,7 @@ async function smoke(mode, browser, staticOnly = false) {
       await checkLinkConsumer({ origin, page, assert });
       await checkFormConsumer({ origin, page, assert });
       await checkIslandPolicies({ origin, page, assert });
+      await checkIslandGraph({ origin, page, assert, mode, consumer });
       await checkDeferredConsumer({ origin, page, mode });
       const islandResponse = await fetch(origin + '/islands');
       assert.equal(islandResponse.status, 200);
@@ -208,6 +210,7 @@ try {
     await rm(join(consumer, 'pages'), { recursive: true });
     await mkdir(join(consumer, 'pages'));
     await cp(join(repo, 'fixtures/consumer/pages/static.island.tsx'), join(consumer, 'pages/index.island.tsx'));
+    await cp(join(repo, 'fixtures/consumer/components/StaticLayout.island.tsx'), join(consumer, 'pages/layout.island.tsx'));
     execFileSync(process.execPath, launcherArgs(consumer, 'build', [], env), { cwd: consumer, env, stdio: ['ignore', 'pipe', 'pipe'] });
     for (const file of await readdir(assets)) {
       if (!file.endsWith('.js')) continue;

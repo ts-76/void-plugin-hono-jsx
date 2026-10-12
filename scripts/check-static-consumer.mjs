@@ -1,3 +1,4 @@
+import { checkIslandGraph } from './check-island-graph.mjs';
 import { checkIslandPolicies } from './check-island-policies.mjs';
 import { launcherArgs } from './consumer-launcher.mjs';
 import assert from 'node:assert/strict';
@@ -12,6 +13,10 @@ export async function checkStaticConsumer({ repo, consumer, browser, env }) {
   await mkdir(join(consumer, 'components'), { recursive: true });
   await cp(join(repo, 'fixtures/consumer/components/PolicyCounter.tsx'), join(consumer, 'components/PolicyCounter.tsx'));
   await cp(join(repo, 'fixtures/consumer/pages/policies.island.tsx'), join(consumer, 'pages/policies.island.tsx'));
+  await cp(join(repo, 'fixtures/consumer/components/StaticIslandWrapper.tsx'), join(consumer, 'components/StaticIslandWrapper.tsx'));
+  await cp(join(repo, 'fixtures/consumer/pages/graph'), join(consumer, 'pages/graph'), { recursive: true });
+  await mkdir(join(consumer, 'pages/_layouts'), { recursive: true });
+  await cp(join(repo, 'fixtures/consumer/pages/_layouts/graph.island.tsx'), join(consumer, 'pages/_layouts/graph.island.tsx'));
   const build = () => {
     const result = spawnSync(process.execPath, launcherArgs(consumer, 'build', [], env), { cwd: consumer, env, encoding: 'utf8' });
     const log = result.stdout + result.stderr;
@@ -23,7 +28,7 @@ export async function checkStaticConsumer({ repo, consumer, browser, env }) {
   const log = build();
   assert.doesNotMatch(log, /failed to prerender|page\(s\) failed/);
   const output = join(consumer, 'dist/client');
-  for (const path of ['index.html', 'users/alice.html', 'users/bob.html', 'forced.html', 'policies.html', '_void/pages/index.json', '_void/pages/users/alice.json']) await access(join(output, path));
+  for (const path of ['index.html', 'users/alice.html', 'users/bob.html', 'forced.html', 'policies.html', 'graph/nested.html', 'graph/named.html', '_void/pages/index.json', '_void/pages/users/alice.json']) await access(join(output, path));
   for (const path of ['skipped.html', 'users/unknown.html']) await assert.rejects(access(join(output, path)));
   const initial = await readFile(join(output, 'index.html'), 'utf8');
   assert.match(initial, /id="static-count"[^>]*>5<\/output>/);
@@ -79,6 +84,7 @@ export async function checkStaticConsumer({ repo, consumer, browser, env }) {
     assert.equal((await fetch(origin + '/skipped')).status, 404);
     assert.equal((await fetch(origin + '/users/unknown')).status, 404);
     await checkIslandPolicies({ origin, page, assert });
+    await checkIslandGraph({ origin, page, assert, mode: 'static', consumer });
     assert.deepEqual(errors, []);
   } finally { await page.close(); await new Promise((resolve) => server.close(resolve)); }
   console.log('Static output: native HTML/JSON collection, declared paths, overrides, safe loader props, direct access, refresh, interaction and static-data SPA navigation passed.');

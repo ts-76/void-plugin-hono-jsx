@@ -68,7 +68,7 @@ See the [package guide](packages/hono-pages/README.md) for public exports, confi
 - Development document reloads for page/loader edits and route additions/removals.
 - Local production-preview ISR through Void's KV/Cache API runtime.
 
-Browser mounting redraws SSR content; it does not promise DOM reuse. Development reloads reset local state. Island layouts, unknown island policies, grouped deferred props, deferred prefetch and mutation-driven deferred refresh are unsupported. [ISR validation](docs/isr.md) covers the local direct-worker runtime. Managed deployment has not been verified.
+Browser mounting redraws SSR content; it does not promise DOM reuse. Development reloads reset local state. Attributed imports inside interactive components, unknown island policies, grouped deferred props, deferred prefetch and mutation-driven deferred refresh are unsupported. [ISR validation](docs/isr.md) covers the local direct-worker runtime. Managed deployment has not been verified.
 
 The old scaffold Vite Plus has additional unapproved formatter advisories; prefer the current latest aligned toolchain or plain Vite. See [scaffold compatibility and audits](docs/scaffold-compatibility.md).
 
