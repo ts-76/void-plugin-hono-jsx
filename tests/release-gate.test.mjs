@@ -18,7 +18,10 @@ function fixture() {
   writeFileSync(path.join(root, 'release-policy.json'), JSON.stringify(policy));
   writeFileSync(path.join(pkgRoot, 'package.json'), JSON.stringify(pkg));
   writeFileSync(path.join(root, 'CHANGELOG.md'), '## 0.1.0-alpha.0 (candidate)\n');
-  const contents = { 'package.json': JSON.stringify({ ...pkg, private: false }), 'README.md': 'Package guide', 'LICENSE': 'MIT License', 'THIRD_PARTY_NOTICES.md': 'Notices', 'CHANGELOG.md': '## 0.1.0-alpha.0 (candidate)\n', 'dist/plugin.js': 'export const value = 1;', 'dist/plugin.d.ts': 'export declare const value = 1;' };
+  const contents = { 'package.json': JSON.stringify({ ...pkg, private: false }), 'README.md': 'Package guide', 'LICENSE': 'MIT License', 'THIRD_PARTY_NOTICES.md': 'Notices', 'CHANGELOG.md': '## 0.1.0-alpha.0 (candidate)\n', 'dist/plugin.js': 'export const value = 1;\n//# sourceMappingURL=plugin.js.map', 'dist/plugin.d.ts': 'export declare const value = 1;\n//# sourceMappingURL=plugin.d.ts.map',
+    'src/plugins/plugin.ts': 'export const value = 1;',
+    'dist/plugin.js.map': JSON.stringify({ version: 3, file: 'plugin.js', names: [], sources: ['../src/plugins/plugin.ts'], sourcesContent: ['export const value = 1;'], mappings: 'AAAA' }),
+    'dist/plugin.d.ts.map': JSON.stringify({ version: 3, file: 'plugin.d.ts', names: [], sources: ['../src/plugins/plugin.ts'], mappings: 'AAAA' }) };
   for (const [file, content] of Object.entries(contents)) {
     mkdirSync(path.dirname(path.join(candidate, file)), { recursive: true });
     writeFileSync(path.join(candidate, file), content);
@@ -107,5 +110,12 @@ test('tarball allowlist rejects unexpected files and symbolic links', () => {
     execFileSync('ln', ['-s', 'README.md', path.join(f.root, 'candidate/package/alias.js')]);
     execFileSync('tar', ['-czf', f.tarball, '-C', path.join(f.root, 'candidate'), 'package/alias.js']);
     assert.throws(() => inspectTarball(f.tarball), /regular files/);
+  } finally { f.cleanup(); }
+});
+
+test('artifact inspection rejects packaged source differing from the reviewed checkout', () => {
+  const f = fixture(); try {
+    writeFileSync(path.join(f.pkgRoot, 'src/plugins/plugin.ts'), 'export const changed = 2;');
+    assert.throws(() => inspectArtifact(f.options), /Packaged source changed/);
   } finally { f.cleanup(); }
 });

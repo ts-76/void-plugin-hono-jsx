@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { readFileSync, realpathSync } from 'node:fs';
+import { readFileSync, realpathSync, readdirSync } from 'node:fs';
+import { inspectSourceMaps } from './source-maps.mjs';
 import path from 'node:path';
 export const registry = 'https://registry.npmjs.org/';
 export const json = file => JSON.parse(readFileSync(file, 'utf8'));
@@ -59,7 +60,12 @@ export function inspectArtifact({ root = process.cwd(), artifactRoot = path.join
   assert.deepEqual(evidence.validation, { typecheck: true, build: true, test: true, source: true, history: true, secrets: true, dryRun: true, externalConsumer: true });
   const packed = JSON.parse(execFileSync('tar', ['-xOzf', tarball, 'package/package.json'], { encoding: 'utf8' }));
   assert.deepEqual(packed, { ...pkg, private: false }, 'Packed metadata changed');
-  inspectTarball(tarball, evidence.files);
+  const files = inspectTarball(tarball, evidence.files);
+  const sourceFiles = directory => readdirSync(path.join(pkgRoot, directory), { withFileTypes: true }).flatMap(entry => entry.isDirectory() ? sourceFiles(`${directory}/${entry.name}`) : [`${directory}/${entry.name}`]);
+  assert.deepEqual(files.filter(file => file.startsWith('src/')).sort(), sourceFiles('src').sort(), 'Packaged source file set changed');
+  for (const file of files.filter(file => file.startsWith('src/'))) {
+    assert.equal(execFileSync('tar', ['-xOzf', tarball, 'package/' + file], { encoding: 'utf8' }), readFileSync(inside(pkgRoot, file), 'utf8'), `Packaged source changed: ${file}`);
+  }
   assert.equal(execFileSync('tar', ['-xOzf', tarball, 'package/THIRD_PARTY_NOTICES.md'], { encoding: 'utf8' }), readFileSync(path.join(pkgRoot, 'THIRD_PARTY_NOTICES.md'), 'utf8'));
   for (const entry of Object.values(packed.exports)) {
     for (const target of Object.values(entry)) assert.ok(evidence.files.includes(target.replace(/^\.\//, '')), 'Missing export target');
@@ -120,16 +126,19 @@ export function inspectTarball(tarball, expectedFiles) {
     assert.ok(name.startsWith('package/'), 'Unexpected archive root');
     const file = name.slice(8);
     assert.ok(!file.split('/').some(part => !part || part === '.' || part === '..'), 'Unsafe archive path');
-    assert.ok(['package.json', 'README.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md', 'CHANGELOG.md'].includes(file) || /^dist\/[\w/.-]+\.(js|d\.ts)$/.test(file), 'Unexpected packed file');
+    assert.ok(['package.json', 'README.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md', 'CHANGELOG.md'].includes(file) || /^dist\/[\w/.-]+\.(js|d\.ts)(\.map)?$/.test(file) || /^src\/(plugins|runtime)\/[\w.-]+\.tsx?$/.test(file), 'Unexpected packed file');
     return file;
   });
   assert.equal(new Set(files).size, files.length, 'Duplicate archive entry');
   if (expectedFiles) assert.deepEqual([...files].sort(), [...expectedFiles].sort(), 'Packed file list changed');
+  const contents = new Map();
   for (const file of files) {
     const content = execFileSync('tar', ['-xOzf', tarball, 'package/' + file], { encoding: 'utf8' });
+    contents.set(file, content);
     assert.doesNotMatch(content, /\/(?:Users|home)\/[^/\s]+\/|\/private\/var\/|\/var\/folders\//, 'Machine-specific packed content');
   }
-  const pkg = JSON.parse(execFileSync('tar', ['-xOzf', tarball, 'package/package.json'], { encoding: 'utf8' }));
+  inspectSourceMaps(contents);
+  const pkg = JSON.parse(contents.get('package.json'));
   assert.ok(!pkg.scripts, 'Publishable adapter must not run package lifecycle scripts');
   assert.ok(!pkg.dependencies && !pkg.devDependencies, 'Only documented peer dependencies are shipped');
   return files;

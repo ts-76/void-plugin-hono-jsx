@@ -1,6 +1,6 @@
 # Experimental Hono Pages adapter for Void
 
-This experimental package integrates Hono JSX with Void Pages. The package name is `void-plugin-hono-jsx`. `0.1.0-alpha.0` is published on the `next` dist-tag under the [MIT license](LICENSE). Use `@next`; `latest` remains a registration placeholder. It is not an official Void adapter.
+This experimental package integrates Hono JSX with Void Pages. The package name is `void-plugin-hono-jsx`. Alpha releases are published on the `next` dist-tag under the [MIT license](LICENSE). Use `@next` or an explicit alpha version; `latest` is reserved for a future stable release. It is not an official Void adapter.
 
 ## Supported versions
 
@@ -25,7 +25,7 @@ npm install --save-dev void@0.26.1 vite@8.3.3 typescript@7.0.2
 For a local validation tarball, in the repository, run `npm ci`, `npm run build:package`, then `npm pack ./packages/hono-pages`. Install the resulting tarball in your project alongside the supported peer versions:
 
 ```sh
-npm install ./void-plugin-hono-jsx-0.1.0-alpha.0.tgz hono@4.13.13
+npm install ./void-plugin-hono-jsx-<version>.tgz hono@4.13.13
 npm install --save-dev void@0.26.1 vite@8.3.3 typescript@7.0.2
 ```
 
@@ -43,6 +43,12 @@ export default defineConfig({ plugins: [voidPlugin(), voidHonoPages()] });
 Configure project settings in `void.config.ts` using `defineConfig` from `void/config`. Run Vite from that project's root. `voidHonoPages()` includes the Hono JSX transform, so do not register a separate transform. Configure charset, viewport and favicon through Void's `head` settings.
 
 Use `jsx: "react-jsx"` and `jsxImportSource: "hono/jsx"` in TypeScript. The plugin chooses the server or DOM factory for application JSX; the plugin resolves package runtime exports using Vite's actual consumer environment. Cloudflare worker environments may enable the browser condition, so that condition alone cannot select the renderer.
+
+## Source and debugging files
+
+The next alpha candidate includes the original `src/plugins/*.ts` and `src/runtime/*.{ts,tsx}` alongside compiled `dist` entries. Every JavaScript file has a `.js.map` with embedded original source; every declaration has a `.d.ts.map` pointing to the same packaged TypeScript files. Build-time import rewriting composes its map with the compiler map, so generated locations still refer to the original source. These additions require a new release; alpha.0 and alpha.1 remain unchanged.
+
+Read source under `node_modules/void-plugin-hono-jsx/src`. Editors supporting declaration maps can navigate from exported types to those files, and debuggers/bundlers supporting source maps can show the original source. Application imports continue to use `/plugin`, `/pages` and `/form`; `src` is supplied for inspection and debugging, not as an additional runtime entry point. Candidate and clean-consumer checks reject missing/stale maps, external source references, changed source bytes and unexpected archive files.
 
 ## Runtime exports
 
