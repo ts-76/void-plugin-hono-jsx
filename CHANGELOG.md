@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.0-alpha.3](https://github.com/ts-76/void-plugin-hono-jsx/compare/v0.1.0-alpha.2...v0.1.0-alpha.3) (2026-10-12)
+
+
+### Bug Fixes
+
+* support scaffold and current framework versions ([#46](https://github.com/ts-76/void-plugin-hono-jsx/issues/46)) ([4748044](https://github.com/ts-76/void-plugin-hono-jsx/commit/4748044cea8af423a77a6e51f0494c9b6d5a9a34))
+
 ## [0.1.0-alpha.2](https://github.com/ts-76/void-plugin-hono-jsx/compare/v0.1.0-alpha.1...v0.1.0-alpha.2) (2026-10-12)
 
 
