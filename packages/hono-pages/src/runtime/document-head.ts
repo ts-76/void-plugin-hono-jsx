@@ -11,7 +11,11 @@ function scriptElements(head: HeadDescriptor | undefined) {
   return Array.from(template.content.querySelectorAll('script'));
 }
 
-/** Complements Void's title/meta/link updates without executing navigation scripts. */
+function metadataSignature(element: Element) {
+  return JSON.stringify([element.tagName, Array.from(element.attributes, ({ name, value }) => [name, value]).filter(([name]) => name !== 'data-void-head').sort()]);
+}
+
+/** Synchronizes the snapshot before Void's idempotent post-render head commit. */
 export function createDocumentHead(initial: HeadDescriptor | undefined) {
   let htmlKeys = Object.keys(initial?.htmlAttrs ?? {});
   let bodyKeys = Object.keys(initial?.bodyAttrs ?? {});
@@ -29,6 +33,18 @@ export function createDocumentHead(initial: HeadDescriptor | undefined) {
   }
 
   return (head: HeadDescriptor | undefined) => {
+    if (head?.title !== undefined) document.title = head.title;
+    // Use Void's serializer and managed-tag marker so the router's subsequent
+    // commit reuses these nodes instead of inserting duplicate meta/link tags.
+    const template = document.createElement('template');
+    template.innerHTML = renderHeadToString({ meta: head?.meta, link: head?.link });
+    const metadata = Array.from(document.head.querySelectorAll('meta[data-void-head],link[data-void-head]'));
+    for (const desired of Array.from(template.content.querySelectorAll('meta,link'))) {
+      const index = metadata.findIndex(element => metadataSignature(element) === metadataSignature(desired));
+      if (index >= 0) document.head.appendChild(metadata.splice(index, 1)[0]);
+      else { desired.setAttribute('data-void-head', ''); document.head.appendChild(desired); }
+    }
+    for (const previous of metadata) previous.remove();
     htmlKeys = attributes(document.documentElement, htmlKeys, head?.htmlAttrs);
     bodyKeys = attributes(document.body, bodyKeys, head?.bodyAttrs);
     const remaining = [...scripts];

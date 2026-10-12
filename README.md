@@ -48,7 +48,7 @@ import { defineConfig } from 'vite';
 import { voidPlugin } from 'void';
 import { voidHonoPages } from 'void-plugin-hono-jsx/plugin';
 
-export default defineConfig({ plugins: [voidPlugin(), voidHonoPages()] });
+export default defineConfig({ plugins: [voidPlugin(), voidHonoPages({ viewTransitions: true, prefetch: { hoverDelay: 75, cacheFor: '30s' } })] });
 ```
 
 Use standard Vite scripts (`vite`, `vite build`, `vite preview`) or keep the scaffold's `vp dev`, `vp build`, `vp preview` scripts. Both the scaffold Vite Plus 0.1.24 and latest 1.1.0 are consumer fixtures. The gate checks the actual hook version and reports resolved package paths. See [launcher diagnostics](packages/hono-pages/README.md#running-vite-and-launcher-diagnostics).
@@ -99,3 +99,5 @@ npm run check:source
 The consumer check installs the packed artifact in a temporary project and exercises development, production preview, islands, deferred data, static output and local ISR in a browser. The source check starts its own servers and covers HTTP contracts, server-only bundle isolation and Pages browser behavior. Install Playwright Chromium first with `npx playwright install chromium`, or set `PLAYWRIGHT_CHANNEL=chrome` to use installed Google Chrome. The [package workflow](.github/workflows/package.yml) runs on pushes and pull requests with Node 24.21.0. It checks types, adapter tests, release content, both example builds and the packed browser consumer. Check the actual GitHub Actions result for the commit being reviewed; enabling the workflow alone does not establish a passing result.
 
 [Contribution guidance](CONTRIBUTING.md) explains local checks and bug reports. [Architecture](docs/architecture.md) describes the framework boundary and development renderer. [Release preparation](docs/releasing.md) explains exact-artifact verification, security gates and staged publishing. [Release checklist](docs/release-checklist.md) records remaining release decisions. [Third-party notices](THIRD_PARTY_NOTICES.md) document upstream adapter references and dependency licenses.
+
+`voidHonoPages()` retains its existing defaults (transitions disabled, 75ms hover delay, 30s cache). Opt in with `viewTransitions`, set `prefetch.hoverDelay` in milliseconds and `prefetch.cacheFor` using Void durations or a stale/expiry tuple. `<Link viewTransition={false}>` overrides the global transition setting; programmatic `router.visit(url, { viewTransition: true })` uses the same router. Native View Transitions fall back to normal navigation when the browser API is absent. The transition callback waits for Hono DOM commit and document-head synchronization.

@@ -4,6 +4,7 @@ import { normalizePath } from 'vite';
 import { pagesRuntimePath, clientRuntimePath, publicRuntimeModules } from './runtime-paths.ts';
 import { generateComponentManifest, resolvePagesDir, resolveStaticPageDataBuildOptions, scanPages, type PageScanResult } from 'void/pages';
 import type { Plugin } from 'vite';
+import { parseCacheFor, type CacheForInput } from 'void/pages-prefetch';
 import { honoJsx } from './hono-jsx.ts';
 import { honoIslands } from './hono-islands.ts';
 import { assertSupportedFrameworks } from './compatibility.ts';
@@ -11,8 +12,26 @@ import { assertSupportedFrameworks } from './compatibility.ts';
 const rendererId = 'virtual:void-pages-renderer';
 const clientId = 'virtual:void-pages-client';
 
+export type HonoPagesOptions = {
+  viewTransitions?: boolean;
+  prefetch?: { hoverDelay?: number; cacheFor?: CacheForInput };
+};
+
+function clientOptions(options: HonoPagesOptions) {
+  const viewTransitions = options.viewTransitions ?? false;
+  const prefetchHoverDelay = options.prefetch?.hoverDelay ?? 75;
+  if (typeof viewTransitions !== 'boolean') throw new Error('Hono Pages: viewTransitions must be a boolean.');
+  if (!Number.isFinite(prefetchHoverDelay) || prefetchHoverDelay < 0) throw new Error('Hono Pages: prefetch.hoverDelay must be a finite non-negative number.');
+  const prefetchDefaultCacheFor = parseCacheFor(options.prefetch?.cacheFor ?? '30s');
+  if (![prefetchDefaultCacheFor.stale, prefetchDefaultCacheFor.expires].every(value => Number.isFinite(value) && value >= 0) || prefetchDefaultCacheFor.stale > prefetchDefaultCacheFor.expires) {
+    throw new Error('Hono Pages: prefetch.cacheFor must have finite non-negative durations, with stale <= expires.');
+  }
+  return { viewTransitions, prefetchHoverDelay, prefetchDefaultCacheFor };
+}
+
 /** Experimental Pages contract verified against Void 0.26.1 and 0.27.0. */
-export function voidHonoPages(): Plugin[] {
+export function voidHonoPages(options: HonoPagesOptions = {}): Plugin[] {
+  const navigationOptions = clientOptions(options);
   const root = process.cwd();
   const pagesDir = resolvePagesDir(root);
   const staticData = resolveStaticPageDataBuildOptions(root);
@@ -136,7 +155,7 @@ export async function renderPage(pageObj, assetTags) {
       return `
 import { startHonoPages } from ${JSON.stringify(clientRuntimePath)};
 ${manifest}
-await startHonoPages({ components, layoutTree, routeMeta, matchRoute, staticPageData: ${JSON.stringify(staticData.enabled)}, staticPageDataFastPath: ${JSON.stringify(staticData.fastPath)} });
+await startHonoPages({ components, layoutTree, routeMeta, matchRoute, staticPageData: ${JSON.stringify(staticData.enabled)}, staticPageDataFastPath: ${JSON.stringify(staticData.fastPath)} }, ${JSON.stringify(navigationOptions)});
 `;
     },
   }];
