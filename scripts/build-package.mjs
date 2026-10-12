@@ -1,5 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { readFile, rm, writeFile } from 'node:fs/promises';
+import { rewritePagesImport } from './rewrite-package-import.mjs';
 
 await rm('packages/hono-pages/dist', { recursive: true, force: true });
 for (const target of ['plugins', 'server', 'browser']) {
@@ -8,19 +9,12 @@ for (const target of ['plugins', 'server', 'browser']) {
 // release-please manages one canonical changelog; pack its exact contents.
 await writeFile('packages/hono-pages/CHANGELOG.md', await readFile('CHANGELOG.md'));
 const { name } = JSON.parse(await readFile('packages/hono-pages/package.json', 'utf8'));
-// Use the same public module identity for providers and hooks in every compiled entry.
+// Keep provider identity and compose the edit map with the compiler map.
 for (const target of ['server/form', 'browser/form', 'browser/client']) {
-  const path = `packages/hono-pages/dist/${target}.js`;
-  const source = await readFile(path, 'utf8');
-  if (!source.includes("'./pages.js'")) throw new Error(`Missing Pages runtime import in ${target}`);
-  await writeFile(path, source.replaceAll("'./pages.js'", JSON.stringify(name + '/pages')));
+  const file = `packages/hono-pages/dist/${target}.js`;
+  const source = await readFile(file, 'utf8');
+  const originalMap = JSON.parse(await readFile(file + '.map', 'utf8'));
+  const edited = rewritePagesImport(source, originalMap, name);
+  await writeFile(file, edited.code);
+  await writeFile(file + '.map', JSON.stringify(edited.map) + '\n');
 }
-// The source adapter loads environment-transformed TSX; the package loads precompiled runtime entries.
-await writeFile('packages/hono-pages/dist/plugins/runtime-paths.js', `import { fileURLToPath } from 'node:url';
-export const pagesRuntimePath = fileURLToPath(new URL('../server/pages.js', import.meta.url));
-export const clientRuntimePath = fileURLToPath(new URL('../browser/client.js', import.meta.url));
-export const publicRuntimeModules = {
-  ${JSON.stringify(name + '/pages')}: { server: fileURLToPath(new URL('../server/pages.js', import.meta.url)), client: fileURLToPath(new URL('../browser/pages.js', import.meta.url)) },
-  ${JSON.stringify(name + '/form')}: { server: fileURLToPath(new URL('../server/form.js', import.meta.url)), client: fileURLToPath(new URL('../browser/form.js', import.meta.url)) },
-};
-`);

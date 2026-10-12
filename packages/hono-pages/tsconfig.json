@@ -4,7 +4,10 @@
     "noEmit": false,
     "declaration": true,
     "rewriteRelativeImportExtensions": true,
-    "jsxImportSource": "hono/jsx"
+    "jsxImportSource": "hono/jsx",
+    "sourceMap": true,
+    "declarationMap": true,
+    "inlineSources": true
   },
   "include": []
 }

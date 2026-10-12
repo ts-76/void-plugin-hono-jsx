@@ -18,7 +18,7 @@ All adapter source lives under `packages/hono-pages/src`:
 
 `npm run build:package` compiles package-local TypeScript configurations into `dist/plugins`, `dist/server` and `dist/browser`. The build rewrites provider imports to the public package identity so providers and hooks share the same module instance. The Vite plugin selects server or browser runtime paths using Vite's consumer environment; a browser export condition alone cannot distinguish Cloudflare worker rendering from DOM rendering.
 
-The package's `files` allowlist includes only `dist`, `README.md`, `LICENSE` and `THIRD_PARTY_NOTICES.md`. Examples, fixtures, build configurations, tests and development logs belong to the repository and are not npm payload. The packed-consumer check enforces this boundary and rejects machine-specific paths.
+The package's `files` allowlist includes `dist` (JavaScript, declarations and both maps), original `src`, `README.md`, `CHANGELOG.md`, `LICENSE` and `THIRD_PARTY_NOTICES.md`. All map sources must resolve within packaged `src`; JS maps embed identical source contents. Source bytes must match the reviewed checkout. Examples, fixtures, build configurations, tests and development logs belong to the repository and are not npm payload. The packed-consumer check enforces this boundary and rejects machine-specific paths.
 
 ## Void integration boundary
 

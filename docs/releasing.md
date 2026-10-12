@@ -25,7 +25,7 @@ The ignored `artifacts/` directory contains:
 
 | File | Review purpose |
 | --- | --- |
-| `void-plugin-hono-jsx-0.1.0-alpha.0.tgz` | Exact reviewed bytes: dist JS/declarations, package metadata, README, changelog, license and notices. |
+| `void-plugin-hono-jsx-0.1.0-alpha.0.tgz` | Exact reviewed bytes: original src, dist JS/declarations with source/declaration maps, package metadata, README, changelog, license and notices. |
 | `evidence.json` | Source commit, Node, file list, SHA256, SHA512 integrity and audit-report hashes. |
 | `dependency-audit.json`, `consumer-dependency-audit.json` | Root and locked consumer findings, including peer-framework tooling. |
 | `history-audit.json` | Full-history counts, finding categories and historical artifact paths; no matched secret values. |
@@ -46,7 +46,7 @@ Source and history scans are evidence, not certification. On 2026-10-12 the main
 
 ## First package and trusted publishing
 
-The maintainer selected npm owner `ts-76`. Live account access and auth-and-writes 2FA have now been verified in an isolated owner session; see [the bootstrap registration record](bootstrap-registration.md). Check name availability immediately before setup. [npm staged publishing](https://docs.npmjs.com/staged-publishing/) supports a first package and creates a publicly available `0.0.0-stage` placeholder; the staged candidate contents stay unavailable to the public until approval. Decide the owner-controlled bootstrap CLI/auth/version separately, then configure a stage-only [trusted publisher](https://docs.npmjs.com/trusted-publishers/) with workflow filename `npm-stage.yml` and environment `npm-stage`. Bootstrap does not require immediate final approval of the alpha. Verify pending versions before another stage attempt. The [stage plan](stage-validation-plan.md) records the completed setup and procedure for future candidates. The owner also approved the registration-only bootstrap; consumers use `@next`, since `latest` still points to the placeholder.
+The maintainer selected npm owner `ts-76`. Live account access and auth-and-writes 2FA have now been verified in an isolated owner session; see [the bootstrap registration record](bootstrap-registration.md). Check name availability immediately before setup. [npm staged publishing](https://docs.npmjs.com/staged-publishing/) supports a first package and creates a publicly available `0.0.0-stage` placeholder; the staged candidate contents stay unavailable to the public until approval. Decide the owner-controlled bootstrap CLI/auth/version separately, then configure a stage-only [trusted publisher](https://docs.npmjs.com/trusted-publishers/) with workflow filename `npm-stage.yml` and environment `npm-stage`. Bootstrap does not require immediate final approval of the alpha. Verify pending versions before another stage attempt. The [stage plan](stage-validation-plan.md) records the completed setup and procedure for future candidates. The owner also approved the registration-only bootstrap. Consumers use `@next` or an explicit alpha version. Remove the registration placeholder from `latest` after public alpha verification; reserve `latest` for the first stable release. Do not promote an alpha to `latest` or unpublish the registration versions as part of tag cleanup.
 
 Automated staging deliberately requires an existing package owned by `npmOwner`. It checks manual version-tag dispatch, main ancestry, protected environment reviewers, no admin bypass, public repository, CLI version, source commit, artifact digest and run/attempt before submitting the same archive. The workflow never performs final npm approval. The maintainer authorized proceeding with the actual stage validation. Policy flags are enabled; the final source CI passed and the matching tag was used for stage. The repository stage variable is false again after validation.
 
@@ -55,3 +55,15 @@ The public repository and approved restored development history satisfy the sour
 The maintainer selected single-person GitHub review with User `ts-76` and `preventSelfReview: false`. The `npm-stage` environment has been configured with that required reviewer, no administrator bypass and only `v*` tags; its live settings match the stage gate. For a future release, commit its selected policy, verify CI, create its matching version tag, enable `NPM_STAGING_ENABLED` for the authorized stage and re-run preparation in the manual workflow. Preserve the existing alpha.0 tag and published bytes. No tag, GitHub release, registry upload or visibility change is performed by preparation or planning.
 
 After owner approval, verify registry version, `next` dist-tag, provenance and a fresh npm-installed consumer. This completed for alpha.0: public bytes match the full-consumer-tested archive; a fresh registry installation verified all package files with peers omitted, and the public signature bundle passed independent verification. A passing local archive or staged receipt alone is not public-release verification. To require independent verification before approval on a future candidate, retain/retrieve the exact sent signature bundle; this stage receipt does not retain it.
+
+## Distribution tag cleanup
+
+The requested cleanup removes only the `latest` tag when it points to `0.0.0-stage`; it preserves the current `next` alpha and registration versions. Verify the registry tag map immediately before and after the owner-authenticated mutation:
+
+```sh
+npm dist-tag ls void-plugin-hono-jsx
+npm dist-tag rm void-plugin-hono-jsx latest
+npm dist-tag ls void-plugin-hono-jsx
+```
+
+This needs owner write authentication/2FA and cannot use the stage-only Trusted Publisher. Do not run removal if `latest` has changed to another version. Until stable publication, document `npm install void-plugin-hono-jsx@next` explicitly; an unqualified install has no designated stable tag. [npm dist-tag documentation](https://docs.npmjs.com/cli/v12/commands/npm-dist-tag/)

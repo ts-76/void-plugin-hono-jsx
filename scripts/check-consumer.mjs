@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { createHash } from 'node:crypto';
 import { inspectTarball } from './release/gate.mjs';
+import { inspectSourceMaps } from './release/source-maps.mjs';
 import { dependencyAudit } from './release/dependency-audit.mjs';
 import { createServer } from 'node:net';
 import { fileURLToPath } from 'node:url';
@@ -171,6 +172,14 @@ try {
   npm(['ci', '--no-audit', '--no-fund'], consumer);
   npm(['install', '--no-save', '--package-lock=false', '--no-audit', '--no-fund', tarball], consumer);
   if (env.RELEASE_CONSUMER_AUDIT) dependencyAudit({ npmCli, cwd: consumer, env, output: env.RELEASE_CONSUMER_AUDIT });
+  const installedContents = new Map();
+  for (const file of entries) {
+    const installed = await readFile(join(consumer, 'node_modules', expected.name, file), 'utf8');
+    assert.equal(installed, execFileSync('tar', ['-xOzf', tarball, 'package/' + file], { encoding: 'utf8' }), `Installed artifact changed: ${file}`);
+    installedContents.set(file, installed);
+  }
+  inspectSourceMaps(installedContents);
+  console.log('Installed source/declaration maps resolve to the exact packaged TypeScript sources.');
   console.log('Checking consumer declarations and browser rendering.');
   execFileSync(process.execPath, ['node_modules/typescript/bin/tsc', '--noEmit'], { cwd: consumer, stdio: 'inherit' });
   const browser = await chromium.launch(process.env.PLAYWRIGHT_CHANNEL ? { channel: process.env.PLAYWRIGHT_CHANNEL } : {});
