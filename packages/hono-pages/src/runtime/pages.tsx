@@ -1,16 +1,23 @@
 import { createContext, useContext, useEffect, useRef, type JSX } from 'hono/jsx';
-import { mergeDataIntoHref, type NavigationMethod, type VoidRouter } from 'void/pages-client';
+import { mergeDataIntoHref, type NavigationState, type NavigationMethod, type VoidRouter } from 'void/pages-client';
 import type { CacheForInput } from 'void/pages-prefetch';
 import type { PageObject } from 'void/pages-protocol';
 export type { DeferredState as Deferred } from 'void';
 
 export const RouterContext = createContext<VoidRouter | null>(null);
+export const NavigationContext = createContext<NavigationState | null>(null);
 export const PageContext = createContext<PageObject | null>(null);
 
 function usePage() {
   const page = useContext(PageContext);
   if (!page) throw new Error('Hono Pages: page data requires a page provider.');
   return page;
+}
+
+export function useNavigation(): NavigationState {
+  const navigation = useContext(NavigationContext);
+  if (!navigation) throw new Error('Hono Pages: useNavigation requires a page provider.');
+  return navigation;
 }
 
 export function useShared() { return usePage().shared; }

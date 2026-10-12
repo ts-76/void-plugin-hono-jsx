@@ -16,6 +16,18 @@ export async function checkLinkConsumer({ origin, page, assert }) {
     await page.goto(origin + '/links');
     await page.locator('#app[data-hono-pages="mounted"]').waitFor();
     await page.waitForFunction(() => document.querySelector('#links-heading'));
+    assert.equal(await page.locator('#navigation-state').textContent(), 'idle:-:-');
+    await page.locator('#slow-link').click();
+    await page.waitForFunction(() => document.querySelector('#navigation-state')?.textContent === 'loading:GET:/links');
+    assert.equal(await page.locator('#layout-navigation-state').textContent(), 'loading');
+    await page.waitForFunction(() => document.querySelector('#navigation-state')?.textContent === 'idle:-:-');
+    await page.locator('#slow-link').click();
+    await page.locator('#query-link').click();
+    await page.waitForFunction(() => document.querySelector('#navigation-state')?.textContent === 'idle:-:-');
+    await page.waitForTimeout(600);
+    assert.equal(await page.locator('#link-value').textContent(), 'query:one,two');
+    await page.goto(origin + '/links');
+    await page.locator('#app[data-hono-pages="mounted"]').waitFor();
     await waitPrefetch('mount');
     await waitPrefetch('visible');
     await page.locator('#prefetch-link').hover();
@@ -42,11 +54,14 @@ export async function checkLinkConsumer({ origin, page, assert }) {
     for (const method of ['post', 'put', 'patch', 'delete']) {
       assert.equal(await page.locator('#mutation-' + method).evaluate((node) => node.tagName), 'BUTTON');
       await page.locator('#mutation-' + method).click();
+      await page.waitForFunction((method) => document.querySelector('#navigation-state')?.textContent === 'submitting:' + method + ':/links', method.toUpperCase());
+      assert.equal(await page.locator('#layout-navigation-state').textContent(), 'submitting');
       await page.waitForFunction((value) => document.querySelector('#link-value')?.textContent === value, method.toUpperCase() + ':saved:');
     }
     await page.route(origin + '/links?fail', (route) => route.fulfill({ status: 500, contentType: 'application/json', headers: { 'X-VoidPages': 'true' }, body: JSON.stringify({ message: 'Link action failed' }) }));
     await page.locator('#fail-link').click();
     await page.getByRole('alert').waitFor();
+    await page.waitForFunction(() => document.querySelector('#navigation-state')?.textContent === 'idle:-:-');
     await page.goto(origin);
     await page.locator('#app[data-hono-pages="mounted"]').waitFor();
   } finally { page.off('request', listener); }
