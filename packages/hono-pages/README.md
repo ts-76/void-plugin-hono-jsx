@@ -1,6 +1,6 @@
 # Experimental Hono Pages adapter for Void
 
-This experimental package integrates Hono JSX with Void Pages. The package name is `void-plugin-hono-jsx`. Alpha releases are published on the `next` dist-tag under the [MIT license](LICENSE). Use `@next` or an explicit alpha version; `latest` is reserved for a future stable release. It is not an official Void adapter.
+This experimental package integrates Hono JSX with Void Pages. The package name is `void-plugin-hono-jsx`. Alpha releases are published on the `next` dist-tag under the [MIT license](LICENSE). Use `@next` or an explicit alpha version. The maintainer also assigned `latest` to the published `0.1.0-alpha.1`; an unqualified install currently selects this experimental alpha, not a stable release. It is not an official Void adapter.
 
 ## Supported versions
 

@@ -1,6 +1,6 @@
 # Release checklist
 
-The initial candidate is **`void-plugin-hono-jsx@0.1.0-alpha.0`**, **`next`**, MIT. It is published on `next` after the maintainer approved it on npm. Package metadata remains `private: true`; preparation changes only `private` in an isolated candidate. The source repository is public. The authorized OIDC/provenance stage upload succeeded; owner approval, public metadata/bytes and independent signature verification are confirmed. At the initial verification, `latest` pointed to the registration placeholder. Users select `@next`; the current [tag policy](releasing.md#distribution-tag-cleanup) reserves `latest` for stable publication. See [the validation result](stage-validation-result.md).
+The initial candidate is **`void-plugin-hono-jsx@0.1.0-alpha.0`**, **`next`**, MIT. It is published on `next` after the maintainer approved it on npm. Package metadata remains `private: true`; preparation changes only `private` in an isolated candidate. The source repository is public. The authorized OIDC/provenance stage upload succeeded; owner approval, public metadata/bytes and independent signature verification are confirmed. At the initial verification, `latest` pointed to the registration placeholder. Users select `@next`; the current [tag policy](releasing.md#distribution-tag-cleanup) records the explicit maintainer decision to assign `latest` to public alpha.1. See [the validation result](stage-validation-result.md).
 
 ## Selected policy
 
