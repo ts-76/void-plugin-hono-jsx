@@ -16,6 +16,7 @@ import { checkStaticConsumer } from './check-static-consumer.mjs';
 import { checkDevelopmentConsumer } from './check-development-consumer.mjs';
 import { checkCompatibilityConsumer } from './check-compatibility-consumer.mjs';
 import { consumerStack, launcherArgs } from './consumer-launcher.mjs';
+import { checkFormConsumer } from './check-form-consumer.mjs';
 import { checkLinkConsumer } from './check-link-consumer.mjs';
 import { checkIsrConsumer } from './check-isr-consumer.mjs';
 
@@ -74,7 +75,7 @@ async function smoke(mode, browser, staticOnly = false) {
     page.setDefaultTimeout(30000);
     const errors = [];
     page.on('pageerror', (error) => errors.push(error.message));
-    page.on('console', (message) => { if (message.type() === 'error' && !(message.location().url.endsWith('/links?fail') && message.text().includes('500'))) errors.push(message.text()); });
+    page.on('console', (message) => { if (message.type() === 'error' && !((message.location().url.endsWith('/links?fail') || message.location().url.endsWith('/forms?fail')) && message.text().includes('500') || message.location().url.endsWith('/forms?quota') && message.text().includes('429'))) errors.push(message.text()); });
     try {
       const staticScripts = [];
       if (staticOnly) page.on('request', (request) => { if (request.resourceType() === 'script') staticScripts.push(request.url()); });
@@ -105,6 +106,7 @@ async function smoke(mode, browser, staticOnly = false) {
       assert.equal(await page.locator('#count').textContent(), '5');
       if (mode === 'development') await checkDevelopmentConsumer({ origin, page, consumer, assertRunning: () => { assert.equal(child.exitCode, null); assert.equal(child.signalCode, null); assert.doesNotMatch(logs, /server restarted|restarting server/i); } });
       await checkLinkConsumer({ origin, page, assert });
+      await checkFormConsumer({ origin, page, assert });
       await checkDeferredConsumer({ origin, page, mode });
       const islandResponse = await fetch(origin + '/islands');
       assert.equal(islandResponse.status, 200);
@@ -188,6 +190,7 @@ try {
   inspectSourceMaps(installedContents);
   console.log('Installed source/declaration maps resolve to the exact packaged TypeScript sources.');
   console.log('Checking consumer declarations and browser rendering.');
+  execFileSync(process.execPath, ['node_modules/void/dist/cli/cli.mjs', 'prepare'], { cwd: consumer, env, stdio: 'inherit' });
   execFileSync(process.execPath, ['node_modules/typescript/bin/tsc', '--noEmit'], { cwd: consumer, stdio: 'inherit' });
   const browser = await chromium.launch(process.env.PLAYWRIGHT_CHANNEL ? { channel: process.env.PLAYWRIGHT_CHANNEL } : {});
   try {

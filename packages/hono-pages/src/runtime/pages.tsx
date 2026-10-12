@@ -1,8 +1,12 @@
 import { createContext, useContext, useEffect, useRef, type JSX } from 'hono/jsx';
-import { mergeDataIntoHref, type NavigationState, type NavigationMethod, type VoidRouter } from 'void/pages-client';
+import { createActionClient, mergeDataIntoHref, type NavigationState, type NavigationMethod, type VoidRouter } from 'void/pages-client';
 import type { CacheForInput } from 'void/pages-prefetch';
 import type { PageObject } from 'void/pages-protocol';
 export type { DeferredState as Deferred } from 'void';
+
+const actionClient = createActionClient();
+export const action = actionClient.action;
+export const setActionRouter = actionClient.setActionRouter;
 
 export const RouterContext = createContext<VoidRouter | null>(null);
 export const NavigationContext = createContext<NavigationState | null>(null);
