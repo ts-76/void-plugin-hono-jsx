@@ -6,11 +6,17 @@ import { generateComponentManifest, resolvePagesDir, resolveStaticPageDataBuildO
 import type { Plugin } from 'vite';
 import { parseCacheFor, type CacheForInput } from 'void/pages-prefetch';
 import { honoJsx } from './hono-jsx.ts';
-import { honoIslands } from './hono-islands.ts';
+import { honoIslands, markdownDiagnostic } from './hono-islands.ts';
 import { assertSupportedFrameworks } from './compatibility.ts';
 
 const rendererId = 'virtual:void-pages-renderer';
 const clientId = 'virtual:void-pages-client';
+
+function assertComponentFile(file: string, kind: 'page' | 'layout') {
+  if (/\.md$/.test(file)) throw new Error(`${markdownDiagnostic} ${kind}: ${file}`);
+  if (!/\.[jt]sx$/.test(file)) throw new Error(`Hono Pages: only standard TSX/JSX ${kind}s are supported: ${file}.`);
+}
+
 
 export type HonoPagesOptions = {
   viewTransitions?: boolean;
@@ -40,12 +46,10 @@ export function voidHonoPages(options: HonoPagesOptions = {}): Plugin[] {
   async function rescan() {
     scan = await scanPages(root, { pagesDir });
     for (const layout of [...scan.layouts, ...scan.namedLayouts]) {
-      if (!/\.[jt]sx$/.test(layout.filePath)) throw new Error('Hono Pages: only standard TSX/JSX layouts are supported.');
+      assertComponentFile(layout.filePath, 'layout');
     }
     for (const page of scan.pages) {
-      if (!/\.[jt]sx$/.test(page.componentPath)) {
-        throw new Error(`Hono Pages: only standard TSX/JSX pages are supported: ${page.componentPath}.`);
-      }
+      assertComponentFile(page.componentPath, 'page');
       if (staticData.enabled && page.methods.some((method) => method === 'action' || method === 'actions')) {
         throw new Error(`Hono Pages: actions require a server and cannot be used with static output: ${page.componentPath}.`);
       }
@@ -62,6 +66,12 @@ export function voidHonoPages(options: HonoPagesOptions = {}): Plugin[] {
         resolve: { dedupe: ['hono'] },
         build: { manifest: true, rollupOptions: { input: { 'pages-client': clientId } } },
       };
+    },
+    configResolved: {
+      order: 'pre',
+      handler(config) {
+        if (config.plugins.some(plugin => plugin.name === 'void-md')) throw new Error(markdownDiagnostic);
+      },
     },
     configEnvironment() {
       const modules = Object.keys(publicRuntimeModules);

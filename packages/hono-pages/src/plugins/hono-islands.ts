@@ -4,6 +4,8 @@ import { normalizePath, parseSync, type Plugin } from 'vite';
 import { scanPages, resolveEffectiveLayoutChain, resolvePagesDir, type PageScanResult } from 'void/pages';
 import { findIslandImports, editIslandSource, resolveSpecifier, computePagesNeedingClientJS, ISLANDS_RENDERER_ID, ISLANDS_CLIENT_ENTRY_ID } from 'void/pages-islands-plugin';
 
+export const markdownDiagnostic = 'Hono Pages: Markdown rendering is blocked by @void/md 0.27.0, which has no public Hono compiler registration. Use TSX/JSX pages or wait for a supported upstream adapter API. See docs/markdown.md and issue #56.';
+
 /** Hono mounting through Void's shared island scheduler. */
 export function honoIslands(): Plugin {
   const root = process.cwd();
@@ -43,6 +45,10 @@ export function honoIslands(): Plugin {
 
   async function rescan() {
     scan = await scanPages(root, { pagesDir });
+    // Never pass Markdown text to the JavaScript static-graph parser.
+    for (const file of [...scan.pages.map(page => page.componentPath), ...scan.layouts.map(layout => layout.filePath), ...scan.namedLayouts.map(layout => layout.filePath)]) {
+      if (/\.md$/.test(file)) throw new Error(`${markdownDiagnostic} ${file}`);
+    }
     islands.clear(); pageFiles.clear(); graph.clear(); directlyInteractive.clear(); interactivePages.clear();
     const visit = (filename: string) => {
       const canonical = realpathSync(filename);
