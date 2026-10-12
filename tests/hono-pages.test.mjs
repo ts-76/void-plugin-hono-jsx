@@ -149,7 +149,7 @@ test('island components reject form helpers with an explicit diagnostic', async 
   }, async (_plugin, plugins) => {
     const islands = plugins.find((plugin) => plugin.name === 'void-hono:islands');
     await islands.buildStart();
-    assert.throws(() => islands.transform(component, join(process.cwd(), 'Counter.tsx')), /form helpers are unsupported/);
+    assert.throws(() => islands.transform(component, join(process.cwd(), 'Counter.tsx')), /useForm.*full Pages/);
   });
 });
 
@@ -225,5 +225,13 @@ test('relative re-exports in static barrels retain the island client requirement
     const islands = plugins.find((plugin) => plugin.name === 'void-hono:islands'); await islands.buildStart();
     assert.match(islands.load(islands.resolveId('virtual:void-islands-renderer')), /new Set\(\["index"\]\)/);
     assert.match(islands.load(islands.resolveId('virtual:void-islands-client')), /Counter\.tsx/);
+  });
+});
+
+test('island components accept named provider-free form imports', async () => {
+  const component = "import { useIslandForm, Form } from 'void-plugin-hono-jsx/form'; " + page;
+  await withPages({ 'index.island.tsx': "import Counter from '../Counter' with { island: 'load' }; export default Counter;", '../Counter.tsx': component }, async (_plugin, plugins) => {
+    const islands = plugins.find((plugin) => plugin.name === 'void-hono:islands'); await islands.buildStart();
+    assert.doesNotThrow(() => islands.transform(component, join(process.cwd(), 'Counter.tsx')));
   });
 });
