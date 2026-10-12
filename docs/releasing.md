@@ -25,7 +25,7 @@ The ignored `artifacts/` directory contains:
 
 | File | Review purpose |
 | --- | --- |
-| `void-plugin-hono-jsx-0.1.0-alpha.0.tgz` | Exact reviewed bytes: original src, dist JS/declarations with source/declaration maps, package metadata, README, changelog, license and notices. |
+| `void-plugin-hono-jsx-<version>.tgz` | Exact reviewed candidate bytes (source/map additions apply after alpha.1): original src, dist JS/declarations with source/declaration maps, package metadata, README, changelog, license and notices. |
 | `evidence.json` | Source commit, Node, file list, SHA256, SHA512 integrity and audit-report hashes. |
 | `dependency-audit.json`, `consumer-dependency-audit.json` | Root and locked consumer findings, including peer-framework tooling. |
 | `history-audit.json` | Full-history counts, finding categories and historical artifact paths; no matched secret values. |
