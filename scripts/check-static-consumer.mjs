@@ -1,13 +1,17 @@
+import { checkIslandPolicies } from './check-island-policies.mjs';
 import { launcherArgs } from './consumer-launcher.mjs';
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { cp, readFile, rm, access, writeFile } from 'node:fs/promises';
+import { cp, readFile, rm, access, writeFile, mkdir } from 'node:fs/promises';
 import { join, relative, extname } from 'node:path';
 import { createServer } from 'node:http';
 
 export async function checkStaticConsumer({ repo, consumer, browser, env }) {
   for (const directory of ['pages', 'components', 'routes', 'server']) await rm(join(consumer, directory), { recursive: true, force: true });
   await cp(join(repo, 'fixtures/static'), consumer, { recursive: true });
+  await mkdir(join(consumer, 'components'), { recursive: true });
+  await cp(join(repo, 'fixtures/consumer/components/PolicyCounter.tsx'), join(consumer, 'components/PolicyCounter.tsx'));
+  await cp(join(repo, 'fixtures/consumer/pages/policies.island.tsx'), join(consumer, 'pages/policies.island.tsx'));
   const build = () => {
     const result = spawnSync(process.execPath, launcherArgs(consumer, 'build', [], env), { cwd: consumer, env, encoding: 'utf8' });
     const log = result.stdout + result.stderr;
@@ -19,7 +23,7 @@ export async function checkStaticConsumer({ repo, consumer, browser, env }) {
   const log = build();
   assert.doesNotMatch(log, /failed to prerender|page\(s\) failed/);
   const output = join(consumer, 'dist/client');
-  for (const path of ['index.html', 'users/alice.html', 'users/bob.html', 'forced.html', '_void/pages/index.json', '_void/pages/users/alice.json']) await access(join(output, path));
+  for (const path of ['index.html', 'users/alice.html', 'users/bob.html', 'forced.html', 'policies.html', '_void/pages/index.json', '_void/pages/users/alice.json']) await access(join(output, path));
   for (const path of ['skipped.html', 'users/unknown.html']) await assert.rejects(access(join(output, path)));
   const initial = await readFile(join(output, 'index.html'), 'utf8');
   assert.match(initial, /id="static-count"[^>]*>5<\/output>/);
@@ -74,6 +78,7 @@ export async function checkStaticConsumer({ repo, consumer, browser, env }) {
     assert.ok(requests.includes('/_void/pages/users/alice.json'));
     assert.equal((await fetch(origin + '/skipped')).status, 404);
     assert.equal((await fetch(origin + '/users/unknown')).status, 404);
+    await checkIslandPolicies({ origin, page, assert });
     assert.deepEqual(errors, []);
   } finally { await page.close(); await new Promise((resolve) => server.close(resolve)); }
   console.log('Static output: native HTML/JSON collection, declared paths, overrides, safe loader props, direct access, refresh, interaction and static-data SPA navigation passed.');

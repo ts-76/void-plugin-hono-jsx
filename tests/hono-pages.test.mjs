@@ -124,14 +124,19 @@ test('loader, action and named-action modules remain server-only in the componen
   });
 });
 
+const filesForPolicy = (policy) => `import Counter from '../Counter' with { island: '${policy}' }; export default Counter;`;
+
 for (const policy of ['idle', 'visible', 'media:(max-width: 600px)']) {
-  test(`rejects unsupported island policy ${policy} during page discovery`, async () => {
+  test(`accepts supported island policy ${policy} during page discovery`, async () => {
     await withPages({
       'index.island.tsx': `import Counter from '../Counter' with { island: '${policy}' }; export default Counter;`,
       '../Counter.tsx': page,
     }, async (_plugin, plugins) => {
       const islands = plugins.find((plugin) => plugin.name === 'void-hono:islands');
-      await assert.rejects(() => islands.buildStart(), /unsupported policy.*use island: 'load'/);
+      await islands.buildStart();
+      const source = filesForPolicy(policy);
+      const transformed = islands.transform(source, join(process.cwd(), 'pages/index.island.tsx'));
+      assert.ok(transformed.code.includes(JSON.stringify(policy)));
     });
   });
 }
@@ -168,3 +173,11 @@ test('explicit prerender pages and declared dynamic paths remain in the Void man
     assert.match(renderer, /users\/\[id\]\.tsx/);
   });
 });
+
+for (const policy of ['unknown', 'media:', 'media:(min-width: 600px', 'media:bad;query']) {
+  test('rejects invalid island policy ' + policy, async () => {
+    await withPages({ 'index.island.tsx': filesForPolicy(policy), '../Counter.tsx': page }, async (_plugin, plugins) => {
+      await assert.rejects(() => plugins.find((plugin) => plugin.name === 'void-hono:islands').buildStart(), /unsupported|invalid/);
+    });
+  });
+}

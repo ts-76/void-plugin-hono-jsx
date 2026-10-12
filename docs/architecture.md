@@ -10,7 +10,7 @@ All adapter source lives under `packages/hono-pages/src`:
 | --- | --- |
 | `plugins/hono-pages.ts` | Void page discovery, component manifests, virtual renderer/client entries and reload invalidation. |
 | `plugins/hono-jsx.ts` | Environment-aware Oxc JSX transformation for Hono server and DOM factories. |
-| `plugins/hono-islands.ts` | Supported load-policy imports, island markers and unsupported-mode diagnostics. |
+| `plugins/hono-islands.ts` | Supported load/visible/idle/media imports, island markers and unsupported-mode diagnostics. |
 | `plugins/compatibility.ts` | Exact framework version checks and actionable install diagnostics. |
 | `plugins/runtime-paths.ts` | Runtime locations for the source example; replaced with compiled entry locations by the package build. |
 | `runtime/pages.tsx` and `runtime/form.ts` | Shared providers, navigation/hooks and action forms. |
@@ -48,6 +48,6 @@ Browser mounting redraws SSR content; DOM reuse and state-preserving HMR are not
 
 Static output uses Void's generated HTML and Pages JSON with a file-only server. Actions require a server. Deferred static routes fail rendering; the pinned Void version may continue the build and omit those routes, so expected output files are checked explicitly.
 
-Load-policy islands mount interactive components only. Static-only island pages emit no executable client scripts. Unsupported policies, island layouts, nested attributed imports and island form helpers fail with diagnostics. Local ISR uses Void's own KV/Cache API worker path; see [ISR validation](isr.md) for observed behavior and unverified managed-edge scope.
+Load/visible/idle/media islands use Void's scheduler to mount interactive components once their condition is met. Static-only island pages emit no executable client scripts. Unsupported policies, island layouts, nested attributed imports and island form helpers fail with diagnostics. Local ISR uses Void's own KV/Cache API worker path; see [ISR validation](isr.md) for observed behavior and unverified managed-edge scope.
 
 The original Custom SSR proof of concept remains in `examples/custom-ssr`: `defineRender` creates Hono HTML, Void supplies asset tags, and a browser entry redraws a counter. It exercises the shared JSX transform without depending on the Pages renderer.

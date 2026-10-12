@@ -122,7 +122,7 @@ Void 0.26.1 forwards ordinary deferred resolver error messages in development; p
 
 The verified contract covers single deferred props during GET document requests and SPA navigation. Grouped deferred props, deferred prefetching, mutation-driven deferred refresh and deferred island pages are excluded. The ordinary Pages action APIs remain documented under runtime exports.
 
-## Load-policy islands
+## Islands
 
 Use a `.island.tsx` or `.island.jsx` page for static server content and import an interactive component using Void's import attribute:
 
@@ -138,7 +138,7 @@ Place the counter outside the pages directory. It can use Hono hooks and event h
 
 A static-only island page emits no client script or module preload tags. Static page modules stay outside the normal Pages browser manifest. A project containing only static island pages builds empty client entry modules with no framework code. Void's own automatic prerender policy still applies to eligible island pages. Full static output and explicit prerender configuration follow the static output contract below.
 
-Only the `load` policy, a single default relative TSX/JSX import, and attributes directly in the island page are supported. Other policies and malformed imports fail during discovery. Island layouts, nested attributed imports and island form helpers are unsupported. Direct imports of `void-plugin-hono-jsx/form` in an island page or component fail with a diagnostic; `useForm` also requires a full Pages provider at runtime. Use ordinary document links in static island pages. Pages navigation falls back to a document request for island routes. Static layouts remain server content and do not retain interactive state.
+The `load`, `visible`, `idle` and `media:(query)` policies use Void's shared scheduler. Use a single default relative TSX/JSX import, with attributes directly in the island page. Unknown policies and obvious malformed media queries fail discovery; the browser checks the media query through CSSOM before scheduling. Each island mounts once when its condition is met. Island layouts, nested attributed imports and island form helpers are unsupported. Direct imports of `void-plugin-hono-jsx/form` in an island page or component fail with a diagnostic; `useForm` also requires a full Pages provider at runtime. Use ordinary document links in static island pages. Pages navigation falls back to a document request for island routes. Static layouts remain server content and do not retain interactive state.
 
 ## Experimental limitations
 
