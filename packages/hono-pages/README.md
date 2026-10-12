@@ -4,14 +4,16 @@ This experimental package integrates Hono JSX with Void Pages. The package name 
 
 ## Supported versions
 
-| Dependency | Verified version |
-| --- | --- |
-| Node.js | 24.21.0 or newer |
-| Void | 0.26.1 |
-| Hono | 4.13.13 |
-| Vite | 8.3.3 |
+| Component | Accepted stable range | Full consumer fixtures |
+| --- | --- | --- |
+| Node.js | >=24.21.0 | 24.21.0 |
+| Void | >=0.26.1 <0.28.0 | 0.26.1, 0.27.0 |
+| Hono | >=4.13.13 <5.0.0 | 4.13.13 |
+| Vite | >=8.0.16 <9.0.0 | 8.0.16 (Vite Plus), 8.3.3, 8.3.4 |
+| Vite Plus | Host Vite must satisfy the Vite range | 0.1.24 (scaffold), 1.1.0 (latest) |
+| TypeScript | Project tooling | 7.0.2 |
 
-Framework packages are exact peer dependencies. Other versions have not been validated; configuration fails with an install command when Void, Hono or Vite differs from this baseline.
+The next release after alpha.2 broadens these peer ranges. Published alpha.1 and staged alpha.2 retain their exact-version gate; install a local candidate to test this change before its release. Stable Vite/Hono updates within the current major are admitted by compatibility policy; Void is pre-1.0, so the next minor (0.28) requires explicit validation. Prereleases are excluded. The fixture versions above were exercised individually; admitting a range does not mean every future version has already been tested. New upstream releases require refreshed fixtures, full checks and dependency audit review.
 
 ## Install
 
@@ -19,14 +21,14 @@ Use Node 24.21.0 or newer:
 
 ```sh
 npm install void-plugin-hono-jsx@next hono@4.13.13
-npm install --save-dev void@0.26.1 vite@8.3.3 typescript@7.0.2
+npm install --save-dev void@0.27.0 vite@8.3.4 typescript@7.0.2
 ```
 
 For a local validation tarball, in the repository, run `npm ci`, `npm run build:package`, then `npm pack ./packages/hono-pages`. Install the resulting tarball in your project alongside the supported peer versions:
 
 ```sh
 npm install ./void-plugin-hono-jsx-<version>.tgz hono@4.13.13
-npm install --save-dev void@0.26.1 vite@8.3.3 typescript@7.0.2
+npm install --save-dev void@0.27.0 vite@8.3.4 typescript@7.0.2
 ```
 
 ## Configure
@@ -43,6 +45,26 @@ export default defineConfig({ plugins: [voidPlugin(), voidHonoPages()] });
 Configure project settings in `void.config.ts` using `defineConfig` from `void/config`. Run Vite from that project's root. `voidHonoPages()` includes the Hono JSX transform, so do not register a separate transform. Configure charset, viewport and favicon through Void's `head` settings.
 
 Use `jsx: "react-jsx"` and `jsxImportSource: "hono/jsx"` in TypeScript. The plugin chooses the server or DOM factory for application JSX; the plugin resolves package runtime exports using Vite's actual consumer environment. Cloudflare worker environments may enable the browser condition, so that condition alone cannot select the renderer.
+
+## Running Vite and launcher diagnostics
+
+The config hook reads `this.meta.viteVersion` from the Vite instance executing the hook. Resolving `vite/package.json` from the adapter or project is not evidence of the running host. The adapter also checks the actual Vite helper module it imports. Errors include the host version, helper version, and absolute adapter/project package.json paths; different pnpm peer copies therefore remain visible.
+
+Bundled launchers such as `vp dev` can execute another Vite even when the project has a direct `vite` dependency. The Void 0.27.0 scaffold requests `vite-plus: ^0.1.21`, resolving to 0.1.24 with host Vite 8.0.16. Latest Vite Plus 1.1.0 runs host Vite 8.3.3. The scaffold fixture retains direct npm Vite 8.3.4. Latest Vite Plus requires its official aligned toolchain: `vite` aliases `npm:@voidzero-dev/vite-plus-core@1.1.0`, and the fixture follows its documented consumer-only Vite/Vitest overrides (Vitest 5.0.3). Both are exercised in independent locked consumers, including dev, build and preview. These settings align the toolchain; they do not replace vulnerable transitive dependencies. Standard Vite 8.3.3/8.3.4 is also covered. Installing project Vite alone does not change a bundled host; unsupported host errors identify the launcher action separately from stale helper peer resolution.
+
+If the project version is already correct, inspect the paths in the diagnostic and refresh stale adapter peer resolutions/lockfiles. Do not infer the host identity from the project dependency alone. Missing hook version information fails closed. [Vite plugin context metadata](https://vite.dev/guide/api-plugin.html#plugin-context-meta)
+
+## Adapting a Void scaffold
+
+Void's init wizard currently offers React, Vue, Svelte and Solid adapters rather than Hono JSX. A React scaffold can be adapted without replacing its Vite Plus scripts:
+
+1. Install this adapter and `hono`; use a candidate/new release with the support policy above.
+2. Replace `voidReact()` / `@void/react/plugin` in `vite.config.ts` with `voidHonoPages()` / `void-plugin-hono-jsx/plugin`, keeping `voidPlugin()`.
+3. Set TypeScript `jsx` to `react-jsx` and `jsxImportSource` to `hono/jsx`. Change page/component React imports and hooks to Hono JSX APIs.
+4. Once React code is removed, uninstall `@void/react`, `react`, `react-dom`, `@types/react`, `@types/react-dom` and `oxc-transform-react` if they are otherwise unused. The Hono plugin supplies its own JSX transform.
+5. Keep `vp dev`, `vp build`, `vp preview`, or use the plain Vite scaffold. Verify the app's loaders/actions and database migrations locally.
+
+The latest consumer fixtures also install React scaffold dependencies (React/DOM/types 19.3.0, `@void/react` 0.27.0 and `oxc-transform-react` 0.153.0), showing that their presence does not block the Hono adapter. This is not a React-to-Hono source conversion or a claim that other UI frameworks run through this adapter.
 
 ## Source and debugging files
 
@@ -130,6 +152,8 @@ The advisory concerns esbuild's own development server. The adapter uses Vite/Ox
 
 The package adds no overrides and does not force changes to Void's internal dependencies. Consumers install the framework peers and their dependencies even though this archive contains no dependency implementation. Follow compatible upstream fixes; a peer upgrade requires renewed validation. New unreviewed advisories continue to block release preparation policy.
 
+The scaffold Vite Plus 0.1.24 additionally brings `oxfmt 0.52.0 → tinypool 2.1.0`. On 2026-10-12 its consumer audit reported three propagated Critical package entries from [GHSA-5gmw-xhrv-c9v3](https://github.com/advisories/GHSA-5gmw-xhrv-c9v3) and [GHSA-85c8-ppgw-ccpr](https://github.com/advisories/GHSA-85c8-ppgw-ccpr). These require prototype pollution followed by pool worker creation/run options; `oxfmt/dist/cli.js` imports Tinypool. Dev/build/preview worked, but that does not prove formatter paths safe. These advisories are unapproved and continue to block that stack's release plan. Prefer latest Vite Plus 1.1.0 with its aligned alias or plain Vite; both retain only the existing esbuild advisory in reviewed audits. No tinypool override or security exception was added. See the repository `docs/scaffold-compatibility.md` for the complete matrix and audit assessment.
+
 ## Verification
 
 `npm run check:consumer` packs the package, audits its file list, copies a fixture into a temporary directory, installs locked peer dependencies and the tarball, and checks types, development rendering, production build, preview rendering and browser interaction. The consumer uses only the documented package exports and does not import repository source files.
@@ -142,7 +166,7 @@ Page and companion-loader edits reload the document and reset page/layout state.
 
 In development, the SSR renderer eagerly imports server-rendered page and layout modules with their providers. This keeps in-flight requests within the same module generation during a reload. Server-side module initialization therefore happens when the renderer loads, including pages not yet visited. Browser-only page components are excluded from this server graph. Production keeps lazy component imports. The packed-consumer regression also sends parallel SSR requests during six simultaneous page/loader revisions and requires every response to succeed.
 
-The packed-consumer check edits a page, changes its loader value, adds and removes a route, checks counter interaction after reloading, and asserts that the server stays running. It also verifies actionable diagnostics for unverified Void, Hono and Vite versions. Development and production preview are exercised on the exact baseline above; no additional framework versions are claimed. The active CI workflow covers that baseline on Node 24.21.0. It also runs `npm run check:source` for navigation, persistent layouts, action forms and head metadata in development and production preview. Inspect the GitHub Actions result on the commit being reviewed.
+The packed-consumer check edits a page, changes its loader value, adds and removes a route, checks counter interaction after reloading, and asserts that the server stays running. It also verifies resolved dependency paths and rejection of an unsupported running Vite even when a supported npm Vite is installed. Five locked consumers cover the original baseline, the Vite patch update, latest Void with plain Vite, the scaffold Vite Plus, and latest Vite Plus on Node 24.21.0. The existing required baseline context aggregates all five results. It also runs `npm run check:source` for navigation, persistent layouts, action forms and head metadata in development and production preview. Inspect the GitHub Actions result on the commit being reviewed.
 
 ## Local ISR
 

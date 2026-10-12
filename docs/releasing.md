@@ -1,6 +1,6 @@
 # Preparing an experimental npm release
 
-The first candidate is `void-plugin-hono-jsx@0.1.0-alpha.0` with the `next` tag. Only the exact peer versions in its manifest are supported. A future Void/Hono/Vite upgrade requires another complete consumer run and candidate release; do not broaden peer ranges based on a build alone. Managed deployment is unverified, browser mounting redraws SSR content, and unsupported features are listed in the package guide.
+The first candidate is `void-plugin-hono-jsx@0.1.0-alpha.0` with the `next` tag. That initial candidate used exact framework peers. The compatibility fix after alpha.2 admits stable Void `>=0.26.1 <0.28.0`, Hono `>=4.13.13 <5.0.0` and Vite `>=8.0.16 <9.0.0`, with five locked consumers covering the original baseline, the Vite patch update, latest Void/plain Vite, scaffold Vite Plus and latest Vite Plus. The next Void minor or Hono/Vite major and prereleases require explicit reassessment. Refresh current-latest fixtures and review every audit when upstream dependencies change; passing a build alone is insufficient. Managed deployment is unverified, browser mounting redraws SSR content, and unsupported features are listed in the package guide.
 
 ## Release PR, version and tag
 
@@ -78,3 +78,7 @@ npm dist-tag ls void-plugin-hono-jsx
 ```
 
 The dedicated owner session used for this change was logged out/revoked and removed; normal npm configuration was unchanged. [npm dist-tag documentation](https://docs.npmjs.com/cli/v12/commands/npm-dist-tag/)
+
+## Alpha.2 stage and compatibility fix
+
+Alpha.2 source/tag `96b9cc4edf439d8cad7bb90f5814128cf7fd0099` completed stage run `38202776733`, stage ID `1a79d282-2aa2-48f2-96da-013b63e62ecb`. Its 63-file tarball includes src/maps and matches the successful main candidate. Receipt verification found only the accepted dependency/publisher findings. The version remained unpublished when the running-Vite identity problem was reported. The run had already completed when cancellation was attempted; the repository stage gate was returned to false. Do not approve that candidate as containing the compatibility fix: staged bytes are immutable, and the fix requires a subsequent version. `latest` and `next` remain alpha.1 pending a separately reviewed publication.

@@ -1,3 +1,4 @@
+import { launcherArgs } from './consumer-launcher.mjs';
 import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
 import { cp, rm } from 'node:fs/promises';
@@ -9,7 +10,7 @@ export async function checkIsrConsumer({ repo, consumer, browser, env }) {
   await cp(join(repo, 'fixtures/isr'), consumer, { recursive: true });
   const types = spawnSync(process.execPath, ['node_modules/typescript/bin/tsc', '--noEmit'], { cwd: consumer, env, encoding: 'utf8' });
   assert.equal(types.status, 0, types.stdout + types.stderr);
-  const build = spawnSync(process.execPath, ['node_modules/vite/bin/vite.js', 'build'], { cwd: consumer, env, encoding: 'utf8' });
+  const build = spawnSync(process.execPath, launcherArgs(consumer, 'build', [], env), { cwd: consumer, env, encoding: 'utf8' });
   if (build.error) throw build.error;
   assert.equal(build.status, 0, build.stdout + build.stderr);
   const reservation = createServer();
@@ -17,7 +18,7 @@ export async function checkIsrConsumer({ repo, consumer, browser, env }) {
   const address = reservation.address();
   assert.ok(address && typeof address === 'object');
   await new Promise((resolve) => reservation.close(resolve));
-  const child = spawn(process.execPath, ['node_modules/vite/bin/vite.js', 'preview', '--host', '127.0.0.1', '--port', String(address.port), '--strictPort'], { cwd: consumer, env, detached: process.platform !== 'win32', stdio: ['ignore', 'pipe', 'pipe'] });
+  const child = spawn(process.execPath, launcherArgs(consumer, 'preview', ['--host', '127.0.0.1', '--port', String(address.port), '--strictPort'], env), { cwd: consumer, env, detached: process.platform !== 'win32', stdio: ['ignore', 'pipe', 'pipe'] });
   let logs = '';
   child.stdout.on('data', (data) => { logs += data; });
   child.stderr.on('data', (data) => { logs += data; });
