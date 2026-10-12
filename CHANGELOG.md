@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.1.0-alpha.2](https://github.com/ts-76/void-plugin-hono-jsx/compare/v0.1.0-alpha.1...v0.1.0-alpha.2) (2026-10-12)
+
+
+### Bug Fixes
+
+* include package sources and valid debug maps ([#42](https://github.com/ts-76/void-plugin-hono-jsx/issues/42)) ([2a69fa5](https://github.com/ts-76/void-plugin-hono-jsx/commit/2a69fa59d903f150e7b9906419283a5906282b62))
+
+
+### Documentation
+
+* distinguish future candidate archives from published alpha ([#45](https://github.com/ts-76/void-plugin-hono-jsx/issues/45)) ([d2740cb](https://github.com/ts-76/void-plugin-hono-jsx/commit/d2740cbb0dfff652fa17b10ff0504f5e353b4aaf))
+* record published alpha as the default npm tag ([#44](https://github.com/ts-76/void-plugin-hono-jsx/issues/44)) ([8c8ea9a](https://github.com/ts-76/void-plugin-hono-jsx/commit/8c8ea9aa1d10e7ee2ff8946dea789d6b407d1680))
+
 ## [0.1.0-alpha.1](https://github.com/ts-76/void-plugin-hono-jsx/compare/v0.1.0-alpha.0...v0.1.0-alpha.1) (2026-10-11)
 
 
