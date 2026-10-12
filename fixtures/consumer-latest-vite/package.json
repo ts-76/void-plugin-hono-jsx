@@ -1,0 +1,23 @@
+{
+  "name": "hono-pages-consumer-smoke",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.21.0"
+  },
+  "dependencies": {
+    "hono": "4.13.13",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.1",
+    "typescript": "7.0.2",
+    "vite": "8.3.4",
+    "void": "0.27.0",
+    "@void/react": "0.27.0",
+    "oxc-transform-react": "0.153.0",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0"
+  }
+}

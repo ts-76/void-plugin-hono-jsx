@@ -10,13 +10,15 @@ concurrency:
   cancel-in-progress: true
 jobs:
   consumer:
-    name: Pinned framework baseline on Node ${{ matrix.node }}
+    name: ${{ matrix.stack }} consumer on Node ${{ matrix.node }}
     strategy:
       matrix:
         node: ['24.21.0']
+        stack: ['baseline', 'vite-patch', 'latest-vite', 'scaffold-vp', 'latest-vp']
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
+      RELEASE_CONSUMER_STACK: ${{ matrix.stack }}
       WRANGLER_SEND_METRICS: 'false'
       VOID_INSPECTOR_PORT: 'false'
       CLOUDFLARE_CF_FETCH_ENABLED: 'false'
@@ -40,7 +42,16 @@ jobs:
         run: npm run release:plan
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: npm-candidate-${{ github.sha }}-attempt-${{ github.run_attempt }}
+          name: npm-candidate-${{ github.sha }}-${{ matrix.stack }}-attempt-${{ github.run_attempt }}
           path: artifacts/
           retention-days: 7
           if-no-files-found: error
+  required-baseline:
+    name: Pinned framework baseline on Node 24.21.0
+    needs: consumer
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require all reviewed consumer stack results
+        run: test "${{ needs.consumer.result }}" = success

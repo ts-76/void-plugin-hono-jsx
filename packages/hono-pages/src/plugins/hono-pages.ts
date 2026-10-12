@@ -1,4 +1,5 @@
 import { realpathSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { normalizePath } from 'vite';
 import { pagesRuntimePath, clientRuntimePath, publicRuntimeModules } from './runtime-paths.ts';
 import { generateComponentManifest, resolvePagesDir, resolveStaticPageDataBuildOptions, scanPages, type PageScanResult } from 'void/pages';
@@ -10,7 +11,7 @@ import { assertSupportedFrameworks } from './compatibility.ts';
 const rendererId = 'virtual:void-pages-renderer';
 const clientId = 'virtual:void-pages-client';
 
-/** Experimental Pages contract verified against Void 0.26.1. */
+/** Experimental Pages contract verified against Void 0.26.1 and 0.27.0. */
 export function voidHonoPages(): Plugin[] {
   const root = process.cwd();
   const pagesDir = resolvePagesDir(root);
@@ -36,8 +37,8 @@ export function voidHonoPages(): Plugin[] {
   return [honoIslands(), honoJsx(), {
     name: 'void-hono:pages',
     enforce: 'pre',
-    config() {
-      assertSupportedFrameworks();
+    config(config) {
+      assertSupportedFrameworks({ root: resolve(config.root ?? root), viteVersion: this?.meta?.viteVersion });
       return {
         resolve: { dedupe: ['hono'] },
         build: { manifest: true, rollupOptions: { input: { 'pages-client': clientId } } },

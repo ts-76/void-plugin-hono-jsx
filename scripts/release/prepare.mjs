@@ -1,3 +1,4 @@
+import { consumerStack } from '../consumer-launcher.mjs';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { cpSync, mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
@@ -58,6 +59,7 @@ try {
     historyReportSha256: sha256(readFileSync(path.join(output, 'history-audit.json'))),
     dependencyReportSha256: sha256(readFileSync(path.join(output, 'dependency-audit.json'))),
     consumerDependencyReportSha256: sha256(readFileSync(path.join(output, 'consumer-dependency-audit.json'))),
+    consumerStack: consumerStack(),
     workflow: process.env.GITHUB_WORKFLOW_REF || null, runId: process.env.GITHUB_RUN_ID || null, runAttempt: process.env.GITHUB_RUN_ATTEMPT || null };
   writeFileSync(path.join(output, 'evidence.json'), JSON.stringify(evidence, null, 2) + '\n');
   console.log(`Prepared ${pkg.name}@${pkg.version}: ${files.length} files; SHA256 ${evidence.sha256}. No registry upload or approval performed.`);

@@ -1,6 +1,6 @@
 # Adapter architecture
 
-The adapter targets Void 0.26.1, Hono 4.13.13 and Vite 8.3.3. It is experimental and is not an official Void adapter. User-facing APIs, supported modes and limitations are documented in the [package guide](../packages/hono-pages/README.md).
+The adapter targets stable Void `>=0.26.1 <0.28.0`, Hono `>=4.13.13 <5.0.0` and Vite `>=8.0.16 <9.0.0` (five locked consumers cover the original baseline, scaffold and current latest). It is experimental and is not an official Void adapter. User-facing APIs, supported modes and limitations are documented in the [package guide](../packages/hono-pages/README.md).
 
 ## Package source and outputs
 

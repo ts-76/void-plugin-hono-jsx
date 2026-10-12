@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { spawn, execFileSync } from 'node:child_process';
 import { cp, mkdtemp, mkdir, readFile, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { createHash } from 'node:crypto';
 import { inspectTarball } from './release/gate.mjs';
 import { inspectSourceMaps } from './release/source-maps.mjs';
@@ -15,6 +15,7 @@ import { checkDeferredConsumer } from './check-deferred-consumer.mjs';
 import { checkStaticConsumer } from './check-static-consumer.mjs';
 import { checkDevelopmentConsumer } from './check-development-consumer.mjs';
 import { checkCompatibilityConsumer } from './check-compatibility-consumer.mjs';
+import { consumerStack, launcherArgs } from './consumer-launcher.mjs';
 import { checkIsrConsumer } from './check-isr-consumer.mjs';
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
@@ -24,7 +25,7 @@ const [major, minor] = process.versions.node.split('.').map(Number);
 if (major < 24 || (major === 24 && minor < 21)) throw new Error('Consumer validation requires Node >=24.21.0.');
 const temporary = await mkdtemp(join(tmpdir(), 'hono-pages-consumer-'));
 const consumer = join(temporary, 'consumer');
-const env = { ...process.env, WRANGLER_LOG_PATH: join(temporary, 'logs'), WRANGLER_SEND_METRICS: 'false', VOID_INSPECTOR_PORT: 'false', CLOUDFLARE_CF_FETCH_ENABLED: 'false' };
+const env = { ...process.env, PATH: dirname(process.execPath) + (process.platform === 'win32' ? ';' : ':') + (process.env.PATH || ''), WRANGLER_LOG_PATH: join(temporary, 'logs'), WRANGLER_SEND_METRICS: 'false', VOID_INSPECTOR_PORT: 'false', CLOUDFLARE_CF_FETCH_ENABLED: 'false' };
 await mkdir(env.WRANGLER_LOG_PATH);
 function npm(args, cwd) {
   return execFileSync(process.execPath, [npmCli, ...args], { cwd, env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
@@ -39,7 +40,7 @@ async function port() {
 }
 async function smoke(mode, browser, staticOnly = false) {
   const number = await port();
-  const args = [join(consumer, 'node_modules/vite/bin/vite.js'), ...(mode === 'preview' ? ['preview'] : []), '--host', '127.0.0.1', '--port', String(number), '--strictPort'];
+  const args = launcherArgs(consumer, mode === 'preview' ? 'preview' : 'dev', ['--host', '127.0.0.1', '--port', String(number), '--strictPort'], env);
   const child = spawn(process.execPath, args, { cwd: consumer, env, detached: process.platform !== 'win32', stdio: ['ignore', 'pipe', 'pipe'] });
   let logs = '';
   child.stdout.on('data', (data) => { logs = (logs + data).slice(-64000); });
@@ -168,7 +169,11 @@ try {
   const expected = JSON.parse(await readFile(join(repo, 'packages/hono-pages/package.json'), 'utf8'));
   assert.deepEqual(metadata, args.length ? { ...expected, private: false } : expected, 'Unexpected consumer artifact metadata');
   await cp(join(repo, 'fixtures/consumer'), consumer, { recursive: true, filter: (path) => !path.includes('node_modules') && !path.includes('/.void') && !path.includes('/dist') });
-  console.log('Tarball audit passed. Installing the locked consumer dependencies.');
+  const stack = consumerStack(env);
+  if (stack.fixture !== 'consumer') {
+    for (const file of ['package.json', 'package-lock.json']) await cp(join(repo, 'fixtures', stack.fixture, file), join(consumer, file));
+  }
+  console.log(`Tarball audit passed. Installing locked consumer ${stack.name}: Void ${stack.void}, npm Vite ${stack.vite}, ${stack.launcher} host ${stack.hostVite}.`);
   npm(['ci', '--no-audit', '--no-fund'], consumer);
   npm(['install', '--no-save', '--package-lock=false', '--no-audit', '--no-fund', tarball], consumer);
   if (env.RELEASE_CONSUMER_AUDIT) dependencyAudit({ npmCli, cwd: consumer, env, output: env.RELEASE_CONSUMER_AUDIT });
@@ -185,7 +190,7 @@ try {
   const browser = await chromium.launch(process.env.PLAYWRIGHT_CHANNEL ? { channel: process.env.PLAYWRIGHT_CHANNEL } : {});
   try {
     await smoke('development', browser);
-    execFileSync(process.execPath, ['node_modules/vite/bin/vite.js', 'build'], { cwd: consumer, env, stdio: ['ignore', 'pipe', 'pipe'] });
+    execFileSync(process.execPath, launcherArgs(consumer, 'build', [], env), { cwd: consumer, env, stdio: ['ignore', 'pipe', 'pipe'] });
     const assets = join(consumer, 'dist/client/assets');
     for (const file of await readdir(assets)) {
       if (!file.endsWith('.js')) continue;
@@ -196,7 +201,7 @@ try {
     await rm(join(consumer, 'pages'), { recursive: true });
     await mkdir(join(consumer, 'pages'));
     await cp(join(repo, 'fixtures/consumer/pages/static.island.tsx'), join(consumer, 'pages/index.island.tsx'));
-    execFileSync(process.execPath, ['node_modules/vite/bin/vite.js', 'build'], { cwd: consumer, env, stdio: ['ignore', 'pipe', 'pipe'] });
+    execFileSync(process.execPath, launcherArgs(consumer, 'build', [], env), { cwd: consumer, env, stdio: ['ignore', 'pipe', 'pipe'] });
     for (const file of await readdir(assets)) {
       if (!file.endsWith('.js')) continue;
       const code = await readFile(join(assets, file), 'utf8');
@@ -206,7 +211,7 @@ try {
     console.log('Static-only client assets: no executable statements or framework imports.');
     await smoke('preview', browser, true);
     await checkStaticConsumer({ repo, consumer, browser, env });
-    await checkCompatibilityConsumer({ consumer, env });
+    await checkCompatibilityConsumer({ consumer, env, stack });
     await checkIsrConsumer({ repo, consumer, browser, env });
   } finally { await browser.close(); }
   assert.equal(await digest(), acceptedDigest, 'Accepted artifact changed during validation');

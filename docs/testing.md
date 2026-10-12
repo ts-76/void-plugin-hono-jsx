@@ -1,6 +1,8 @@
 # Testing and examples
 
-Use the repository lockfile and Node.js 24.21.0. The verified framework baseline is Void 0.26.1, Hono 4.13.13, Vite 8.3.3 and TypeScript 7.0.2. Other framework versions are rejected by the plugin and are not claimed as supported.
+Use the repository lockfile and Node.js 24.21.0. Source tests retain the original Void 0.26.1/Hono 4.13.13/Vite 8.3.3 baseline. Packed consumers additionally cover the Vite 8.3.4 patch, latest Void 0.27.0 with plain Vite 8.3.4, the standard scaffold's Vite Plus 0.1.24 (host Vite 8.0.16), and latest Vite Plus 1.1.0 (host Vite 8.3.3). All five run dev, build, preview, browser interaction/reload, deferred data, islands, static output, compatibility diagnostics and local ISR. The existing required baseline context aggregates all five results. Runtime Vite identity comes from the real config hook; npm Vite metadata is diagnostic only. The package guide distinguishes accepted stable ranges from individually tested versions.
+
+Select a locked stack with `RELEASE_CONSUMER_STACK=baseline|vite-patch|latest-vite|scaffold-vp|latest-vp` when running `npm run check:consumer`. Fixtures for newer stacks overlay only package metadata/locks on the shared consumer source. Latest fixtures contain a snapshot of current registry versions, not floating installs; refresh them and run full checks/audit before declaring a new upstream release verified.
 
 ## Automated checks
 
@@ -24,7 +26,7 @@ For installed Google Chrome, set `PLAYWRIGHT_CHANNEL=chrome` for the browser che
 | `audit:release` | Current tracked/proposed files, accidental artifacts, configured path/credential patterns and matching license/notices. Does not scan Git history or certify every secret. |
 | `build:custom-ssr` | Minimal Custom SSR counter production build. |
 | `check:source` | Pages production build; development/preview HTTP contracts, safe JSON, routes/client-only shells, SSR layouts/head, action methods/failures/redirects and server-only bundle isolation; browser navigation/history/native links, layout persistence, forms and head synchronization. |
-| `check:consumer` | Builds and packs the adapter, validates package contents/types, installs into an isolated locked consumer and tests development/preview interaction. Includes islands, deferred streaming, development reload races, exact-peer diagnostics, static output and local ISR. |
+| `check:consumer` | Builds and packs the adapter, validates package contents/types, installs into an isolated locked consumer and tests development/preview interaction. Includes islands, deferred streaming, development reload races, host/peer range diagnostics, static output and local ISR. |
 
 The source check combines HTTP and browser regressions in one owned-server runner. `scripts/check-source-contracts.mjs` provides the HTTP/SSR checks. The former manual Pages scripts have been consolidated; Python, agent-browser and pre-started Chrome sessions are no longer required.
 
@@ -54,3 +56,5 @@ Automated checks allocate temporary runtime/log directories and stop their own s
 Generated logs, screenshots, runtime caches and tarballs are not committed. The former `evidence` logs and implementation/merge progress reports were removed from the current tree; their originals remain in Git history. Use CI run URLs and concise sanitized results in PRs/releases, and capture diagnostic artifacts separately when needed. Removing current files does not sanitize older commits; a full history review remains a release gate.
 
 For publication, repeat validation on the final release commit and verify the actual npm artifact in a fresh consumer. Follow the [release checklist](release-checklist.md), including artifact checksums and post-publication verification. A local pack or dry run alone does not verify npm authentication, upload or registry behavior.
+
+CI candidate artifact names include the stack: `npm-candidate-<sha>-<stack>-attempt-<attempt>`. Stage preparation uses the default baseline and keeps accepted artifact naming unchanged. `evidence.json.consumerStack` records the selected fixture, launcher, Void version, direct Vite version and expected host Vite. All required stack results must be reviewed before staging.

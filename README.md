@@ -6,15 +6,16 @@ Alpha versions are published on the `next` dist-tag under the [MIT license](LICE
 
 ## Compatibility
 
-| Component | Verified baseline |
-| --- | --- |
-| Node.js | 24.21.0 |
-| Void | 0.26.1 |
-| Hono | 4.13.13 |
-| Vite | 8.3.3 |
-| TypeScript | 7.0.2 |
+| Component | Accepted stable range | Full consumer fixtures |
+| --- | --- | --- |
+| Node.js | >=24.21.0 | 24.21.0 |
+| Void | >=0.26.1 <0.28.0 | 0.26.1, 0.27.0 |
+| Hono | >=4.13.13 <5.0.0 | 4.13.13 |
+| Vite | >=8.0.16 <9.0.0 | 8.0.16 (Vite Plus), 8.3.3, 8.3.4 |
+| Vite Plus | Host Vite must satisfy the Vite range | 0.1.24 (scaffold), 1.1.0 (latest) |
+| TypeScript | Project tooling | 7.0.2 |
 
-Node.js must be at least 24.21.0. The adapter requires the exact framework versions above and rejects other versions with an install command. Its virtual renderer and client entries follow version-specific conventions in Void's official adapter. A local successful check does not establish upstream support or compatibility with newer releases.
+The next release after alpha.2 broadens these peer ranges. Published alpha.1 and staged alpha.2 retain their exact-version gate; install a local candidate to test this change before its release. Stable Vite/Hono updates within the current major are admitted by compatibility policy; Void is pre-1.0, so the next minor (0.28) requires explicit validation. Prereleases are excluded. The fixture versions above were exercised individually; admitting a range does not mean every future version has already been tested. New upstream releases require refreshed fixtures, full checks and dependency audit review.
 
 ## Install the alpha
 
@@ -22,7 +23,7 @@ Use Node 24.21.0 or newer in your project:
 
 ```sh
 npm install void-plugin-hono-jsx@next hono@4.13.13
-npm install --save-dev void@0.26.1 vite@8.3.3 typescript@7.0.2
+npm install --save-dev void@0.27.0 vite@8.3.4 typescript@7.0.2
 ```
 
 For a local source build, use the checked-in lockfile and supported Node version:
@@ -37,7 +38,7 @@ In a separate project, install the resulting tarball:
 
 ```sh
 npm install ./void-plugin-hono-jsx-0.1.0-alpha.0.tgz hono@4.13.13
-npm install --save-dev void@0.26.1 vite@8.3.3 typescript@7.0.2
+npm install --save-dev void@0.27.0 vite@8.3.4 typescript@7.0.2
 ```
 
 Configure the Vite plugins in `vite.config.ts`:
@@ -49,6 +50,8 @@ import { voidHonoPages } from 'void-plugin-hono-jsx/plugin';
 
 export default defineConfig({ plugins: [voidPlugin(), voidHonoPages()] });
 ```
+
+Use standard Vite scripts (`vite`, `vite build`, `vite preview`) or keep the scaffold's `vp dev`, `vp build`, `vp preview` scripts. Both the scaffold Vite Plus 0.1.24 and latest 1.1.0 are consumer fixtures. The gate checks the actual hook version and reports resolved package paths. See [launcher diagnostics](packages/hono-pages/README.md#running-vite-and-launcher-diagnostics).
 
 Keep project settings in `void.config.ts`, using `defineConfig` from `void/config`. These files have different roles. Run Vite from your project root. The adapter includes JSX transformation; set TypeScript's `jsx` to `react-jsx` and `jsxImportSource` to `hono/jsx`.
 
@@ -67,6 +70,8 @@ See the [package guide](packages/hono-pages/README.md) for public exports, confi
 
 Browser mounting redraws SSR content; it does not promise DOM reuse. Development reloads reset local state. Island layouts, other island policies, grouped deferred props, deferred prefetch and mutation-driven deferred refresh are unsupported. [ISR validation](docs/isr.md) covers the local direct-worker runtime. Managed deployment has not been verified.
 
+The old scaffold Vite Plus has additional unapproved formatter advisories; prefer the current latest aligned toolchain or plain Vite. See [scaffold compatibility and audits](docs/scaffold-compatibility.md).
+
 The initial alpha accepts one upstream esbuild advisory as a [known dependency limitation](docs/dependency-security.md), without overrides. Moderate findings across multiple package entries reflect that one advisory in the pinned Void/Drizzle dependency tree. Exact counts are recorded in each candidate's audit evidence. New unreviewed advisories still block the release plan; publisher tooling is assessed separately.
 
 ## Examples and checks
@@ -75,7 +80,7 @@ The repository separates the publishable adapter, runnable examples and automate
 
 | Directory | Purpose |
 | --- | --- |
-| `packages/hono-pages` | Package metadata, user guide, adapter source and build configuration. Only `dist`, the guide, changelog and license/notices are packed. |
+| `packages/hono-pages` | Package metadata, user guide, adapter source and build configuration. Only `dist`, `src`, the guide, changelog and license/notices are packed. |
 | `examples/pages` | Full Pages example using the adapter source, including navigation, layouts, forms and head metadata. |
 | `examples/custom-ssr` | Original minimal Custom SSR counter, kept as a separate example. |
 | `fixtures` | Isolated packed-consumer, static-output and local ISR test inputs. |

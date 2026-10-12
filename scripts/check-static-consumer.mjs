@@ -1,3 +1,4 @@
+import { launcherArgs } from './consumer-launcher.mjs';
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { cp, readFile, rm, access, writeFile } from 'node:fs/promises';
@@ -8,7 +9,7 @@ export async function checkStaticConsumer({ repo, consumer, browser, env }) {
   for (const directory of ['pages', 'components', 'routes', 'server']) await rm(join(consumer, directory), { recursive: true, force: true });
   await cp(join(repo, 'fixtures/static'), consumer, { recursive: true });
   const build = () => {
-    const result = spawnSync(process.execPath, ['node_modules/vite/bin/vite.js', 'build'], { cwd: consumer, env, encoding: 'utf8' });
+    const result = spawnSync(process.execPath, launcherArgs(consumer, 'build', [], env), { cwd: consumer, env, encoding: 'utf8' });
     const log = result.stdout + result.stderr;
     if (result.error) throw result.error;
     if (result.status !== 0) throw new Error(log);
