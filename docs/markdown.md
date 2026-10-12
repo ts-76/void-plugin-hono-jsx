@@ -1,49 +1,74 @@
-# Markdown integration boundary
+# Optional Hono Markdown
 
-Markdown rendering remains unsupported. This record distinguishes a usable adapter integration from an extension check and is the implementation plan for issue #56.
+Use a release that exports `/markdown/plugin`; alpha.3 predates this API. Install the parser peers only in projects using Markdown:
 
-## Verified public package
-
-The isolated probe installed `@void/md@0.27.0` from the npm registry with scripts disabled and imported its public `@void/md/plugin` entry. Calling `voidMarkdown()[0].configResolved()` with the Hono adapter failed:
-
-```text
-void-md: No framework adapter detected. Install @void/vue, @void/react, @void/svelte, or @void/solid.
+```sh
+npm install void-plugin-hono-jsx@next markdown-exit@1.3.0 yaml@2.9.1
 ```
 
-The published plugin identifies adapters through a closed name table (`void-vue:pages`, `void-react:pages`, `void-svelte:pages`, `void-solid:pages`). Its transform dispatch emits those four frameworks. `MarkdownOptions` exposes Shiki configuration only; the plugin API exposes client-script collection and entry metadata, not compiler registration. The public export map includes `.`, `./plugin`, `./pages` and theme CSS, but no compile/script-extraction entry. The placeholder frontmatter runtime returns an empty object until a supported framework replaces it.
+```ts
+import { defineConfig } from 'vite';
+import { voidPlugin } from 'void';
+import { voidHonoPages } from 'void-plugin-hono-jsx/plugin';
+import { voidHonoMarkdown } from 'void-plugin-hono-jsx/markdown/plugin';
 
-Reproduce in an isolated npm project containing exactly `@void/md@0.27.0`:
-
-```js
-import assert from 'node:assert/strict';
-import { voidMarkdown } from '@void/md/plugin';
-assert.throws(() => voidMarkdown()[0].configResolved({
-  root: process.cwd(),
-  plugins: [{ name: 'void-hono:pages' }],
-}), /No framework adapter detected/);
+export default defineConfig({
+  plugins: [voidPlugin(), voidHonoPages(), voidHonoMarkdown()],
+});
 ```
 
-Adding a fake React plugin name would emit React components and runtime imports. Importing hash-named private compiler chunks, rewriting the installed plugin or maintaining a copied Markdown compiler would not establish a supported integration. None is used here. Installing `@void/md` in ordinary Hono consumers is not required.
+The Markdown entry is independent of `@void/md` and uses its published 0.27.0 implementation as a reference. Do not also configure `@void/md/plugin`, which emits another framework. Ordinary Pages projects do not need the parser peers; importing `/plugin`, `/pages`, `/form` or the Markdown context runtime does not load the compiler.
 
-## Upstream change needed
+## Page format
 
-One supported public integration path is needed before implementation can proceed:
+```md
+<script>
+import Counter from "../components/Counter.tsx" with { island: "visible" };
+document.querySelector('#updated').textContent = 'Ready';
+</script>
+---
+title: Getting started
+description: Hono Markdown example
+layout: docs
+---
+# Getting started
 
-1. Add Hono directly to the compiler's adapter dispatch and expose a Hono frontmatter runtime; or
-2. Add a documented adapter registration option that receives compiled HTML/frontmatter/headings, extracted island imports and client scripts, and lets the Hono adapter emit its module. Publish the compiler/extractor entry if adapters must invoke them separately.
+<div id="updated">SSR content</div>
 
-The public API should keep stable module exports (`default`, `frontmatter`, `headings`, layout metadata) and give the renderer enough information to register only the active page's script and islands. Plugin-name detection alone is insufficient; component emission and frontmatter context must also be implemented.
+<Counter name="example" initial="4" />
+```
 
-## Adapter work after that gate
+The optional leading script block comes before YAML frontmatter. Island imports participate in SSR and use the shared load/visible/idle/media scheduler; remaining JavaScript becomes a page-specific client module. Normal script imports are browser imports. Island component paths must be relative TSX/JSX imports. Tag attributes are literal strings or boolean presence attributes; JSX expressions and tag children are not supported. Each instance receives its own props and mount state.
 
-- Reuse Void route discovery, companion server loaders, head descriptors and prerender path handling; accept `.md` only when the supported compiler is configured.
-- Pass frontmatter to a Hono context provider per rendered request/page. Do not keep it in mutable process-global state; concurrent SSR requests and layout renders must remain isolated.
-- Start with document navigation for Markdown routes. Keep full TSX Pages navigation supported and verify TSX→Markdown→TSX visits. Do not include server-only Markdown modules in the SPA client manifest.
-- Register compiler-discovered islands with the existing Hono scheduling/graph machinery; independently mount repeated components with their own serialized props.
-- Emit only the page-specific script and required island assets. Static Markdown pages without scripts or interactive layout chains must send no executable framework entry.
+The compiler supports standard Markdown, tables, raw authored HTML, escaped fenced code and unique heading anchors. It does not implement the complete `@void/md` extension set: Shiki highlighting, custom containers, footnotes and theme CSS are not included. Apply the application's own CSS. Markdown is repository-authored content; raw HTML is preserved, following Void's authoring model.
 
-## Required acceptance evidence
+## Layouts, frontmatter and loader data
 
-A pinned optional consumer must verify direct SSR, companion loader, frontmatter in default/named layouts, head updates, page-specific script execution, load/visible/idle/media islands, native navigation in both directions, dev edits, build/preview and static output. Also verify no Markdown dependency or asset is added to a non-Markdown consumer. Until those tests pass, issue #56 stays open; current diagnostics explicitly identify the upstream gate.
+Use TSX/JSX layouts, including existing island/default/named layouts. Void discovers `layout` in frontmatter, including named/exclusive layouts and `layout: false`. Layout files themselves remain TSX/JSX.
 
-Sources: [npm package](https://www.npmjs.com/package/@void/md/v/0.27.0), [official Markdown guide](https://void.cloud/guide/pages-routing/markdown), and the downloaded public `0.27.0` distribution (`dist/plugin.mjs`, `dist/plugin-DcZ5SZxg.d.mts`, `dist/runtime/index.mjs`, package export map).
+```tsx
+import { useFrontmatter, useMarkdownHeadings, useMarkdownProps } from 'void-plugin-hono-jsx/markdown';
+
+export default function DocsLayout({ children }) {
+  const frontmatter = useFrontmatter<{ title: string }>();
+  const headings = useMarkdownHeadings();
+  const props = useMarkdownProps<{ message?: string }>();
+  return <main><h1>{frontmatter.title}</h1><p>{props.message}</p>{children}</main>;
+}
+```
+
+A companion `guide.server.ts` loader works through Void's normal page protocol. Frontmatter title/description contribute to Void head metadata; a companion `head` handler can override them. The provider surrounds the complete SSR layout/page chain and is scoped to that render. Hydrated islands receive the same frontmatter/headings and serialized page props through their own provider; there is no mutable global frontmatter state. Generic hook types describe the authored data and do not perform runtime validation. Frontmatter must be a JSON-serializable mapping; duplicate YAML keys, invalid syntax and cyclic values fail compilation.
+
+## Navigation and assets
+
+Markdown routes use document navigation. A full TSX `<Link>` entering a Markdown route leaves the SPA; normal Markdown links return to TSX pages through a new document. Full Pages keep their existing SPA behavior.
+
+Static Markdown pages with a static layout chain send no executable script or module preload. Script-only pages load the Markdown entry and current page's script without the island scheduler/framework entry. Interactive pages load the shared island scheduler and required component modules. Other pages' client scripts remain separate dynamic chunks and do not execute. Interactive/script pages use the existing full reload behavior on development content/script edits. Zero-script pages require a normal refresh.
+
+Void handles auto-prerender and `output: 'static'`. Companion loader data must be suitable for build-time evaluation, as with other static routes. Actions still require a server; deferred islands and deferred static output remain unsupported. The plugin does not add a second router or patch installed framework packages.
+
+## Validation and source reference
+
+`fixtures/markdown/parser-lock.json` locks parser dependencies and is combined with the existing five framework consumer locks without replacing their entries. Markdown checks run on baseline/patch/latest Vite and scaffold/latest Vite Plus as well as baseline/latest Void. The packed check exercises direct SSR, loader/head, default/named/island layouts, provider isolation, repeated islands, all scheduling policies, script selection, development edits, TSX document roundtrips, production preview and a file-only static server. Existing non-Markdown consumers remain separate and are tested before optional dependencies are installed into the Markdown fixture.
+
+The reference package separates Markdown parsing from framework emitters, but its public API registers only React/Vue/Svelte/Solid. This plugin implements Hono emission locally using public parser APIs and Void's Markdown asset convention. It neither imports hash-named compiler chunks nor pretends to be another framework. See [Void's Markdown guide](https://void.cloud/guide/pages-routing/markdown) and [third-party attribution](../THIRD_PARTY_NOTICES.md).

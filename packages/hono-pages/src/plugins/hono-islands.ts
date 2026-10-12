@@ -4,7 +4,7 @@ import { normalizePath, parseSync, type Plugin } from 'vite';
 import { scanPages, resolveEffectiveLayoutChain, resolvePagesDir, type PageScanResult } from 'void/pages';
 import { findIslandImports, editIslandSource, resolveSpecifier, computePagesNeedingClientJS, ISLANDS_RENDERER_ID, ISLANDS_CLIENT_ENTRY_ID } from 'void/pages-islands-plugin';
 
-export const markdownDiagnostic = 'Hono Pages: Markdown rendering is blocked by @void/md 0.27.0, which has no public Hono compiler registration. Use TSX/JSX pages or wait for a supported upstream adapter API. See docs/markdown.md and issue #56.';
+import { markdownApi, markdownDiagnostic, type HonoMarkdownApi } from './markdown-api.ts';
 
 /** Hono mounting through Void's shared island scheduler. */
 export function honoIslands(): Plugin {
@@ -15,7 +15,9 @@ export function honoIslands(): Plugin {
   const graph = new Map<string, Set<string>>();
   const directlyInteractive = new Set<string>();
   const interactivePages = new Set<string>();
+  const scriptOnlyPages = new Set<string>();
   let scan: PageScanResult | undefined;
+  let markdown: HonoMarkdownApi | undefined;
 
   function islandImports(code: string, filename: string) {
     const found = findIslandImports(code, filename);
@@ -47,17 +49,17 @@ export function honoIslands(): Plugin {
     scan = await scanPages(root, { pagesDir });
     // Never pass Markdown text to the JavaScript static-graph parser.
     for (const file of [...scan.pages.map(page => page.componentPath), ...scan.layouts.map(layout => layout.filePath), ...scan.namedLayouts.map(layout => layout.filePath)]) {
-      if (/\.md$/.test(file)) throw new Error(`${markdownDiagnostic} ${file}`);
+      if (/\.md$/.test(file) && !markdown) throw new Error(`${markdownDiagnostic} ${file}`);
     }
-    islands.clear(); pageFiles.clear(); graph.clear(); directlyInteractive.clear(); interactivePages.clear();
+    islands.clear(); pageFiles.clear(); graph.clear(); directlyInteractive.clear(); interactivePages.clear(); scriptOnlyPages.clear();
     const visit = (filename: string) => {
       const canonical = realpathSync(filename);
       if (graph.has(canonical)) return;
       const dependencies = new Set<string>(); graph.set(canonical, dependencies); pageFiles.add(canonical);
-      const code = readFileSync(canonical, 'utf8');
+      const code = canonical.endsWith('.md') && markdown ? markdown.getGraphSource(canonical) : readFileSync(canonical, 'utf8');
       const found = imports(code, canonical);
       if (found.length) {
-        if (!/\.[jt]sx$/.test(canonical)) throw new Error('Hono islands: attributed imports require a static TSX/JSX module.');
+        if (!/\.[jt]sx$/.test(canonical) && !(canonical.endsWith('.md') && markdown)) throw new Error('Hono islands: attributed imports require a static TSX/JSX module.');
         directlyInteractive.add(canonical);
       }
       for (const node of parseSync(canonical, code).program.body) {
@@ -74,7 +76,7 @@ export function honoIslands(): Plugin {
     const validateInteractive = (filename: string, seen = new Set<string>()) => {
       const canonical = realpathSync(filename);
       if (seen.has(canonical)) return; seen.add(canonical);
-      const code = readFileSync(canonical, 'utf8');
+      const code = canonical.endsWith('.md') && markdown ? markdown.getGraphSource(canonical) : readFileSync(canonical, 'utf8');
       if (islandImports(code, canonical).length) throw new Error('Hono islands: attributed imports inside an interactive component are unsupported; use ordinary component imports there.');
       for (const node of parseSync(canonical, code).program.body) {
         const source = node.type === 'ImportDeclaration' ? node.source : node.type === 'ExportNamedDeclaration' || node.type === 'ExportAllDeclaration' ? node.source : undefined;
@@ -96,13 +98,17 @@ export function honoIslands(): Plugin {
     }
     for (const page of scan.pages.filter((page) => page.island)) {
       const files = [page.componentPath, ...resolveEffectiveLayoutChain(page, scan.layouts, scan.namedLayouts).map((layout) => layout.filePath)];
-      if (files.some((file) => needsJS.has(realpathSync(join(pagesDir, file))))) interactivePages.add(page.componentId);
+      const hasIslands = files.some(file => needsJS.has(realpathSync(join(pagesDir, file))));
+      const hasScript = markdown?.getClientScripts().has(page.componentId);
+      if (hasIslands || hasScript) interactivePages.add(page.componentId);
+      if (hasScript && !hasIslands) scriptOnlyPages.add(page.componentId);
     }
   }
 
   return {
     name: 'void-hono:islands',
     enforce: 'pre',
+    configResolved(config) { markdown = markdownApi(config.plugins); },
     buildStart: rescan,
     async hotUpdate({ file, modules, timestamp }) {
       const inPages = normalizePath(file).startsWith(normalizePath(pagesDir) + '/');
@@ -151,15 +157,29 @@ const ${entry.importName} = (props) => __honoIslandJsx('div', { 'data-island': $
         const interactive = [...new Set([...computePagesNeedingClientJS(scan, pagesDir, null), ...interactivePages])];
         return `import { renderPage } from 'virtual:void-pages-renderer';
 const interactive = new Set(${JSON.stringify(interactive)});
+const scriptOnly = new Set(${JSON.stringify([...scriptOnlyPages])});
+const markdownScripts = new Set(${JSON.stringify([...(markdown?.getClientScripts().keys() ?? [])])});
 export function renderIslandPage(page, assets) {
   if (page.deferred?.length || page.deferredKeys) throw new Error('Hono islands: deferred props are unsupported.');
-  return renderPage(page, interactive.has(page.component) ? assets : { ...assets, preloads: '', body: '' });
+  if (!markdownScripts.has(page.component)) assets = { ...assets,
+    body: assets.body.replace(/<script\\b[^>]*src=["'][^"']*(?:void-hono-markdown-client|markdown-client-)[^"']*["'][^>]*>\\s*<\\/script>/g, ''),
+    preloads: assets.preloads.replace(/<link\\b[^>]*href=["'][^"']*markdown-client-[^"']*["'][^>]*>/g, ''),
+  };
+  if (!interactive.has(page.component)) return renderPage(page, { ...assets, preloads: '', body: '' });
+  if (scriptOnly.has(page.component)) {
+    // Keep the Markdown entry; its dynamic import loads only this page's code.
+    // Framework preloads and the island scheduler have no work on this chain.
+    const body = assets.body.replace(/<script\\b[^>]*src=["'][^"']*(?:void-islands-client|islands-client-)[^"']*["'][^>]*>\\s*<\\/script>/g, '');
+    return renderPage(page, { ...assets, preloads: '', body });
+  }
+  return renderPage(page, assets);
 }`;
       }
       if (id === `\0${ISLANDS_CLIENT_ENTRY_ID}`) {
         if (!islands.size || !interactivePages.size) return 'export {};';
         const loaders = [...islands].map(([name, path]) => `${JSON.stringify(name)}: () => import(${JSON.stringify(path)})`).join(',\n');
-        return `import { initIslands } from 'void/pages-client';
+        return `${markdown ? "import { MarkdownContext } from 'void-plugin-hono-jsx/markdown';" : ''}
+import { initIslands } from 'void/pages-client';
 import { jsx } from 'hono/jsx/dom/jsx-runtime';
 import { render } from 'hono/jsx/dom';
 for (const element of document.querySelectorAll('[data-hydrate^="media:"]')) {
@@ -168,7 +188,11 @@ for (const element of document.querySelectorAll('[data-hydrate^="media:"]')) {
 }
 initIslands({ ${loaders} }, (element, module, props) => {
   if (typeof module.default !== 'function') throw new Error('Hono islands: a component must export a default function.');
-  render(jsx(module.default, props), element);
+  let content = jsx(module.default, props);
+  ${markdown ? `const metadata = JSON.parse(document.getElementById('app')?.getAttribute('data-hono-markdown') || '{}');
+  const page = JSON.parse(document.getElementById('__VOID_PAGE_DATA__')?.textContent || '{}');
+  content = jsx(MarkdownContext.Provider, { value: { frontmatter: metadata.frontmatter ?? {}, headings: metadata.headings ?? [], props: page.props ?? {} }, children: content });` : ''}
+  render(content, element);
   element.setAttribute('data-hono-island', 'mounted');
 });`;
       }

@@ -1,19 +1,20 @@
 import { realpathSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { normalizePath } from 'vite';
-import { pagesRuntimePath, clientRuntimePath, publicRuntimeModules } from './runtime-paths.ts';
+import { pagesRuntimePath, clientRuntimePath, markdownRuntimePath, publicRuntimeModules } from './runtime-paths.ts';
 import { generateComponentManifest, resolvePagesDir, resolveStaticPageDataBuildOptions, scanPages, type PageScanResult } from 'void/pages';
 import type { Plugin } from 'vite';
 import { parseCacheFor, type CacheForInput } from 'void/pages-prefetch';
 import { honoJsx } from './hono-jsx.ts';
-import { honoIslands, markdownDiagnostic } from './hono-islands.ts';
+import { honoIslands } from './hono-islands.ts';
+import { markdownApi, markdownDiagnostic, type HonoMarkdownApi } from './markdown-api.ts';
 import { assertSupportedFrameworks } from './compatibility.ts';
 
 const rendererId = 'virtual:void-pages-renderer';
 const clientId = 'virtual:void-pages-client';
 
-function assertComponentFile(file: string, kind: 'page' | 'layout') {
-  if (/\.md$/.test(file)) throw new Error(`${markdownDiagnostic} ${kind}: ${file}`);
+function assertComponentFile(file: string, kind: 'page' | 'layout', markdown = false) {
+  if (/\.md$/.test(file)) { if (markdown && kind === 'page') return; if (markdown) throw new Error('Hono Markdown: layouts must remain TSX/JSX: ' + file); throw new Error(`${markdownDiagnostic} ${kind}: ${file}`); }
   if (!/\.[jt]sx$/.test(file)) throw new Error(`Hono Pages: only standard TSX/JSX ${kind}s are supported: ${file}.`);
 }
 
@@ -42,6 +43,7 @@ export function voidHonoPages(options: HonoPagesOptions = {}): Plugin[] {
   const pagesDir = resolvePagesDir(root);
   const staticData = resolveStaticPageDataBuildOptions(root);
   let scan: PageScanResult | undefined;
+  let markdown: HonoMarkdownApi | undefined;
 
   async function rescan() {
     scan = await scanPages(root, { pagesDir });
@@ -49,7 +51,7 @@ export function voidHonoPages(options: HonoPagesOptions = {}): Plugin[] {
       assertComponentFile(layout.filePath, 'layout');
     }
     for (const page of scan.pages) {
-      assertComponentFile(page.componentPath, 'page');
+      assertComponentFile(page.componentPath, 'page', Boolean(markdown));
       if (staticData.enabled && page.methods.some((method) => method === 'action' || method === 'actions')) {
         throw new Error(`Hono Pages: actions require a server and cannot be used with static output: ${page.componentPath}.`);
       }
@@ -70,7 +72,7 @@ export function voidHonoPages(options: HonoPagesOptions = {}): Plugin[] {
     configResolved: {
       order: 'pre',
       handler(config) {
-        if (config.plugins.some(plugin => plugin.name === 'void-md')) throw new Error(markdownDiagnostic);
+        markdown = markdownApi(config.plugins);
       },
     },
     configEnvironment() {
@@ -104,7 +106,7 @@ export function voidHonoPages(options: HonoPagesOptions = {}): Plugin[] {
     },
     resolveId(id) {
       if (id === rendererId || id === clientId) return `\0${id}`;
-      if (id === pagesRuntimePath || id === clientRuntimePath) return { id: realpathSync(id), external: false };
+      if (id === pagesRuntimePath || id === clientRuntimePath || id === markdownRuntimePath) return { id: realpathSync(id), external: false };
       const runtime = publicRuntimeModules[id];
       if (runtime) return { id: realpathSync(this.environment.config.consumer === 'client' ? runtime.client : runtime.server), external: false };
     },
@@ -131,8 +133,11 @@ export function voidHonoPages(options: HonoPagesOptions = {}): Plugin[] {
       }
       if (id === `\0${clientId}` && !currentScan.pages.some((page) => !page.island)) return 'export {};';
       if (id === `\0${rendererId}`) {
+        const markdownScriptIds = [...(markdown?.getClientScripts().keys() ?? [])];
         return `
 import { jsx } from 'hono/jsx';
+${markdown ? `import { MarkdownContext } from ${JSON.stringify(markdownRuntimePath)};` : ''}
+const markdownScriptIds = new Set(${JSON.stringify(markdownScriptIds)});
 import { createSsrRouter, idleNavigationState } from 'void/pages-client';
 import { PageContext, RouterContext, NavigationContext } from ${JSON.stringify(pagesRuntimePath)};
 import { serializePageData } from 'void/pages-server';
@@ -142,7 +147,7 @@ export async function renderPage(pageObj, assetTags) {
   if (${JSON.stringify(staticData.enabled)} && pageObj.deferredKeys) throw new Error('Hono Pages: deferred props cannot be statically prerendered; remove defer().');
   const load = components[pageObj.component];
   if (!load) throw new Error('Hono Pages: unknown page component ' + pageObj.component);
-  const { default: Page } = await load();
+  const { default: Page, frontmatter = {}, headings = [] } = await load();
   if (typeof Page !== 'function') throw new Error('Hono Pages: a page must export a component function.');
   let content = jsx(Page, pageObj.props);
   const ids = layoutTree[pageObj.component] ?? [];
@@ -151,14 +156,16 @@ export async function renderPage(pageObj, assetTags) {
     if (typeof Layout !== 'function') throw new Error('Hono Pages: a layout must export a component function.');
     content = jsx(Layout, { children: content });
   }
+  ${markdown ? 'content = jsx(MarkdownContext.Provider, { value: { frontmatter, headings, props: pageObj.props }, children: content });' : ''}
   const markup = await jsx(RouterContext.Provider, { value: createSsrRouter(pageObj.url, pageObj.params), children: jsx(PageContext.Provider, { value: pageObj, children: jsx(NavigationContext.Provider, { value: idleNavigationState(), children: content }) }) }).toString();
+  const appHtml = await jsx('div', { id: 'app', 'data-md-script': markdownScriptIds.has(pageObj.component) ? pageObj.component : undefined, ${markdown ? "'data-hono-markdown': JSON.stringify({ frontmatter, headings })," : ''} dangerouslySetInnerHTML: { __html: markup } }).toString();
   const head = pageObj.head;
   const body = pageObj.deferredKeys ? assetTags.body.replaceAll('<script type="module"', '<script async type="module"') : assetTags.body;
   return '<!doctype html><html' + (head ? renderHtmlAttrs(head) : '') + '><head>'
     + (head ? renderHeadToString(head) : '') + assetTags.css + assetTags.preloads
     + '</head><body' + (head ? renderBodyAttrs(head) : '') + '>'
     + '<script id="__VOID_PAGE_DATA__" type="application/json">' + serializePageData(pageObj) + '</script>'
-    + '<div id="app">' + markup + '</div>' + body + '</body></html>';
+    + appHtml + body + '</body></html>';
 }
 `;
       }
