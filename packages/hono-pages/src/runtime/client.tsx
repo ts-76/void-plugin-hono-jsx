@@ -1,8 +1,9 @@
 import { render } from 'hono/jsx/dom';
 import { jsx } from 'hono/jsx/dom/jsx-runtime';
 import { useLayoutEffect, useState } from 'hono/jsx';
-import { createVoidRouter, idleNavigationState, type NavigationState, type VoidRouterConfig } from 'void/pages-client';
+import { idleNavigationState, type NavigationState, type VoidRouterConfig } from 'void/pages-client';
 import { PageContext, RouterContext, NavigationContext, setActionRouter } from './pages.tsx';
+import { createHonoRouter } from './navigation.ts';
 import { createDocumentHead } from './document-head.ts';
 import { createDeferred, resolveDeferred, rejectDeferred, isLoading, bufferInitialDeferred } from './deferred.ts';
 
@@ -18,19 +19,17 @@ function pageComponent(component: unknown) {
 export async function startHonoPages(manifest: Manifest, options: NavigationOptions) {
   const root = document.getElementById('app');
   if (!root) throw new Error('Hono Pages: app root is missing.');
-  type Frame = { page: Awaited<ReturnType<typeof createVoidRouter>>['initialPageData']; component: unknown; layouts: unknown[]; revision: number; commit: number };
+  type Frame = { page: Awaited<ReturnType<typeof createHonoRouter>>['initialPageData']; component: unknown; layouts: unknown[]; revision: number; commit: number };
   let update: ((frame: Frame) => void) | undefined;
   let revision = 0;
   let commit = 0;
-  let navigationEpoch = 0;
-  let renderIntent: { url: string; epoch: number } | undefined;
   const pendingCommits = new Map<number, () => void>();
   let navigationState = idleNavigationState();
   let updateNavigation: ((state: NavigationState) => void) | undefined;
   let applyDocumentHead: ReturnType<typeof createDocumentHead> | undefined;
   let renderedProps: Record<string, unknown> | undefined;
   let updateDeferred: ((props: Record<string, unknown>) => void) | undefined;
-  const initialization = createVoidRouter({
+  const initialization = createHonoRouter({
     ...manifest,
     adapter: {
       createDeferred, resolveDeferred, rejectDeferred, isLoading,
@@ -38,10 +37,6 @@ export async function startHonoPages(manifest: Manifest, options: NavigationOpti
         if (props === renderedProps) updateDeferred?.({ ...props });
       },
       async applyUpdate(page, component, layouts, options) {
-        // A native transition may delay its callback beyond a newer request.
-        // Void reports the shell's route before calling the adapter; discard an
-        // old callback instead of drawing its DOM/head over the newer page.
-        if (renderIntent?.epoch !== navigationEpoch || renderIntent.url !== page.url) throw new DOMException('Hono Pages: stale navigation callback discarded.', 'AbortError');
         layouts.forEach(pageComponent);
         pageComponent(component);
         if (!update) throw new Error('Hono Pages: page rendering has not started.');
@@ -55,8 +50,7 @@ export async function startHonoPages(manifest: Manifest, options: NavigationOpti
     },
     ...options,
     cacheVisitedPageData: false,
-    onRouteChange(url) { renderIntent = { url, epoch: navigationEpoch }; },
-    onNavigationChange(state) { if (state.state !== 'idle') navigationEpoch++; navigationState = state; updateNavigation?.(state); root.dataset.navigation = state.state; },
+    onNavigationChange(state) { navigationState = state; updateNavigation?.(state); root.dataset.navigation = state.state; },
   });
   const releaseBuffer = bufferInitialDeferred();
   const navigation = await initialization.finally(releaseBuffer);

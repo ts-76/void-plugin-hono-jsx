@@ -45,7 +45,7 @@ export async function checkTransitionConsumer({ origin, page }) {
         window.releaseOldTransition = () => Promise.resolve(callback()).then(resolve, reject);
       }) : Promise.resolve().then(callback);
       hold = false;
-      return { updateCallbackDone };
+      return { updateCallbackDone, ready: Promise.resolve() };
     };
   });
   await page.locator('#transition-on').click();
