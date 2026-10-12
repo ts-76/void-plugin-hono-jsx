@@ -62,13 +62,13 @@ See the [package guide](packages/hono-pages/README.md) for public exports, confi
 - Loader-backed SSR, file-based routes and client-only pages.
 - Void navigation, root/nested/named layouts and action forms.
 - Resolved head metadata, document attributes and inert navigation scripts.
-- Single deferred loader props on GET document requests and SPA navigation.
+- Single and grouped deferred loader props on GET document/SPA requests, successful prefetch→visit, and resolved-value retention after actions.
 - Load/visible/idle/media Hono islands and zero-script static island pages.
 - Static HTML/page-data output and declared dynamic prerender paths.
 - Development document reloads for page/loader edits and route additions/removals.
 - Local production-preview ISR through Void's KV/Cache API runtime.
 
-Browser mounting redraws SSR content; it does not promise DOM reuse. Development reloads reset local state. Attributed imports inside interactive components, unknown island policies, grouped deferred props, deferred prefetch and mutation-driven deferred refresh are unsupported. [ISR validation](docs/isr.md) covers the local direct-worker runtime. Managed deployment has not been verified.
+Browser mounting redraws SSR content; it does not promise DOM reuse. Development reloads reset local state. Attributed imports inside interactive components, unknown island policies, deferred islands and static deferred output are unsupported. Void preserves resolved deferred values after actions until the next load/navigation. Failed deferred prefetch currently becomes a resolved `null` because Void does not transmit its error; use document/SPA streaming when error state is required. Grouped resolver projections require explicit prop types with the current Void `defer<T>` declaration. [ISR validation](docs/isr.md) covers the local direct-worker runtime. Managed deployment has not been verified.
 
 The old scaffold Vite Plus has additional unapproved formatter advisories; prefer the current latest aligned toolchain or plain Vite. See [scaffold compatibility and audits](docs/scaffold-compatibility.md).
 
