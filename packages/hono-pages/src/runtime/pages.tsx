@@ -91,7 +91,7 @@ export function Link({ href, method = 'GET', data, preserveScroll, preserveState
       let cancelled = false;
       onNavigate?.({ preventDefault() { cancelled = true; } });
       event.preventDefault();
-      if (!cancelled) void router.visit(destination, { method: normalized, data: get ? undefined : data, preserveScroll, preserveState, replace, viewTransition }).catch(report);
+      if (!cancelled) void router.visit(new URL(destination, window.location.href), { method: normalized, data: get ? undefined : data, preserveScroll, preserveState, replace, viewTransition }).catch(report);
     },
     onMouseEnter(event: MouseEvent) {
       onMouseEnter?.(event); clear();
