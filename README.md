@@ -15,7 +15,9 @@ Alpha versions are published on the `next` dist-tag under the [MIT license](LICE
 | Vite Plus | Host Vite must satisfy the Vite range | 0.1.24 (scaffold), 1.1.0 (latest) |
 | TypeScript | Project tooling | 7.0.2 |
 
-The next release after alpha.2 broadens these peer ranges. Published alpha.1 and staged alpha.2 retain their exact-version gate; install a local candidate to test this change before its release. Stable Vite/Hono updates within the current major are admitted by compatibility policy; Void is pre-1.0, so the next minor (0.28) requires explicit validation. Prereleases are excluded. The fixture versions above were exercised individually; admitting a range does not mean every future version has already been tested. New upstream releases require refreshed fixtures, full checks and dependency audit review.
+Published alpha.3 includes these peer ranges, running-Vite diagnostics and packaged source/maps. Alpha.1 and alpha.2 retain their exact-version gate. Stable Vite/Hono updates within the accepted ranges are admitted by compatibility policy; Void 0.28 and later require explicit validation. Prereleases are excluded. The fixture versions above are the 2026-10-12 snapshot; admitting a range does not mean every future version has already been tested. New upstream releases require refreshed fixtures, full checks and dependency audit review.
+
+This source tree also includes the next alpha's expanded Link/Form APIs, island forms and graphs, deferred contracts, page options and optional Markdown. Use a local tarball to test these additions until the next alpha is published; installing the currently published alpha.3 does not provide them.
 
 ## Install the alpha
 
@@ -37,7 +39,7 @@ npm pack ./packages/hono-pages
 In a separate project, install the resulting tarball:
 
 ```sh
-npm install ./void-plugin-hono-jsx-0.1.0-alpha.0.tgz hono@4.13.13
+npm install ./void-plugin-hono-jsx-<version>.tgz hono@4.13.13
 npm install --save-dev void@0.27.0 vite@8.3.4 typescript@7.0.2
 ```
 

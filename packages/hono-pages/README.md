@@ -13,7 +13,9 @@ This experimental package integrates Hono JSX with Void Pages. The package name 
 | Vite Plus | Host Vite must satisfy the Vite range | 0.1.24 (scaffold), 1.1.0 (latest) |
 | TypeScript | Project tooling | 7.0.2 |
 
-The next release after alpha.2 broadens these peer ranges. Published alpha.1 and staged alpha.2 retain their exact-version gate; install a local candidate to test this change before its release. Stable Vite/Hono updates within the current major are admitted by compatibility policy; Void is pre-1.0, so the next minor (0.28) requires explicit validation. Prereleases are excluded. The fixture versions above were exercised individually; admitting a range does not mean every future version has already been tested. New upstream releases require refreshed fixtures, full checks and dependency audit review.
+Published alpha.3 includes these peer ranges, running-Vite diagnostics and packaged source/maps. Alpha.1 and alpha.2 retain their exact-version gate. Stable Vite/Hono updates within the accepted ranges are admitted by compatibility policy; Void 0.28 and later require explicit validation. Prereleases are excluded. The fixture versions above are the 2026-10-12 snapshot; admitting a range does not mean every future version has already been tested. New upstream releases require refreshed fixtures, full checks and dependency audit review.
+
+This source tree also includes the next alpha's expanded Link/Form APIs, island forms and graphs, deferred contracts, page options and optional Markdown. Use a local tarball to test these additions until the next alpha is published; installing the currently published alpha.3 does not provide them.
 
 ## Install
 
@@ -68,7 +70,7 @@ The latest consumer fixtures also install React scaffold dependencies (React/DOM
 
 ## Source and debugging files
 
-The next alpha candidate includes the original `src/plugins/*.ts` and `src/runtime/*.{ts,tsx}` alongside compiled `dist` entries. Every JavaScript file has a `.js.map` with embedded original source; every declaration has a `.d.ts.map` pointing to the same packaged TypeScript files. Build-time import rewriting composes its map with the compiler map, so generated locations still refer to the original source. These additions require a new release; alpha.0 and alpha.1 remain unchanged.
+Published alpha.2 and alpha.3 include the original `src/plugins/*.ts` and `src/runtime/*.{ts,tsx}` alongside compiled `dist` entries. Every JavaScript file has a `.js.map` with embedded original source; every declaration has a `.d.ts.map` pointing to the same packaged TypeScript files. Build-time import rewriting composes its map with the compiler map, so generated locations still refer to the original source. Alpha.0 and alpha.1 retain their original dist-only archives.
 
 Read source under `node_modules/void-plugin-hono-jsx/src`. Editors supporting declaration maps can navigate from exported types to those files, and debuggers/bundlers supporting source maps can show the original source. Application imports continue to use `/plugin`, `/pages` and `/form`; `src` is supplied for inspection and debugging, not as an additional runtime entry point. Candidate and clean-consumer checks reject missing/stale maps, external source references, changed source bytes and unexpected archive files.
 
@@ -120,7 +122,7 @@ A resolved value or error updates the current page without resetting page-local 
 
 Void 0.26.1 forwards ordinary deferred resolver error messages in development; production streams use `Internal Server Error`. Deliberate HTTP exception messages may be forwarded in production. The adapter turns the received message into an `Error` and exposes it through `error`; server stack traces are not included. Author deliberate HTTP exception messages suitable for display to users. This follows the verified streaming error behavior of the pinned Void version.
 
-The verified contract covers single deferred props during GET document requests and SPA navigation. Grouped deferred props, deferred prefetching, mutation-driven deferred refresh and deferred island pages are excluded. The ordinary Pages action APIs remain documented under runtime exports.
+The verified contract covers single and grouped deferred props during GET document requests and SPA navigation, successful prefetch followed by a visit, and retention of resolved values after actions. Void preserves these values until the next load/navigation; mutation actions do not rerun the deferred resolver. Failed deferred prefetch currently becomes a resolved `null` because Void does not transmit its error; use document/SPA streaming when error state is required. Grouped resolver projections require explicit prop types with the current Void `defer<T>` declaration. Deferred island pages and static deferred output remain unsupported. The ordinary Pages action APIs remain documented under runtime exports.
 
 ## Islands
 

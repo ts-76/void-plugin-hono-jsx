@@ -6,7 +6,7 @@ release-please-action v5.0.0 を commit SHA で固定しています。main へ�
 
 - `.release-please-manifest.json`: 現在のリリースversion。
 - `package.json` と `package-lock.json`: private な開発用rootも同じversionに同期。
-- `packages/hono-pages/package.json`: `extra-files` の JSON updater が version のみを更新。private / exact peers / publishConfig は維持。
+- `packages/hono-pages/package.json`: `extra-files` の JSON updater が version のみを更新。private / peer ranges / publishConfig は維持。
 - `CHANGELOG.md`: 唯一の正本。package build が同じ内容を package にコピーし、tarball gate が byte単位で照合。package側のコピーは生成物としてGitから除外。
 
 `versioning: prerelease`、`prerelease: true`、`prerelease-type: alpha` を設定し、alpha番号を更新します。GitHub Releaseもprereleaseとして作成し、tagは `v<version>` です。breaking changeやstable移行では、候補version・互換性・dist-tagの方針を別途確認します。固定の `release-as` は設定しません。

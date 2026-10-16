@@ -1,5 +1,7 @@
 # 実 OIDC / provenance stage と alpha 公開の検証結果
 
+この文書は alpha.0 の履歴証拠です。下記の version・dist-tag・publisher・source は検証時点の値であり、現行状態や次候補の検証結果ではありません。現行案内は [公開手順](releasing.md) と [リリースチェックリスト](release-checklist.md) を参照してください。
+
 確認日: 2026-10-12 JST。`void-plugin-hono-jsx@0.1.0-alpha.0 / next` の実 stage は成功し、maintainer `ts-76` が npm サイトで approve したと確認しました。公開 registry の metadata・tarball・署名 bundle を取得し、**独立した暗号検証も完了しました。** 自動化と今回の CLI 操作は最終 npm approve を実行していません。
 
 ## 実行と成果物の照合
