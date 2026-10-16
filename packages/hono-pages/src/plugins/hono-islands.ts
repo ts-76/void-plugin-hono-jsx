@@ -2,7 +2,9 @@ import { readFileSync, realpathSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { normalizePath, parseSync, type Plugin } from 'vite';
 import { scanPages, resolveEffectiveLayoutChain, resolvePagesDir, type PageScanResult } from 'void/pages';
-import { findIslandImports, editIslandSource, resolveSpecifier, computePagesNeedingClientJS, ISLANDS_RENDERER_ID, ISLANDS_CLIENT_ENTRY_ID } from 'void/pages-islands-plugin';
+import { findIslandImports, editIslandSource, computePagesNeedingClientJS, ISLANDS_RENDERER_ID, ISLANDS_CLIENT_ENTRY_ID } from 'void/pages-islands-plugin';
+
+import { resolveComponent } from './resolve-component.ts';
 
 import { markdownApi, markdownDiagnostic, type HonoMarkdownApi } from './markdown-api.ts';
 
@@ -36,7 +38,7 @@ export function honoIslands(): Plugin {
         if (!query || balance !== 0 || /[{};]/.test(query)) throw new Error(`Hono islands: unsupported policy or invalid media query '${entry.hydrate}' in ${filename}.`);
       }
       if (!entry.specifier.startsWith('.')) throw new Error(`Hono islands: use a relative TSX/JSX component import in ${filename}.`);
-      const path = resolveSpecifier(entry.specifier, join(filename, '..'), ['.tsx', '.jsx']);
+      const path = resolveComponent(entry.specifier, join(filename, '..'), ['.tsx', '.jsx']);
       if (!path || !/\.[jt]sx$/.test(path)) throw new Error(`Hono islands: cannot resolve TSX/JSX component ${entry.specifier} in ${filename}.`);
       const canonical = realpathSync(path);
       const id = normalizePath(relative(root, canonical));
@@ -66,7 +68,7 @@ export function honoIslands(): Plugin {
         const source = node.type === 'ImportDeclaration' ? node.source : node.type === 'ExportNamedDeclaration' || node.type === 'ExportAllDeclaration' ? node.source : undefined;
         const typeOnly = node.type === 'ImportDeclaration' ? node.importKind === 'type' || (node.specifiers.length > 0 && node.specifiers.every((entry) => entry.type === 'ImportSpecifier' && entry.importKind === 'type')) : (node.type === 'ExportNamedDeclaration' || node.type === 'ExportAllDeclaration') && node.exportKind === 'type';
         if (!source || typeOnly || !source.value.startsWith('.') || found.some((entry) => entry.specifier === source.value)) continue;
-        const target = resolveSpecifier(source.value, join(canonical, '..'), ['.tsx', '.jsx', '.ts', '.js']);
+        const target = resolveComponent(source.value, join(canonical, '..'), ['.tsx', '.jsx', '.ts', '.js']);
         if (!target || !/\.[jt]sx?$/.test(target)) continue;
         dependencies.add(realpathSync(target)); visit(target);
       }
@@ -82,7 +84,7 @@ export function honoIslands(): Plugin {
         const source = node.type === 'ImportDeclaration' ? node.source : node.type === 'ExportNamedDeclaration' || node.type === 'ExportAllDeclaration' ? node.source : undefined;
         const typeOnly = node.type === 'ImportDeclaration' ? node.importKind === 'type' || (node.specifiers.length > 0 && node.specifiers.every((entry) => entry.type === 'ImportSpecifier' && entry.importKind === 'type')) : (node.type === 'ExportNamedDeclaration' || node.type === 'ExportAllDeclaration') && node.exportKind === 'type';
         if (!source || typeOnly || !source.value.startsWith('.')) continue;
-        const target = resolveSpecifier(source.value, join(canonical, '..'), ['.tsx', '.jsx', '.ts', '.js']);
+        const target = resolveComponent(source.value, join(canonical, '..'), ['.tsx', '.jsx', '.ts', '.js']);
         if (target && /\.[jt]sx?$/.test(target)) validateInteractive(target, seen);
       }
     };
@@ -143,7 +145,7 @@ export function honoIslands(): Plugin {
       // for that traversal rather than generating server-only marker wrappers.
       if (this.environment?.config.consumer === 'client') return editIslandSource(code, found.map((entry) => ({ start: entry.start, end: entry.end, text: `import ${entry.importName} from ${entry.specifierRaw};` })));
       return editIslandSource(code, found.map((entry) => {
-        const path = resolveSpecifier(entry.specifier, join(filename, '..'), ['.tsx', '.jsx']);
+        const path = resolveComponent(entry.specifier, join(filename, '..'), ['.tsx', '.jsx']);
         if (!path) throw new Error(`Hono islands: missing component ${entry.specifier}.`);
         const islandId = normalizePath(relative(root, realpathSync(path)));
         const component = `__honoIslandComponent${entry.start}`;
