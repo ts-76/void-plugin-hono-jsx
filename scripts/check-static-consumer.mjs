@@ -14,6 +14,7 @@ export async function checkStaticConsumer({ repo, consumer, browser, env }) {
   await cp(join(repo, 'fixtures/consumer/components/PolicyCounter.tsx'), join(consumer, 'components/PolicyCounter.tsx'));
   await cp(join(repo, 'fixtures/consumer/pages/policies.island.tsx'), join(consumer, 'pages/policies.island.tsx'));
   await cp(join(repo, 'fixtures/consumer/components/StaticIslandWrapper.tsx'), join(consumer, 'components/StaticIslandWrapper.tsx'));
+  await cp(join(repo, 'fixtures/consumer/components/DirectoryWrapper'), join(consumer, 'components/DirectoryWrapper'), { recursive: true });
   await cp(join(repo, 'fixtures/consumer/pages/graph'), join(consumer, 'pages/graph'), { recursive: true });
   await mkdir(join(consumer, 'pages/_layouts'), { recursive: true });
   await cp(join(repo, 'fixtures/consumer/pages/_layouts/graph.island.tsx'), join(consumer, 'pages/_layouts/graph.island.tsx'));
