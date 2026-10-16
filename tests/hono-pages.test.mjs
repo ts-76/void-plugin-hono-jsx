@@ -227,3 +227,27 @@ test('relative re-exports in static barrels retain the island client requirement
     assert.match(islands.load(islands.resolveId('virtual:void-islands-client')), /Counter\.tsx/);
   });
 });
+
+test('directory index imports and re-exports retain static graph and island identities', async () => {
+  await withPages({
+    'index.island.tsx': "import { Wrapper } from '../parts'; export default Wrapper;",
+    '../parts/index.ts': "export { default as Wrapper } from '../nested';",
+    '../nested/index.tsx': "import Counter from '../counter' with { island: 'load' }; export default Counter;",
+    '../counter/index.tsx': page,
+  }, async (_plugin, plugins, directory) => {
+    const islands = plugins.find(plugin => plugin.name === 'void-hono:islands'); await islands.buildStart();
+    assert.match(islands.load(islands.resolveId('virtual:void-islands-renderer')), /new Set\(\["index"\]\)/);
+    assert.match(islands.load(islands.resolveId('virtual:void-islands-client')), /counter\/index\.tsx/);
+  });
+});
+
+test('directory imports do not bypass the interactive component boundary', async () => {
+  await withPages({
+    'index.island.tsx': "import Counter from '../counter' with { island: 'load' }; export default Counter;",
+    '../counter/index.tsx': "import Part from '../parts'; export default Part;",
+    '../parts/index.tsx': "import Nested from '../Nested' with { island: 'load' }; export default Nested;",
+    '../Nested.tsx': page,
+  }, async (_plugin, plugins) => {
+    await assert.rejects(() => plugins.find(plugin => plugin.name === 'void-hono:islands').buildStart(), /inside an interactive component/);
+  });
+});
