@@ -1,6 +1,15 @@
 # Release checklist
 
-The initial candidate is **`void-plugin-hono-jsx@0.1.0-alpha.0`**, **`next`**, MIT. It is published on `next` after the maintainer approved it on npm. Package metadata remains `private: true`; preparation changes only `private` in an isolated candidate. The source repository is public. The authorized OIDC/provenance stage upload succeeded; owner approval, public metadata/bytes and independent signature verification are confirmed. At the initial verification, `latest` pointed to the registration placeholder. Users select `@next`; the current [tag policy](releasing.md#distribution-tag-cleanup) records the explicit maintainer decision to assign `latest` to public alpha.1. See [the validation result](stage-validation-result.md).
+The initial candidate was **`void-plugin-hono-jsx@0.1.0-alpha.0`**, **`next`**, MIT. Its authorized OIDC/provenance upload, owner approval, public bytes and independent signature verification are recorded in [the alpha.0 validation result](stage-validation-result.md). The checked items below preserve that version's evidence rather than approving future candidates. Package metadata remains `private: true`; preparation changes only `private` in an isolated candidate. The source repository is public.
+
+The public registry checked on 2026-10-17 JST has `next: 0.1.0-alpha.3` and `latest: 0.1.0-alpha.1`. Alpha.3 already includes stable peer ranges, running-Vite diagnostics and source/maps. See [the tag policy](releasing.md#distribution-tag-cleanup). The next alpha's feature integration and release PR require fresh checks; stage and publication remain separate approvals.
+
+## Next candidate
+
+- [ ] Merge the integration PR only after all final-head checks pass; verify main CI separately.
+- [ ] Review the release-please PR version, synchronized manifests, changelog, packed source/maps and all consumer/publisher checks.
+- [ ] Before a separately authorized stage, select its new tag/source and exact same-run artifact, and review fresh dependency/publisher audit reports. Keep `NPM_STAGING_ENABLED=false` during preparation.
+- [ ] After stage/owner approval, verify the public version, next tag, exact bytes, provenance/signatures and registry-installed consumer. Historical alpha.0 evidence does not complete this item.
 
 ## Selected policy
 
@@ -26,7 +35,7 @@ The initial candidate is **`void-plugin-hono-jsx@0.1.0-alpha.0`**, **`next`**, M
 - [x] Set npm owner to `ts-76`, as selected by the maintainer.
 - [x] Verify real ts-76 login / auth-and-writes 2FA, initial package registration and stage-only Trusted Publisher save.
 - [x] Confirm each final candidate's root and consumer audits contain no advisory beyond the accepted GHSA-67mh-4wv8-2f99. Reassess acceptance after peer changes or upstream fixes; new unreviewed advisories block staging.
-- [x] Select pnpm 12.11.2 for the stage job only; accept four exact Rust findings within the fixed-tarball scope, pin source/inventory/native distribution and enforce fresh fail-closed auditing. See the [pnpm assessment](pnpm-publisher-assessment.md).
+- [x] Select pnpm 12.11.2 for the initial stage job only; accept four exact Rust findings within the fixed-tarball scope, pin source/inventory/native distribution and enforce fresh fail-closed auditing. The next candidate refreshes the publisher to 12.14.0 with patched rustls and the same four scoped findings. See the dated [pnpm assessment](pnpm-publisher-assessment.md); a real stage with the refreshed CLI remains a future step.
 - [x] Confirm real OIDC exchange, provenance-enabled native stage success, registry trusted automation actor and downloaded alpha digest.
 - [x] Retrieve the published attestation bundle and independently verify signature / issuer / workflow / source / SHA512 subject / CT and transparency logs, plus npm registry signature. Verification completed after owner approval; pre-approval stage view/download did not expose the bundle.
 - [x] Rename the public repository to `void-plugin-hono-jsx`; restore the original development and merge history, correcting only the alternate-account author/committer identities on 2026-10-09, as requested on 2026-10-12. Preserve naming/release preparation in an additional commit and validate the full history for each candidate; prior PR refs/cached views and external clones can retain previous commits.

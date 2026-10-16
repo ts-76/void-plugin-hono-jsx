@@ -1,3 +1,4 @@
+import { checkMarkdownConsumer } from './check-markdown-consumer.mjs';
 import assert from 'node:assert/strict';
 import { spawn, execFileSync } from 'node:child_process';
 import { cp, mkdtemp, mkdir, readFile, readdir, rm } from 'node:fs/promises';
@@ -11,11 +12,17 @@ import { createServer } from 'node:net';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { parseSync } from 'vite';
+import { checkTransitionConsumer } from './check-transition-consumer.mjs';
 import { checkDeferredConsumer } from './check-deferred-consumer.mjs';
 import { checkStaticConsumer } from './check-static-consumer.mjs';
 import { checkDevelopmentConsumer } from './check-development-consumer.mjs';
 import { checkCompatibilityConsumer } from './check-compatibility-consumer.mjs';
 import { consumerStack, launcherArgs } from './consumer-launcher.mjs';
+import { checkIslandForms } from './check-island-forms.mjs';
+import { checkIslandGraph } from './check-island-graph.mjs';
+import { checkIslandPolicies } from './check-island-policies.mjs';
+import { checkFormConsumer } from './check-form-consumer.mjs';
+import { checkLinkConsumer } from './check-link-consumer.mjs';
 import { checkIsrConsumer } from './check-isr-consumer.mjs';
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
@@ -73,7 +80,7 @@ async function smoke(mode, browser, staticOnly = false) {
     page.setDefaultTimeout(30000);
     const errors = [];
     page.on('pageerror', (error) => errors.push(error.message));
-    page.on('console', (message) => { if (message.type() === 'error') errors.push(message.text()); });
+    page.on('console', (message) => { if (message.type() === 'error' && !((message.location().url.endsWith('/links?fail') || message.location().url.endsWith('/forms?fail') || message.location().url.endsWith('/island-forms?fail') || message.location().url.endsWith('/transitions?value=error')) && message.text().includes('500') || message.location().url.endsWith('/forms?quota') && message.text().includes('429') || message.location().url.endsWith('/island-forms?save') && message.text().includes('422'))) errors.push(message.text()); });
     try {
       const staticScripts = [];
       if (staticOnly) page.on('request', (request) => { if (request.resourceType() === 'script') staticScripts.push(request.url()); });
@@ -103,7 +110,13 @@ async function smoke(mode, browser, staticOnly = false) {
       await page.locator('#app[data-hono-pages="mounted"]').waitFor();
       assert.equal(await page.locator('#count').textContent(), '5');
       if (mode === 'development') await checkDevelopmentConsumer({ origin, page, consumer, assertRunning: () => { assert.equal(child.exitCode, null); assert.equal(child.signalCode, null); assert.doesNotMatch(logs, /server restarted|restarting server/i); } });
+      await checkLinkConsumer({ origin, page, assert });
+      await checkFormConsumer({ origin, page, assert });
+      await checkIslandPolicies({ origin, page, assert });
+      await checkIslandGraph({ origin, page, assert, mode, consumer });
+      await checkIslandForms({ origin, page, assert });
       await checkDeferredConsumer({ origin, page, mode });
+      await checkTransitionConsumer({ origin, page });
       const islandResponse = await fetch(origin + '/islands');
       assert.equal(islandResponse.status, 200);
       const islandHtml = await islandResponse.text();
@@ -176,6 +189,7 @@ try {
   console.log(`Tarball audit passed. Installing locked consumer ${stack.name}: Void ${stack.void}, npm Vite ${stack.vite}, ${stack.launcher} host ${stack.hostVite}.`);
   npm(['ci', '--no-audit', '--no-fund'], consumer);
   npm(['install', '--no-save', '--package-lock=false', '--no-audit', '--no-fund', tarball], consumer);
+  assert.equal((await readdir(join(consumer, 'node_modules'))).includes('markdown-exit'), false, 'Ordinary consumers must not install the optional Markdown parser');
   if (env.RELEASE_CONSUMER_AUDIT) dependencyAudit({ npmCli, cwd: consumer, env, output: env.RELEASE_CONSUMER_AUDIT });
   const installedContents = new Map();
   for (const file of entries) {
@@ -186,6 +200,7 @@ try {
   inspectSourceMaps(installedContents);
   console.log('Installed source/declaration maps resolve to the exact packaged TypeScript sources.');
   console.log('Checking consumer declarations and browser rendering.');
+  execFileSync(process.execPath, ['node_modules/void/dist/cli/cli.mjs', 'prepare'], { cwd: consumer, env, stdio: 'inherit' });
   execFileSync(process.execPath, ['node_modules/typescript/bin/tsc', '--noEmit'], { cwd: consumer, stdio: 'inherit' });
   const browser = await chromium.launch(process.env.PLAYWRIGHT_CHANNEL ? { channel: process.env.PLAYWRIGHT_CHANNEL } : {});
   try {
@@ -201,6 +216,7 @@ try {
     await rm(join(consumer, 'pages'), { recursive: true });
     await mkdir(join(consumer, 'pages'));
     await cp(join(repo, 'fixtures/consumer/pages/static.island.tsx'), join(consumer, 'pages/index.island.tsx'));
+    await cp(join(repo, 'fixtures/consumer/components/StaticLayout.island.tsx'), join(consumer, 'pages/layout.island.tsx'));
     execFileSync(process.execPath, launcherArgs(consumer, 'build', [], env), { cwd: consumer, env, stdio: ['ignore', 'pipe', 'pipe'] });
     for (const file of await readdir(assets)) {
       if (!file.endsWith('.js')) continue;
@@ -213,6 +229,7 @@ try {
     await checkStaticConsumer({ repo, consumer, browser, env });
     await checkCompatibilityConsumer({ consumer, env, stack });
     await checkIsrConsumer({ repo, consumer, browser, env });
+    await checkMarkdownConsumer({ repo, consumer, browser, env, tarball, npmCli });
   } finally { await browser.close(); }
   assert.equal(await digest(), acceptedDigest, 'Accepted artifact changed during validation');
   console.log(`Package audit passed: ${entries.length} intended files; declarations and locked clean-consumer checks passed.`);

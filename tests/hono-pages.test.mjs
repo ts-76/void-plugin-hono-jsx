@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import { voidHonoPages } from '../packages/hono-pages/src/plugins/hono-pages.ts';
 
-async function withPages(files, check) {
+async function withPages(files, check, options) {
   const previous = process.cwd();
   const root = await mkdtemp(join(tmpdir(), 'hono-pages-contract-'));
   try {
@@ -15,7 +15,7 @@ async function withPages(files, check) {
       await writeFile(join(root, 'pages', name), source);
     }
     process.chdir(root);
-    const plugin = voidHonoPages().find((plugin) => plugin.name === 'void-hono:pages');
+    const plugin = voidHonoPages(options).find((plugin) => plugin.name === 'void-hono:pages');
     plugin.environment = { mode: 'build' };
     await check(plugin, voidHonoPages());
   } finally {
@@ -65,7 +65,7 @@ test('Void discovers a loader-backed page and the adapter generates both entries
 });
 
 for (const [name, files, error] of [
-  ['island layouts', { 'index.tsx': page, '_layouts/shell.island.tsx': page }, /only standard TSX\/JSX layouts/],
+  ['mixed island layouts and full Pages', { 'index.tsx': page, 'layout.island.tsx': page }, /under an island layout/],
 ]) {
   test(`rejects unsupported ${name} after scanning real page files`, async () => {
     await withPages(files, async (plugin) => {
@@ -124,14 +124,19 @@ test('loader, action and named-action modules remain server-only in the componen
   });
 });
 
+const filesForPolicy = (policy) => `import Counter from '../Counter' with { island: '${policy}' }; export default Counter;`;
+
 for (const policy of ['idle', 'visible', 'media:(max-width: 600px)']) {
-  test(`rejects unsupported island policy ${policy} during page discovery`, async () => {
+  test(`accepts supported island policy ${policy} during page discovery`, async () => {
     await withPages({
       'index.island.tsx': `import Counter from '../Counter' with { island: '${policy}' }; export default Counter;`,
       '../Counter.tsx': page,
     }, async (_plugin, plugins) => {
       const islands = plugins.find((plugin) => plugin.name === 'void-hono:islands');
-      await assert.rejects(() => islands.buildStart(), /unsupported policy.*use island: 'load'/);
+      await islands.buildStart();
+      const source = filesForPolicy(policy);
+      const transformed = islands.transform(source, join(process.cwd(), 'pages/index.island.tsx'));
+      assert.ok(transformed.code.includes(JSON.stringify(policy)));
     });
   });
 }
@@ -144,7 +149,7 @@ test('island components reject form helpers with an explicit diagnostic', async 
   }, async (_plugin, plugins) => {
     const islands = plugins.find((plugin) => plugin.name === 'void-hono:islands');
     await islands.buildStart();
-    assert.throws(() => islands.transform(component, join(process.cwd(), 'Counter.tsx')), /form helpers are unsupported/);
+    assert.throws(() => islands.transform(component, join(process.cwd(), 'Counter.tsx')), /useForm.*full Pages/);
   });
 });
 
@@ -166,5 +171,128 @@ test('explicit prerender pages and declared dynamic paths remain in the Void man
     await plugin.buildStart();
     const renderer = await plugin.load(plugin.resolveId('virtual:void-pages-renderer'));
     assert.match(renderer, /users\/\[id\]\.tsx/);
+  });
+});
+
+for (const policy of ['unknown', 'media:', 'media:(min-width: 600px', 'media:bad;query']) {
+  test('rejects invalid island policy ' + policy, async () => {
+    await withPages({ 'index.island.tsx': filesForPolicy(policy), '../Counter.tsx': page }, async (_plugin, plugins) => {
+      await assert.rejects(() => plugins.find((plugin) => plugin.name === 'void-hono:islands').buildStart(), /unsupported|invalid/);
+    });
+  });
+}
+
+test('island layouts and nested static component imports register one shared interactive module', async () => {
+  await withPages({
+    'layout.island.tsx': "import Wrapper from '../Wrapper'; export default Wrapper;",
+    'index.island.tsx': page,
+    '../Wrapper.tsx': "import Counter from './Counter' with { island: 'visible' }; export default Counter;",
+    '../Counter.tsx': page,
+    '_layouts/named.island.tsx': page,
+  }, async (plugin, plugins) => {
+    await plugin.buildStart();
+    const islands = plugins.find((plugin) => plugin.name === 'void-hono:islands');
+    await islands.buildStart();
+    const renderer = islands.load(islands.resolveId('virtual:void-islands-renderer'));
+    assert.match(renderer, /new Set\(\["index"\]\)/);
+    assert.match(islands.load(islands.resolveId('virtual:void-islands-client')), /Counter\.tsx/);
+    const transformed = islands.transform("import Counter from './Counter' with { island: 'visible' }; export default Counter;", join(process.cwd(), 'Wrapper.tsx'));
+    assert.match(transformed.code, /data-hydrate/);
+  });
+});
+
+test('static import cycles propagate island requirements without duplicate registration', async () => {
+  await withPages({
+    'index.island.tsx': "import A from '../A'; export default A;",
+    '../A.tsx': "import B from './B'; export default B;",
+    '../B.tsx': "import A from './A'; import Counter from './Counter' with { island: 'load' }; void A; export default Counter;",
+    '../Counter.tsx': page,
+  }, async (_plugin, plugins) => {
+    const islands = plugins.find((plugin) => plugin.name === 'void-hono:islands'); await islands.buildStart();
+    assert.match(islands.load(islands.resolveId('virtual:void-islands-renderer')), /new Set\(\["index"\]\)/);
+    assert.equal([...islands.load(islands.resolveId('virtual:void-islands-client')).matchAll(/Counter\.tsx/g)].length, 2);
+  });
+});
+
+test('an interactive component cannot introduce another independently scheduled island', async () => {
+  await withPages({ 'index.island.tsx': "import Parent from '../Parent' with { island: 'load' }; export default Parent;", '../Parent.tsx': "import Counter from './Counter' with { island: 'visible' }; export default Counter;", '../Counter.tsx': page }, async (_plugin, plugins) => {
+    await assert.rejects(() => plugins.find((plugin) => plugin.name === 'void-hono:islands').buildStart(), /inside an interactive component/);
+  });
+});
+
+test('relative re-exports in static barrels retain the island client requirement', async () => {
+  await withPages({ 'index.island.tsx': "import { Wrapper } from '../barrel'; export default Wrapper;", '../barrel.ts': "export { default as Wrapper } from './Wrapper';", '../Wrapper.tsx': "import Counter from './Counter' with { island: 'load' }; export default Counter;", '../Counter.tsx': page }, async (_plugin, plugins) => {
+    const islands = plugins.find((plugin) => plugin.name === 'void-hono:islands'); await islands.buildStart();
+    assert.match(islands.load(islands.resolveId('virtual:void-islands-renderer')), /new Set\(\["index"\]\)/);
+    assert.match(islands.load(islands.resolveId('virtual:void-islands-client')), /Counter\.tsx/);
+  });
+});
+
+test('island components accept named provider-free form imports', async () => {
+  const component = "import { useIslandForm, Form } from 'void-plugin-hono-jsx/form'; " + page;
+  await withPages({ 'index.island.tsx': "import Counter from '../Counter' with { island: 'load' }; export default Counter;", '../Counter.tsx': component }, async (_plugin, plugins) => {
+    const islands = plugins.find((plugin) => plugin.name === 'void-hono:islands'); await islands.buildStart();
+    assert.doesNotThrow(() => islands.transform(component, join(process.cwd(), 'Counter.tsx')));
+  });
+});
+
+test('navigation options retain defaults and serialize shared parsed cache durations', async () => {
+  await withPages({ 'index.tsx': page }, async plugin => {
+    const entry = await plugin.load(plugin.resolveId('virtual:void-pages-client'));
+    assert.match(entry, /"viewTransitions":false/);
+    assert.match(entry, /"prefetchHoverDelay":75/);
+    assert.match(entry, /"stale":30000,"expires":30000/);
+  });
+  await withPages({ 'index.tsx': page }, async plugin => {
+    const entry = await plugin.load(plugin.resolveId('virtual:void-pages-client'));
+    assert.match(entry, /"viewTransitions":true/);
+    assert.match(entry, /"prefetchHoverDelay":20/);
+    assert.match(entry, /"stale":5000,"expires":10000/);
+  }, { viewTransitions: true, prefetch: { hoverDelay: 20, cacheFor: ['5s', '10s'] } });
+});
+for (const options of [ { viewTransitions: 'yes' }, { prefetch: { hoverDelay: -1 } }, { prefetch: { hoverDelay: Infinity } }, { prefetch: { cacheFor: -1 } }, { prefetch: { cacheFor: ['10s', '5s'] } }, { prefetch: { cacheFor: 'bad' } } ]) {
+  test('invalid navigation options fail before starting Vite: ' + JSON.stringify(options), () => assert.throws(() => voidHonoPages(options), /Hono Pages:|prefetch:/));
+}
+
+test('Markdown routes fail discovery with the upstream gate and exact file', async () => {
+  await withPages({ 'guide.md': '# Guide' }, async plugin => {
+    await assert.rejects(() => plugin.buildStart(), /Markdown requires voidHonoMarkdown.*guide\.md/);
+  });
+});
+
+test('optional Markdown configuration reports the Hono boundary before the closed framework dispatch', () => {
+  const plugin = voidHonoPages().find(plugin => plugin.name === 'void-hono:pages');
+  assert.equal(plugin.configResolved.order, 'pre');
+  assert.throws(() => plugin.configResolved.handler({ plugins: [{ name: 'void-md' }] }), /use voidHonoMarkdown.*official compiler/);
+  assert.doesNotThrow(() => plugin.configResolved.handler({ plugins: [{ name: 'void-core' }] }));
+});
+
+test('Markdown island discovery fails at the same gate before parsing Markdown as JavaScript', async () => {
+  await withPages({ 'guide.island.md': '# Guide' }, async (_plugin, plugins) => {
+    await assert.rejects(() => plugins.find(plugin => plugin.name === 'void-hono:islands').buildStart(), /Markdown requires voidHonoMarkdown.*guide\.island\.md/);
+  });
+});
+
+test('directory index imports and re-exports retain static graph and island identities', async () => {
+  await withPages({
+    'index.island.tsx': "import { Wrapper } from '../parts'; export default Wrapper;",
+    '../parts/index.ts': "export { default as Wrapper } from '../nested';",
+    '../nested/index.tsx': "import Counter from '../counter' with { island: 'load' }; export default Counter;",
+    '../counter/index.tsx': page,
+  }, async (_plugin, plugins, directory) => {
+    const islands = plugins.find(plugin => plugin.name === 'void-hono:islands'); await islands.buildStart();
+    assert.match(islands.load(islands.resolveId('virtual:void-islands-renderer')), /new Set\(\["index"\]\)/);
+    assert.match(islands.load(islands.resolveId('virtual:void-islands-client')), /counter\/index\.tsx/);
+  });
+});
+
+test('directory imports do not bypass the interactive component boundary', async () => {
+  await withPages({
+    'index.island.tsx': "import Counter from '../counter' with { island: 'load' }; export default Counter;",
+    '../counter/index.tsx': "import Part from '../parts'; export default Part;",
+    '../parts/index.tsx': "import Nested from '../Nested' with { island: 'load' }; export default Nested;",
+    '../Nested.tsx': page,
+  }, async (_plugin, plugins) => {
+    await assert.rejects(() => plugins.find(plugin => plugin.name === 'void-hono:islands').buildStart(), /inside an interactive component/);
   });
 });

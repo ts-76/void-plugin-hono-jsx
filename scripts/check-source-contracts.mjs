@@ -89,12 +89,13 @@ export async function checkSourceContracts(base, checkBuild) {
   await redirect.text();
   assert.equal(redirect.status, 302);
   assert.equal(redirect.headers.get('location'), '/users/saved?redirect');
-  // Isolate the deliberately unhandled POST body from the next assertion.
-  // Workerd's dev transport can close its upstream connection after this 404.
-  const unknown = await action('/named?unknown', 'POST', 'Test', { Connection: 'close' });
+  // Unknown-action routing does not need a body. A body-bearing unknown POST
+  // can reset Workerd's reused dev connection (documented upstream limitation).
+  // Keep that transport repro separate from this HTTP 404 contract check.
+  const unknown = await fetch(base + '/named?unknown', { method: 'POST', headers: { 'X-VoidPages': 'true', Accept: 'application/json', Connection: 'close' } });
   await unknown.text();
   assert.equal(unknown.status, 404);
-  const failure = await action('/named?fail');
+  const failure = await fetch(base + '/named?fail', { method: 'POST', headers: { 'X-VoidPages': 'true', Accept: 'application/json', Connection: 'close' } });
   assert.match(await failure.text(), /Example action failed\./);
   assert.equal(failure.status, 500);
 
