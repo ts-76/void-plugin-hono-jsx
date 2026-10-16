@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, rm, symlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { jsx } from 'hono/jsx/jsx-runtime';
@@ -72,4 +72,22 @@ test('configured optional Markdown participates in server manifests and island g
 
 test('malformed Markdown island imports fail before becoming browser-only script imports', () => {
   assert.throws(() => extractMarkdown('<script>import { Counter } from "./Counter" with { island: "load" };</script>'), /one default component import/);
+});
+
+test('Markdown symlink imports use the same canonical island key as the client registry', { skip: process.platform === 'win32' }, async () => {
+  const previous = process.cwd(); const root = await mkdtemp(join(tmpdir(), 'hono-markdown-link-'));
+  try {
+    await mkdir(join(root, 'pages')); await mkdir(join(root, 'shared'));
+    await writeFile(join(root, 'shared/Counter.tsx'), 'export default function Counter() { return <button>Count</button>; }');
+    await symlink(join(root, 'shared/Counter.tsx'), join(root, 'LinkedCounter.tsx'));
+    const source = '<script>import Counter from "../LinkedCounter" with { island: "load" };</script>\n# Linked\n\n<Counter />';
+    await writeFile(join(root, 'pages/index.md'), source); process.chdir(root);
+    const md = voidHonoMarkdown(); const plugins = [...voidHonoPages(), md]; md.configResolved({ root, plugins });
+    const islands = plugins.find(plugin => plugin.name === 'void-hono:islands'); islands.configResolved({ plugins }); await islands.buildStart();
+    const server = md.transform.handler(source, join(root, 'pages/index.md')).code;
+    const client = islands.load(islands.resolveId('virtual:void-islands-client'));
+    assert.match(server, /'data-island': "shared\/Counter\.tsx"/);
+    assert.match(client, /"shared\/Counter\.tsx":/);
+    assert.doesNotMatch(server, /'data-island': "LinkedCounter/);
+  } finally { process.chdir(previous); await rm(root, { recursive: true, force: true }); }
 });

@@ -1,8 +1,8 @@
-import { readFileSync, readdirSync, existsSync } from 'node:fs';
+import { readFileSync, readdirSync, existsSync, realpathSync } from 'node:fs';
 import { join, relative, dirname } from 'node:path';
 import { normalizePath, type Plugin } from 'vite';
 import { resolvePagesDir } from 'void/pages';
-import { resolveSpecifier } from 'void/pages-islands-plugin';
+import { resolveComponent } from './resolve-component.ts';
 import { compileMarkdown, extractMarkdown, renderChunks } from './markdown-compiler.ts';
 import type { HonoMarkdownApi } from './markdown-api.ts';
 
@@ -32,7 +32,7 @@ export function voidHonoMarkdown(): Plugin {
     // Void's Markdown entry/asset convention is shared with @void/md.
     name: 'void-md', enforce: 'pre', api,
     config() { return { build: { rollupOptions: { input: { 'markdown-client': clientId } } } }; },
-    configResolved(config) { if (!config.plugins.some(plugin => plugin.name === 'void-hono:pages')) throw new Error('Hono Markdown: configure voidHonoPages() before voidHonoMarkdown().'); root = config.root; pagesDir = resolvePagesDir(root); rescan(); },
+    configResolved(config) { if (!config.plugins.some(plugin => plugin.name === 'void-hono:pages')) throw new Error('Hono Markdown: configure voidHonoPages() before voidHonoMarkdown().'); root = realpathSync(config.root); pagesDir = resolvePagesDir(root); rescan(); },
     buildStart() { rescan(); },
     hotUpdate({ file, timestamp }) {
       if (!file.endsWith('.md') || !normalizePath(file).startsWith(normalizePath(pagesDir) + '/')) return;
@@ -55,9 +55,9 @@ if (id && scripts[id]) await scripts[id]();`;
       handler(source, id) {
         const result = compileMarkdown(source);
         const imports = result.imports.map((entry, index) => {
-          const target = resolveSpecifier(entry.specifier, dirname(id), ['.tsx', '.jsx']);
+          const target = resolveComponent(entry.specifier, dirname(id), ['.tsx', '.jsx']);
           if (!target || !entry.specifier.startsWith('.')) throw new Error(`Hono Markdown: cannot resolve relative TSX/JSX island ${entry.specifier} in ${id}.`);
-          return { ...entry, alias: `__island${index}`, islandId: normalizePath(relative(root, target)) };
+          return { ...entry, alias: `__island${index}`, islandId: normalizePath(relative(root, realpathSync(target))) };
         });
         const chunks = renderChunks(result.html, new Set(imports.map(entry => entry.importName)));
         const children = chunks.map(chunk => {

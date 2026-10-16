@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
-import { cp, rm, readFile, writeFile, mkdir, access, readdir } from 'node:fs/promises';
+import { cp, rm, readFile, writeFile, mkdir, access, readdir, symlink } from 'node:fs/promises';
 import { dirname, join, relative, extname } from 'node:path';
 import { createServer as netServer } from 'node:net';
 import { createServer } from 'node:http';
@@ -15,6 +15,7 @@ export async function checkMarkdownConsumer({ repo, consumer: original, browser,
   const npm = args => execFileSync(process.execPath, [npmCli, ...args], { cwd: consumer, env, stdio: 'inherit' });
   await rm(consumer, { recursive: true, force: true });
   await cp(join(repo, 'fixtures/markdown'), consumer, { recursive: true });
+  await symlink('MarkdownCounter.tsx', join(consumer, 'components/LinkedCounter.tsx'), 'file');
   const overlay = JSON.parse(await readFile(join(consumer, 'parser-lock.json'), 'utf8'));
   const pkg = JSON.parse(await readFile(join(repo, 'fixtures', stack.fixture, 'package.json'), 'utf8'));
   const lock = JSON.parse(await readFile(join(repo, 'fixtures', stack.fixture, 'package-lock.json'), 'utf8'));
@@ -96,6 +97,11 @@ export async function checkMarkdownConsumer({ repo, consumer: original, browser,
       await page.goto(origin + '/docs/layout-counter'); await page.locator('[data-hono-island] #layout-increment').click();
       await page.waitForFunction(() => document.getElementById('layout-value')?.textContent === '3');
       assert.equal(await page.locator('#layout-frontmatter').textContent(), 'Layout counter');
+      await page.goto(origin + '/docs/linked');
+      await page.locator('[data-hono-island] #linked-increment').click();
+      assert.equal(await page.locator('#linked-value').textContent(), '3');
+      assert.equal(await page.locator('#linked-frontmatter').textContent(), 'Linked Markdown');
+      assert.match(await page.locator('[data-island]').getAttribute('data-island'), /components\/MarkdownCounter\.tsx$/);
       const scriptRequests = []; const scriptListener = request => { if (request.resourceType() === 'script') scriptRequests.push(request.url()); }; page.on('request', scriptListener);
       await page.goto(origin + '/docs/script-only'); await page.waitForFunction(() => window.onlyMarkdownScript === true);
       assert.equal(await page.locator('#script-only').textContent(), 'script-only ready');
