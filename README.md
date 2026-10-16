@@ -17,7 +17,7 @@ Alpha versions are published on the `next` dist-tag under the [MIT license](LICE
 
 Published alpha.3 includes these peer ranges, running-Vite diagnostics and packaged source/maps. Alpha.1 and alpha.2 retain their exact-version gate. Stable Vite/Hono updates within the accepted ranges are admitted by compatibility policy; Void 0.28 and later require explicit validation. Prereleases are excluded. The fixture versions above are the 2026-10-12 snapshot; admitting a range does not mean every future version has already been tested. New upstream releases require refreshed fixtures, full checks and dependency audit review.
 
-This source tree also includes the next alpha's expanded Link/Form APIs, island forms and graphs, deferred contracts, page options and optional Markdown. Use a local tarball to test these additions until the next alpha is published; installing the currently published alpha.3 does not provide them.
+The expanded Link/Form APIs, island forms and graphs, deferred contracts, page options and optional Markdown documented below are additions after alpha.3. Use a later alpha containing the corresponding exports, or a local tarball to validate this source tree. Alpha.3 does not provide these additions.
 
 ## Install the alpha
 

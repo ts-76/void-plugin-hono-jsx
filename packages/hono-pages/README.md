@@ -15,7 +15,7 @@ This experimental package integrates Hono JSX with Void Pages. The package name 
 
 Published alpha.3 includes these peer ranges, running-Vite diagnostics and packaged source/maps. Alpha.1 and alpha.2 retain their exact-version gate. Stable Vite/Hono updates within the accepted ranges are admitted by compatibility policy; Void 0.28 and later require explicit validation. Prereleases are excluded. The fixture versions above are the 2026-10-12 snapshot; admitting a range does not mean every future version has already been tested. New upstream releases require refreshed fixtures, full checks and dependency audit review.
 
-This source tree also includes the next alpha's expanded Link/Form APIs, island forms and graphs, deferred contracts, page options and optional Markdown. Use a local tarball to test these additions until the next alpha is published; installing the currently published alpha.3 does not provide them.
+The expanded Link/Form APIs, island forms and graphs, deferred contracts, page options and optional Markdown documented below are additions after alpha.3. Use a later alpha containing the corresponding exports, or a local tarball to validate this source tree. Alpha.3 does not provide these additions.
 
 ## Install
 
@@ -146,7 +146,7 @@ The `load`, `visible`, `idle` and `media:(query)` policies use Void's shared sch
 
 ## Optional Markdown
 
-Use a version exporting `/markdown/plugin`; published alpha.3 predates this API. Install the adapter candidate using the local tarball steps above until the next alpha is published. Add parser peers explicitly only when using Markdown:
+Use a later alpha exporting `/markdown/plugin`; alpha.3 predates this API. For source validation, install the adapter using the local tarball steps above. Add parser peers explicitly only when using Markdown:
 
 ```sh
 npm install markdown-exit@1.3.0 yaml@2.9.1
