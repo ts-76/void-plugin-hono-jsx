@@ -116,5 +116,66 @@ export async function checkDeferredConsumer({ origin, page, mode }) {
   }
   await page.goto(origin);
   await page.locator('#app[data-hono-pages="mounted"]').waitFor();
+  const groupStatus = async (token) => (await fetch(origin + '/api/deferred-control?token=' + token)).json();
+  const groupToken = `group-${mode === 'development' ? 'development' : 'production'}`;
+  const groupStream = await fetch(origin + '/deferred-group?token=' + groupToken);
+  const groupReader = groupStream.body.getReader();
+  const shell = new TextDecoder().decode((await groupReader.read()).value);
+  assert.match(shell, /id="group-left">pending/);
+  assert.match(shell, /id="group-right">pending/);
+  assert.equal((await groupStatus(groupToken)).requests, 1);
+  await control(groupToken);
+  let completion = '';
+  while (true) { const chunk = await groupReader.read(); if (chunk.done) break; completion += new TextDecoder().decode(chunk.value); }
+  assert.equal(completion.match(/window\.__resolveDeferred\?/g)?.length, 1);
+  assert.match(completion, /"bundle"/);
+  await page.locator('#group-link').click();
+  await page.waitForFunction(() => document.querySelector('#group-left')?.textContent?.endsWith(':left:0'));
+  await page.locator('#group-increment').click();
+  const beforeMutation = await groupStatus(groupToken);
+  await page.locator('#group-save').click();
+  await page.waitForFunction(() => document.querySelector('#group-version')?.textContent === '1');
+  assert.match(await page.locator('#group-left').textContent(), /:left:0$/);
+  assert.match(await page.locator('#group-right').textContent(), /:right:0$/);
+  assert.equal(await page.locator('#group-increment').textContent(), '1');
+  assert.equal((await groupStatus(groupToken)).requests, beforeMutation.requests);
+  await page.reload({ waitUntil: 'commit' });
+  await page.waitForFunction(() => document.querySelector('#group-right')?.textContent?.endsWith(':right:1'));
+  await page.locator('#group-prefetch').click();
+  const prefetchedToken = groupToken + '-prefetch';
+  const deadline = Date.now() + 5000;
+  while ((await groupStatus(prefetchedToken)).requests === 0) {
+    if (Date.now() > deadline) throw new Error('Grouped prefetch was not started');
+    await new Promise(resolve => setTimeout(resolve, 25));
+  }
+  await control(prefetchedToken);
+  await page.waitForFunction(() => document.querySelector('#group-prefetched')?.textContent === 'true');
+  assert.equal((await groupStatus(prefetchedToken)).requests, 1);
+  await page.locator('#group-visit').click();
+  await page.waitForFunction(() => document.querySelector('#group-left')?.textContent?.includes('-prefetch:'));
+  assert.match(await page.locator('#group-right').textContent(), /:right:1$/);
+  assert.equal((await groupStatus(prefetchedToken)).requests, 1);
+  await page.locator('#group-away').click();
+  await page.waitForURL('**/other');
+  await page.goBack();
+  await page.waitForFunction(() => document.querySelector('#group-left')?.textContent?.includes('-prefetch:'));
+  await page.goForward();
+  await page.waitForURL('**/other');
+  await page.goto(origin + '/deferred-group?token=group-failure-' + mode, { waitUntil: 'commit' });
+  await page.locator('#app[data-hono-pages="mounted"]').waitFor();
+  await control('group-failure-' + mode, true);
+  await page.waitForFunction(message => ['group-left', 'group-right'].every(id => document.getElementById(id)?.textContent === message), failureMessage);
+  assert.equal((await groupStatus('group-failure-' + mode)).requests, 1);
+  await page.locator('#group-pending').click();
+  await page.waitForFunction(() => document.querySelector('#group-left')?.textContent === 'pending');
+  await page.locator('#group-away').click();
+  await page.waitForURL('**/other');
+  await control('group-failure-' + mode + '-pending');
+  await waitForCompletion('group-failure-' + mode + '-pending');
+  assert.equal(await page.locator('#group-left').count(), 0);
+  assert.equal(await page.locator('#other-heading').textContent(), 'Other page');
+  await page.goto(origin);
+  await page.locator('#app[data-hono-pages="mounted"]').waitFor();
+  console.log(`Grouped deferred ${mode}: one resolver, HTML/SPA projections, mutation value retention, fresh load, cached prefetch, history and sanitized errors passed.`);
   console.log(`Deferred ${mode}: immediate streamed shell, HTML/NDJSON completion, typed errors, early completion queue, page/layout retention, pending-page isolation and stale navigation discard passed.`);
 }
