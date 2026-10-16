@@ -50,7 +50,7 @@ import { defineConfig } from 'vite';
 import { voidPlugin } from 'void';
 import { voidHonoPages } from 'void-plugin-hono-jsx/plugin';
 
-export default defineConfig({ plugins: [voidPlugin(), voidHonoPages({ viewTransitions: true, prefetch: { hoverDelay: 75, cacheFor: '30s' } })] });
+export default defineConfig({ plugins: [voidPlugin(), voidHonoPages()] });
 ```
 
 Use standard Vite scripts (`vite`, `vite build`, `vite preview`) or keep the scaffold's `vp dev`, `vp build`, `vp preview` scripts. Both the scaffold Vite Plus 0.1.24 and latest 1.1.0 are consumer fixtures. The gate checks the actual hook version and reports resolved package paths. See [launcher diagnostics](packages/hono-pages/README.md#running-vite-and-launcher-diagnostics).

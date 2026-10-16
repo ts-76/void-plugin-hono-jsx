@@ -142,6 +142,29 @@ A static-only island page emits no client script or module preload tags. Static 
 
 The `load`, `visible`, `idle` and `media:(query)` policies use Void's shared scheduler. Use a single default relative TSX/JSX import, with attributes directly in the island page. Unknown policies and obvious malformed media queries fail discovery; the browser checks the media query through CSSOM before scheduling. Each island mounts once when its condition is met. Island layouts and attributed imports in their static TSX/JSX component graph are supported, including named layouts and repeated components with independent JSON props. The graph handles cycles and invalidates island entries when a known static component changes. Static chains without interactive imports emit no client script. Interactive components form a boundary: use ordinary imports inside them; another attributed island inside an already interactive component is rejected to avoid overlapping mounts. Full Pages cannot inherit an island layout (Void diagnoses the mixed mode). `useIslandForm(defaults)` provides the same data/dirty/error/submit/reset/clear state without a Pages provider. Submit to an explicit same-origin URL, or use `<Form form={form} url="/blog?save">`. Island success reloads or redirects the document, so state is rebuilt from SSR props. Duplicate submissions are suppressed; cancellation aborts the owned fetch but does not roll back a server write. Fields are sent as JSON. Ordinary `useForm` and the one-shot Pages `action` still require full Pages; use named imports of `useIslandForm`/`Form` in islands. Pages-only form imports (`useForm`, `action`) and ambiguous namespace/default form imports fail with a diagnostic in an island page or component. `useForm` also requires a full Pages provider at runtime. Use ordinary document links in static island pages. Pages navigation falls back to a document request for island routes. Static layouts remain server content and do not retain interactive state.
 
+## Optional Markdown
+
+Use a version exporting `/markdown/plugin`; published alpha.3 predates this API. Install the adapter candidate using the local tarball steps above until the next alpha is published. Add parser peers explicitly only when using Markdown:
+
+```sh
+npm install markdown-exit@1.3.0 yaml@2.9.1
+```
+
+```ts
+import { defineConfig } from 'vite';
+import { voidPlugin } from 'void';
+import { voidHonoPages } from 'void-plugin-hono-jsx/plugin';
+import { voidHonoMarkdown } from 'void-plugin-hono-jsx/markdown/plugin';
+
+export default defineConfig({
+  plugins: [voidPlugin(), voidHonoPages(), voidHonoMarkdown()],
+});
+```
+
+Create `.md` files in the Pages directory. Standard Markdown, tables, authored HTML, fenced code, heading anchors, YAML frontmatter, companion server loaders and TSX/JSX layouts are supported. Import `useFrontmatter()`, `useMarkdownHeadings()` and `useMarkdownProps()` from `void-plugin-hono-jsx/markdown` in layouts or islands. A leading `<script>` block before frontmatter may contain page-specific browser code and default relative TSX/JSX island imports. Islands use literal props and the load/visible/idle/media policies, including canonical identities for symlinked components. Frontmatter must be a JSON-serializable mapping; duplicate keys, invalid YAML and cycles fail compilation.
+
+Markdown routes use document navigation, and static-only pages emit no executable script. Interactive/script pages reload on development edits; zero-script pages need a normal refresh. Raw HTML is preserved for repository-authored content, without sanitization for untrusted input. Markdown layout files, JSX-expression/tag-child island props, Shiki themes, footnotes, custom containers and a page-catalog virtual module are unsupported. Do not also configure `@void/md/plugin`. Ordinary Pages users do not need these parser peers. See the repository's [Markdown guide](https://github.com/ts-76/void-plugin-hono-jsx/blob/main/docs/markdown.md) for page examples, metadata scoping and the complete contract.
+
 ## Experimental limitations
 
 The virtual renderer/client entries follow version-specific conventions observed in Void's official adapter rather than a documented third-party registration API. Browser mounting redraws the SSR page; DOM reuse is not guaranteed. Local ISR uses Void's native direct-worker KV/Cache API runtime; managed edge behavior remains unverified. Unsupported modes fail clearly. Package publication and repository visibility are separate maintainer decisions.
