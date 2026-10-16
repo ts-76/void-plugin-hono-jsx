@@ -121,8 +121,8 @@ export function honoIslands(): Plugin {
       const filename = id.split('?')[0];
       if (!/\.[jt]sx$/.test(filename) || filename.includes('/node_modules/')) return;
       const canonical = realpathSync(filename);
-      if ((pageFiles.has(canonical) || [...islands.values()].includes(canonical)) && parseSync(filename, code).program.body.some((node) => node.type === 'ImportDeclaration' && node.source.value === 'void-plugin-hono-jsx/form')) {
-        throw new Error('Hono islands: form helpers are unsupported; use a full Pages component.');
+      if ((pageFiles.has(canonical) || [...islands.values()].includes(canonical)) && parseSync(filename, code).program.body.some((node) => node.type === 'ImportDeclaration' && node.importKind !== 'type' && ['void-plugin-hono-jsx/form', 'void-plugin-hono-jsx/pages'].includes(node.source.value) && node.specifiers.some((entry) => entry.type !== 'ImportSpecifier' ? node.source.value.endsWith('/form') : entry.importKind !== 'type' && ['useForm', 'action', 'setActionRouter'].includes('name' in entry.imported ? entry.imported.name : entry.imported.value)))) {
+        throw new Error('Hono islands: useForm/action require full Pages; use named useIslandForm/Form imports for islands.');
       }
       const found = islandImports(code, filename);
       if (!found.length) return;
