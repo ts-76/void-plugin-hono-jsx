@@ -13,7 +13,9 @@ This experimental package integrates Hono JSX with Void Pages. The package name 
 | Vite Plus | Host Vite must satisfy the Vite range | 0.1.24 (scaffold), 1.1.0 (latest) |
 | TypeScript | Project tooling | 7.0.2 |
 
-The next release after alpha.2 broadens these peer ranges. Published alpha.1 and staged alpha.2 retain their exact-version gate; install a local candidate to test this change before its release. Stable Vite/Hono updates within the current major are admitted by compatibility policy; Void is pre-1.0, so the next minor (0.28) requires explicit validation. Prereleases are excluded. The fixture versions above were exercised individually; admitting a range does not mean every future version has already been tested. New upstream releases require refreshed fixtures, full checks and dependency audit review.
+Published alpha.3 includes these peer ranges, running-Vite diagnostics and packaged source/maps. Alpha.1 and alpha.2 retain their exact-version gate. Stable Vite/Hono updates within the accepted ranges are admitted by compatibility policy; Void 0.28 and later require explicit validation. Prereleases are excluded. The fixture versions above are the 2026-10-12 snapshot; admitting a range does not mean every future version has already been tested. New upstream releases require refreshed fixtures, full checks and dependency audit review.
+
+The expanded Link/Form APIs, island forms and graphs, deferred contracts, page options and optional Markdown documented below are additions after alpha.3. Use a later alpha containing the corresponding exports, or a local tarball to validate this source tree. Alpha.3 does not provide these additions.
 
 ## Install
 
@@ -68,7 +70,7 @@ The latest consumer fixtures also install React scaffold dependencies (React/DOM
 
 ## Source and debugging files
 
-The next alpha candidate includes the original `src/plugins/*.ts` and `src/runtime/*.{ts,tsx}` alongside compiled `dist` entries. Every JavaScript file has a `.js.map` with embedded original source; every declaration has a `.d.ts.map` pointing to the same packaged TypeScript files. Build-time import rewriting composes its map with the compiler map, so generated locations still refer to the original source. These additions require a new release; alpha.0 and alpha.1 remain unchanged.
+Published alpha.2 and alpha.3 include the original `src/plugins/*.ts` and `src/runtime/*.{ts,tsx}` alongside compiled `dist` entries. Every JavaScript file has a `.js.map` with embedded original source; every declaration has a `.d.ts.map` pointing to the same packaged TypeScript files. Build-time import rewriting composes its map with the compiler map, so generated locations still refer to the original source. Alpha.0 and alpha.1 retain their original dist-only archives.
 
 Read source under `node_modules/void-plugin-hono-jsx/src`. Editors supporting declaration maps can navigate from exported types to those files, and debuggers/bundlers supporting source maps can show the original source. Application imports continue to use `/plugin`, `/pages` and `/form`; `src` is supplied for inspection and debugging, not as an additional runtime entry point. Candidate and clean-consumer checks reject missing/stale maps, external source references, changed source bytes and unexpected archive files.
 
@@ -122,7 +124,7 @@ A resolved value or error updates the current page without resetting page-local 
 
 Void 0.26.1 forwards ordinary deferred resolver error messages in development; production streams use `Internal Server Error`. Deliberate HTTP exception messages may be forwarded in production. The adapter turns the received message into an `Error` and exposes it through `error`; server stack traces are not included. Author deliberate HTTP exception messages suitable for display to users. This follows the verified streaming error behavior of the pinned Void version.
 
-The verified contract covers single deferred props during GET document requests and SPA navigation. Grouped deferred props, deferred prefetching, mutation-driven deferred refresh and deferred island pages are excluded. The ordinary Pages action APIs remain documented under runtime exports.
+The verified contract covers single and grouped deferred props during GET document requests and SPA navigation, successful prefetch followed by a visit, and retention of resolved values after actions. Void preserves these values until the next load/navigation; mutation actions do not rerun the deferred resolver. Failed deferred prefetch currently becomes a resolved `null` because Void does not transmit its error; use document/SPA streaming when error state is required. Grouped resolver projections require explicit prop types with the current Void `defer<T>` declaration. Deferred island pages and static deferred output remain unsupported. The ordinary Pages action APIs remain documented under runtime exports.
 
 ## Islands
 
@@ -141,6 +143,29 @@ Place the counter outside the pages directory. It can use Hono hooks and event h
 A static-only island page emits no client script or module preload tags. Static page modules stay outside the normal Pages browser manifest. A project containing only static island pages builds empty client entry modules with no framework code. Void's own automatic prerender policy still applies to eligible island pages. Full static output and explicit prerender configuration follow the static output contract below.
 
 The `load`, `visible`, `idle` and `media:(query)` policies use Void's shared scheduler. Use a single default relative TSX/JSX import, with attributes directly in the island page. Unknown policies and obvious malformed media queries fail discovery; the browser checks the media query through CSSOM before scheduling. Each island mounts once when its condition is met. Island layouts and attributed imports in their static TSX/JSX component graph are supported, including named layouts and repeated components with independent JSON props. The graph handles cycles and invalidates island entries when a known static component changes. Static chains without interactive imports emit no client script. Interactive components form a boundary: use ordinary imports inside them; another attributed island inside an already interactive component is rejected to avoid overlapping mounts. Full Pages cannot inherit an island layout (Void diagnoses the mixed mode). `useIslandForm(defaults)` provides the same data/dirty/error/submit/reset/clear state without a Pages provider. Submit to an explicit same-origin URL, or use `<Form form={form} url="/blog?save">`. Island success reloads or redirects the document, so state is rebuilt from SSR props. Duplicate submissions are suppressed; cancellation aborts the owned fetch but does not roll back a server write. Fields are sent as JSON. Ordinary `useForm` and the one-shot Pages `action` still require full Pages; use named imports of `useIslandForm`/`Form` in islands. Pages-only form imports (`useForm`, `action`) and ambiguous namespace/default form imports fail with a diagnostic in an island page or component. `useForm` also requires a full Pages provider at runtime. Use ordinary document links in static island pages. Pages navigation falls back to a document request for island routes. Static layouts remain server content and do not retain interactive state.
+
+## Optional Markdown
+
+Use a later alpha exporting `/markdown/plugin`; alpha.3 predates this API. For source validation, install the adapter using the local tarball steps above. Add parser peers explicitly only when using Markdown:
+
+```sh
+npm install markdown-exit@1.3.0 yaml@2.9.1
+```
+
+```ts
+import { defineConfig } from 'vite';
+import { voidPlugin } from 'void';
+import { voidHonoPages } from 'void-plugin-hono-jsx/plugin';
+import { voidHonoMarkdown } from 'void-plugin-hono-jsx/markdown/plugin';
+
+export default defineConfig({
+  plugins: [voidPlugin(), voidHonoPages(), voidHonoMarkdown()],
+});
+```
+
+Create `.md` files in the Pages directory. Standard Markdown, tables, authored HTML, fenced code, heading anchors, YAML frontmatter, companion server loaders and TSX/JSX layouts are supported. Import `useFrontmatter()`, `useMarkdownHeadings()` and `useMarkdownProps()` from `void-plugin-hono-jsx/markdown` in layouts or islands. A leading `<script>` block before frontmatter may contain page-specific browser code and default relative TSX/JSX island imports. Islands use literal props and the load/visible/idle/media policies, including canonical identities for symlinked components. Frontmatter must be a JSON-serializable mapping; duplicate keys, invalid YAML and cycles fail compilation.
+
+Markdown routes use document navigation, and static-only pages emit no executable script. Interactive/script pages reload on development edits; zero-script pages need a normal refresh. Raw HTML is preserved for repository-authored content, without sanitization for untrusted input. Markdown layout files, JSX-expression/tag-child island props, Shiki themes, footnotes, custom containers and a page-catalog virtual module are unsupported. Do not also configure `@void/md/plugin`. Ordinary Pages users do not need these parser peers. See the repository's [Markdown guide](https://github.com/ts-76/void-plugin-hono-jsx/blob/main/docs/markdown.md) for page examples, metadata scoping and the complete contract.
 
 ## Experimental limitations
 

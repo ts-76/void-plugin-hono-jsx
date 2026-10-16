@@ -1,5 +1,12 @@
 {
   "extends": "./tsconfig.json",
-  "compilerOptions": { "rootDir": "src/runtime", "outDir": "dist/server" },
-  "include": ["src/runtime/pages.tsx", "src/runtime/form.ts"]
+  "compilerOptions": {
+    "rootDir": "src/runtime",
+    "outDir": "dist/server"
+  },
+  "include": [
+    "src/runtime/pages.tsx",
+    "src/runtime/form.ts",
+    "src/runtime/markdown.ts"
+  ]
 }

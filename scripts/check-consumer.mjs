@@ -1,3 +1,4 @@
+import { checkMarkdownConsumer } from './check-markdown-consumer.mjs';
 import assert from 'node:assert/strict';
 import { spawn, execFileSync } from 'node:child_process';
 import { cp, mkdtemp, mkdir, readFile, readdir, rm } from 'node:fs/promises';
@@ -188,6 +189,7 @@ try {
   console.log(`Tarball audit passed. Installing locked consumer ${stack.name}: Void ${stack.void}, npm Vite ${stack.vite}, ${stack.launcher} host ${stack.hostVite}.`);
   npm(['ci', '--no-audit', '--no-fund'], consumer);
   npm(['install', '--no-save', '--package-lock=false', '--no-audit', '--no-fund', tarball], consumer);
+  assert.equal((await readdir(join(consumer, 'node_modules'))).includes('markdown-exit'), false, 'Ordinary consumers must not install the optional Markdown parser');
   if (env.RELEASE_CONSUMER_AUDIT) dependencyAudit({ npmCli, cwd: consumer, env, output: env.RELEASE_CONSUMER_AUDIT });
   const installedContents = new Map();
   for (const file of entries) {
@@ -227,6 +229,7 @@ try {
     await checkStaticConsumer({ repo, consumer, browser, env });
     await checkCompatibilityConsumer({ consumer, env, stack });
     await checkIsrConsumer({ repo, consumer, browser, env });
+    await checkMarkdownConsumer({ repo, consumer, browser, env, tarball, npmCli });
   } finally { await browser.close(); }
   assert.equal(await digest(), acceptedDigest, 'Accepted artifact changed during validation');
   console.log(`Package audit passed: ${entries.length} intended files; declarations and locked clean-consumer checks passed.`);

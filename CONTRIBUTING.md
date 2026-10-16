@@ -1,6 +1,6 @@
 # Contributing
 
-This adapter is experimental; alpha.0 is published on npm with the `next` tag. The project uses the [MIT license](LICENSE). Follow the release checklist before publishing a release.
+This adapter is experimental; alpha releases are published on npm with the `next` tag. The project uses the [MIT license](LICENSE). Follow the release checklist before publishing a release.
 
 ## Setup and checks
 

@@ -254,6 +254,25 @@ for (const options of [ { viewTransitions: 'yes' }, { prefetch: { hoverDelay: -1
   test('invalid navigation options fail before starting Vite: ' + JSON.stringify(options), () => assert.throws(() => voidHonoPages(options), /Hono Pages:|prefetch:/));
 }
 
+test('Markdown routes fail discovery with the upstream gate and exact file', async () => {
+  await withPages({ 'guide.md': '# Guide' }, async plugin => {
+    await assert.rejects(() => plugin.buildStart(), /Markdown requires voidHonoMarkdown.*guide\.md/);
+  });
+});
+
+test('optional Markdown configuration reports the Hono boundary before the closed framework dispatch', () => {
+  const plugin = voidHonoPages().find(plugin => plugin.name === 'void-hono:pages');
+  assert.equal(plugin.configResolved.order, 'pre');
+  assert.throws(() => plugin.configResolved.handler({ plugins: [{ name: 'void-md' }] }), /use voidHonoMarkdown.*official compiler/);
+  assert.doesNotThrow(() => plugin.configResolved.handler({ plugins: [{ name: 'void-core' }] }));
+});
+
+test('Markdown island discovery fails at the same gate before parsing Markdown as JavaScript', async () => {
+  await withPages({ 'guide.island.md': '# Guide' }, async (_plugin, plugins) => {
+    await assert.rejects(() => plugins.find(plugin => plugin.name === 'void-hono:islands').buildStart(), /Markdown requires voidHonoMarkdown.*guide\.island\.md/);
+  });
+});
+
 test('directory index imports and re-exports retain static graph and island identities', async () => {
   await withPages({
     'index.island.tsx': "import { Wrapper } from '../parts'; export default Wrapper;",

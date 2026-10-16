@@ -1,6 +1,6 @@
 # Void scaffold and current-latest compatibility
 
-This change applies after staged alpha.2; alpha.1/alpha.2 retain the exact-version gate. Registry versions were read on 2026-10-12. Void 0.27.0's packaged init source requests Hono `^4.11.9`, Vite `^8.0.10`, TypeScript `^7.0.2`, and (by default) Vite Plus `^0.1.21`. The React choice adds `@void/react`, React/DOM/types and `oxc-transform-react`; Hono JSX replaces that adapter and compiler. [Void quickstart](https://void.cloud/guide/quickstart)
+These ranges and running-Vite checks shipped in alpha.3; alpha.1/alpha.2 retain the exact-version gate. The following is a versioned fixture snapshot, with registry versions read on 2026-10-12. Void 0.27.0's packaged init source requests Hono `^4.11.9`, Vite `^8.0.10`, TypeScript `^7.0.2`, and (by default) Vite Plus `^0.1.21`. The React choice adds `@void/react`, React/DOM/types and `oxc-transform-react`; Hono JSX replaces that adapter and compiler. [Void quickstart](https://void.cloud/guide/quickstart)
 
 | Locked consumer | Void | Direct `vite` dependency | Launcher / actual hook Vite |
 | --- | --- | --- | --- |
@@ -10,7 +10,7 @@ This change applies after staged alpha.2; alpha.1/alpha.2 retain the exact-versi
 | scaffold-vp | 0.27.0 | 8.3.4 | Vite Plus 0.1.24 / 8.0.16 |
 | latest-vp | 0.27.0 | npm:@voidzero-dev/vite-plus-core@1.1.0 | Vite Plus 1.1.0 / 8.3.3 |
 
-Hono 4.13.13 and TypeScript 7.0.2 are current latest and shared by every fixture. The three new-stack fixtures retain the React scaffold dependencies at current latest: React/DOM/types 19.3.0, @void/react 0.27.0 and oxc-transform-react 0.153.0. Their presence is tested; converting application React source is still required. Full consumers exercise declarations, dev/build/preview, SSR, browser mounting, counter/nav/reset/reload, concurrent SSR during page/loader changes, route add/remove, deferred HTML/NDJSON, islands, static HTML/JSON and local ISR. Managed deployment remains unverified.
+Hono 4.13.13 and TypeScript 7.0.2 were the latest versions on that date and are shared by every fixture. The three new-stack fixtures retain the React scaffold dependencies from that snapshot: React/DOM/types 19.3.0, @void/react 0.27.0 and oxc-transform-react 0.153.0. Their presence is tested; converting application React source is still required. Full consumers exercise declarations, dev/build/preview, SSR, browser mounting, counter/nav/reset/reload, concurrent SSR during page/loader changes, route add/remove, deferred HTML/NDJSON, islands, static HTML/JSON and local ISR. Managed deployment remains unverified.
 
 The real config hook context reports `this.meta.viteVersion`; root or adapter-resolved package metadata does not establish host identity. The adapter also validates the actual Vite helper module it imports and identifies adapter/project package metadata paths in errors. Alias metadata identifies the core package, while its exported version identifies the underlying helper Vite. [Vite plugin context](https://vite.dev/guide/api-plugin.html#plugin-context-meta)
 
