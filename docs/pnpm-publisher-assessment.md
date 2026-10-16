@@ -1,6 +1,10 @@
 # pnpm 公開 job の依存評価と採用条件
 
-2026-10-11、**pnpm 12.11.2 の Linux x64 native binary を、固定 tarball の stage 公開に限定して採用しました。** 実ビルドの依存を Cargo で解決した結果、監査対象は 517 crate、残る指摘は 4 件です。発動条件と公開経路を照合し、下記の隔離・監査ゲートを条件に既知の制約として受け入れます。監査 0 件や、あらゆる pnpm コマンドの安全性を示す判断ではありません。
+2026-10-11、**pnpm 12.11.2 の Linux x64 native binary を、固定 tarball の stage 公開に限定して採用しました。** 2026-10-17に公開CLIを **12.14.0** へ更新しました。監査対象は517 crateで、既存の4件の受け入れ条件は維持しています。監査0件や、あらゆるpnpmコマンドの安全性を示す判断ではありません。
+
+12.11.2の `rustls 0.23.45` は、10月14日公開の [RUSTSEC-2026-0346](https://rustsec.org/advisories/RUSTSEC-2026-0346.html) により必須CIで停止しました。12.14.0は修正版の `rustls 0.23.46` を含みます。新しい監査例外は追加していません。配布物のintegrity・binary SHA256、ソースarchive・Cargo.lock・Linux inventoryのhashを更新し、CIは保存したinventoryとの完全一致と実バイナリの隔離protocol検証を引き続き要求します。
+
+現在の参照ソースは [pnpm 12.14.0](https://github.com/pnpm/pnpm/tree/fe4a0c232384289de82be3d502896ca7e070050c)、commit `fe4a0c232384289de82be3d502896ca7e070050c` です。以下の12.11.2の記録は初回の到達経路評価です。更新時はstage/provenance経路の差分と新しいLinux Cargo解決を再確認し、既存の4件以外が現れた場合は停止します。
 
 対象は `void-plugin-hono-jsx@0.1.0-alpha.0 / next` の公開 job のみです。開発・ビルド・候補作成・lockfile は npm を使います。公開フラグは無効のままです。repository visibility、Trusted Publisher、owner の最終承認は別途の設定・判断が必要です。
 
