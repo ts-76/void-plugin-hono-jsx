@@ -3,7 +3,7 @@ import { jsx } from 'hono/jsx/dom/jsx-runtime';
 import { useLayoutEffect, useState } from 'hono/jsx';
 import { createVoidRouter, idleNavigationState, type NavigationState, type VoidRouterConfig } from 'void/pages-client';
 import { parseCacheFor } from 'void/pages-prefetch';
-import { PageContext, RouterContext, NavigationContext } from './pages.tsx';
+import { PageContext, RouterContext, NavigationContext, setActionRouter } from './pages.tsx';
 import { createDocumentHead } from './document-head.ts';
 import { createDeferred, resolveDeferred, rejectDeferred, isLoading, bufferInitialDeferred } from './deferred.ts';
 
@@ -51,6 +51,7 @@ export async function startHonoPages(manifest: Manifest) {
   });
   const releaseBuffer = bufferInitialDeferred();
   const navigation = await initialization.finally(releaseBuffer);
+  setActionRouter(navigation.router);
   renderedProps = navigation.initialPageData.props;
   applyDocumentHead = createDocumentHead(navigation.initialPageData.head);
 

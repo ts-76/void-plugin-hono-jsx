@@ -4,7 +4,7 @@ The renderer/client entry conventions and provider integration were adapted from
 
 ## Void and @void/react
 
-Source distributions: `void@0.26.0` and `@void/react@0.26.0`, published npm packages. Link behavior and prefetch lifecycle also reference the published `@void/react@0.27.0` adapter. The adapter imports framework APIs rather than bundling the framework.
+Source distributions: `void@0.26.0` and `@void/react@0.26.0`, published npm packages. Link, prefetch lifecycle and form API behavior also reference the published `@void/react@0.27.0` adapter. The adapter imports framework APIs rather than bundling the framework.
 
 MIT License
 
