@@ -39,6 +39,9 @@ export async function checkLinkConsumer({ origin, page, assert }) {
     await page.locator('#replace-link').click();
     await page.waitForFunction(() => document.querySelector('#link-value')?.textContent === 'replaced:');
     assert.equal(await page.evaluate(() => history.length), before);
+    await page.locator('#relative-link').click();
+    await page.waitForURL('**/links?value=relative');
+    await page.waitForFunction(() => document.querySelector('#link-value')?.textContent === 'relative:');
     for (const method of ['post', 'put', 'patch', 'delete']) {
       assert.equal(await page.locator('#mutation-' + method).evaluate((node) => node.tagName), 'BUTTON');
       await page.locator('#mutation-' + method).click();

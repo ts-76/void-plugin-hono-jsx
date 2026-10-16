@@ -9,6 +9,7 @@ export default function Links({ search, tags }: { search: string; tags: string[]
     <Link id="state-link" href="/links" data={{ value: 'kept' }} preserveState preserveScroll>Keep state</Link>
     <Link id="cancel-link" href="/other" onNavigate={(event) => event.preventDefault()}>Cancel</Link>
     <Link id="replace-link" href="/links" data={{ value: 'replaced' }} replace>Replace</Link>
+    <Link id="relative-link" href="?value=relative">Relative query</Link>
     {(['post', 'put', 'patch', 'delete'] as const).map((method) => <Link id={'mutation-' + method} href="/links?save" method={method} data={{ value: 'saved' }}>{method}</Link>)}
     <Link id="fail-link" href="/links?fail" method="post" data={{ value: '' }}>Failure</Link>
     <Link id="prefetch-link" href="/links?value=hover" prefetch cacheFor="1m">Hover</Link>
