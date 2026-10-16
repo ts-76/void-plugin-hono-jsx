@@ -44,6 +44,10 @@ inventory_text = json.dumps(inventory, indent=2) + '\n'
 (report / 'inventory.json').write_text(inventory_text)
 reviewed = pathlib.Path(__file__).with_name('publisher-rust-inventory.json')
 if reviewed.exists():
+    if inventory_text != reviewed.read_text():
+        before = {(p['name'], p['version']): p for p in json.loads(reviewed.read_text())}
+        after = {(p['name'], p['version']): p for p in inventory}
+        print(json.dumps(dict(removed=[p for k,p in before.items() if after.get(k) != p], added=[p for k,p in after.items() if before.get(k) != p]), indent=2), flush=True)
     assert inventory_text == reviewed.read_text(), 'Linux publisher build inventory changed; reassess'
 
 queries = [dict(package=dict(name=p['name'], ecosystem='crates.io'), version=p['version']) for p in inventory]
