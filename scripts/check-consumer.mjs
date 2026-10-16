@@ -16,6 +16,7 @@ import { checkStaticConsumer } from './check-static-consumer.mjs';
 import { checkDevelopmentConsumer } from './check-development-consumer.mjs';
 import { checkCompatibilityConsumer } from './check-compatibility-consumer.mjs';
 import { consumerStack, launcherArgs } from './consumer-launcher.mjs';
+import { checkLinkConsumer } from './check-link-consumer.mjs';
 import { checkIsrConsumer } from './check-isr-consumer.mjs';
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
@@ -73,7 +74,7 @@ async function smoke(mode, browser, staticOnly = false) {
     page.setDefaultTimeout(30000);
     const errors = [];
     page.on('pageerror', (error) => errors.push(error.message));
-    page.on('console', (message) => { if (message.type() === 'error') errors.push(message.text()); });
+    page.on('console', (message) => { if (message.type() === 'error' && !(message.location().url.endsWith('/links?fail') && message.text().includes('500'))) errors.push(message.text()); });
     try {
       const staticScripts = [];
       if (staticOnly) page.on('request', (request) => { if (request.resourceType() === 'script') staticScripts.push(request.url()); });
@@ -103,6 +104,7 @@ async function smoke(mode, browser, staticOnly = false) {
       await page.locator('#app[data-hono-pages="mounted"]').waitFor();
       assert.equal(await page.locator('#count').textContent(), '5');
       if (mode === 'development') await checkDevelopmentConsumer({ origin, page, consumer, assertRunning: () => { assert.equal(child.exitCode, null); assert.equal(child.signalCode, null); assert.doesNotMatch(logs, /server restarted|restarting server/i); } });
+      await checkLinkConsumer({ origin, page, assert });
       await checkDeferredConsumer({ origin, page, mode });
       const islandResponse = await fetch(origin + '/islands');
       assert.equal(islandResponse.status, 200);

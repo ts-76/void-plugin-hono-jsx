@@ -79,7 +79,7 @@ import { Link, useRouter, useShared, useParams, useErrors } from 'void-plugin-ho
 import { useForm } from 'void-plugin-hono-jsx/form';
 ```
 
-`Link` and `useRouter` use Void's shared navigation protocol. Ordinary GET visits reset page state; refresh preserves it. Root/nested/named layouts retain state while they remain in the active chain. Shared data, route params and field errors are available in SSR and browser components. `useForm` supports all mutation methods, named actions, validation, duplicate suppression and cancellation. Cancellation does not undo server writes.
+`Link` and `useRouter` use Void's shared navigation protocol. Link accepts `method`, `data`, `preserveScroll`, `preserveState`, `replace`, `reloadDocument` and cancellable `onNavigate`. GET data is serialized into its href; mutation links render buttons. Prefetch supports `true` (hover), `hover`, `click`, `mount`, `visible` or an array, with optional `cacheFor`. Prefetch and document reload are GET-only. User event handlers can prevent the adapter's action; external/download/target links retain native behavior. Ordinary GET visits reset page state; refresh preserves it. Root/nested/named layouts retain state while they remain in the active chain. Shared data, route params and field errors are available in SSR and browser components. `useForm` supports all mutation methods, named actions, validation, duplicate suppression and cancellation. Cancellation does not undo server writes.
 
 Head resolution and escaping follow Void. The adapter synchronizes document attributes and inert script metadata; navigation does not execute newly inserted scripts. Raw `script.innerHTML` is authored content. Serialize dynamic JSON-LD and escape `<` before assigning it.
 
