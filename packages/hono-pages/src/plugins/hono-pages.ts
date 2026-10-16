@@ -104,8 +104,8 @@ export function voidHonoPages(): Plugin[] {
       if (id === `\0${rendererId}`) {
         return `
 import { jsx } from 'hono/jsx';
-import { createSsrRouter } from 'void/pages-client';
-import { PageContext, RouterContext } from ${JSON.stringify(pagesRuntimePath)};
+import { createSsrRouter, idleNavigationState } from 'void/pages-client';
+import { PageContext, RouterContext, NavigationContext } from ${JSON.stringify(pagesRuntimePath)};
 import { serializePageData } from 'void/pages-server';
 import { renderHeadToString, renderHtmlAttrs, renderBodyAttrs } from 'void/pages-head';
 ${manifest}
@@ -122,7 +122,7 @@ export async function renderPage(pageObj, assetTags) {
     if (typeof Layout !== 'function') throw new Error('Hono Pages: a layout must export a component function.');
     content = jsx(Layout, { children: content });
   }
-  const markup = await jsx(RouterContext.Provider, { value: createSsrRouter(pageObj.url, pageObj.params), children: jsx(PageContext.Provider, { value: pageObj, children: content }) }).toString();
+  const markup = await jsx(RouterContext.Provider, { value: createSsrRouter(pageObj.url, pageObj.params), children: jsx(PageContext.Provider, { value: pageObj, children: jsx(NavigationContext.Provider, { value: idleNavigationState(), children: content }) }) }).toString();
   const head = pageObj.head;
   const body = pageObj.deferredKeys ? assetTags.body.replaceAll('<script type="module"', '<script async type="module"') : assetTags.body;
   return '<!doctype html><html' + (head ? renderHtmlAttrs(head) : '') + '><head>'

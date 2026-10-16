@@ -1,8 +1,12 @@
 import { useState } from 'hono/jsx';
-import { Link } from 'void-plugin-hono-jsx/pages';
+import { Link, useNavigation } from 'void-plugin-hono-jsx/pages';
+export const layout = '!navigation';
 export default function Links({ search, tags }: { search: string; tags: string[] }) {
+  const navigation = useNavigation();
   const [count, setCount] = useState(0);
   return <main style="min-height: 3000px"><h1 id="links-heading">Links</h1>
+    <output id="navigation-state">{navigation.state}:{navigation.method ?? '-'}:{navigation.location?.pathname ?? '-'}</output>
+    <Link id="slow-link" href="/links?value=slow">Slow</Link>
     <output id="link-value">{search}:{tags.join(',')}</output>
     <output id="link-count">{count}</output><button id="link-increment" onClick={() => setCount(count + 1)}>Increment</button>
     <Link id="query-link" href="/links?keep=1" data={{ value: 'query', tag: ['one', 'two'], omitted: null }} preserveScroll>Query</Link>

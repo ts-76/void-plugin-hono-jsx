@@ -1,9 +1,9 @@
 import { render } from 'hono/jsx/dom';
 import { jsx } from 'hono/jsx/dom/jsx-runtime';
 import { useLayoutEffect, useState } from 'hono/jsx';
-import { createVoidRouter, type VoidRouterConfig } from 'void/pages-client';
+import { createVoidRouter, idleNavigationState, type NavigationState, type VoidRouterConfig } from 'void/pages-client';
 import { parseCacheFor } from 'void/pages-prefetch';
-import { PageContext, RouterContext } from './pages.tsx';
+import { PageContext, RouterContext, NavigationContext } from './pages.tsx';
 import { createDocumentHead } from './document-head.ts';
 import { createDeferred, resolveDeferred, rejectDeferred, isLoading, bufferInitialDeferred } from './deferred.ts';
 
@@ -20,6 +20,8 @@ export async function startHonoPages(manifest: Manifest) {
   type Frame = { page: Awaited<ReturnType<typeof createVoidRouter>>['initialPageData']; component: unknown; layouts: unknown[]; revision: number };
   let update: ((frame: Frame) => void) | undefined;
   let revision = 0;
+  let navigationState = idleNavigationState();
+  let updateNavigation: ((state: NavigationState) => void) | undefined;
   let applyDocumentHead: ReturnType<typeof createDocumentHead> | undefined;
   let renderedProps: Record<string, unknown> | undefined;
   let updateDeferred: ((props: Record<string, unknown>) => void) | undefined;
@@ -45,7 +47,7 @@ export async function startHonoPages(manifest: Manifest) {
     prefetchHoverDelay: 75,
     prefetchDefaultCacheFor: parseCacheFor('30s'),
     cacheVisitedPageData: false,
-    onNavigationChange(state) { root.dataset.navigation = state.state; },
+    onNavigationChange(state) { navigationState = state; updateNavigation?.(state); root.dataset.navigation = state.state; },
   });
   const releaseBuffer = bufferInitialDeferred();
   const navigation = await initialization.finally(releaseBuffer);
@@ -54,13 +56,16 @@ export async function startHonoPages(manifest: Manifest) {
 
   function App() {
     const [frame, setFrame] = useState<Frame>({ page: { ...navigation.initialPageData, props: { ...navigation.initialPageData.props } }, component: navigation.initialComponent, layouts: navigation.initialLayouts, revision });
+    const [pendingNavigation, setNavigation] = useState(navigationState);
     const [failed, setFailed] = useState(false);
     useLayoutEffect(() => {
+      updateNavigation = setNavigation;
+      setNavigation(navigationState);
       updateDeferred = (props) => setFrame((frame) => ({ ...frame, page: { ...frame.page, props } }));
       update = (next) => { setFailed(false); setFrame(next); };
       const onError = () => setFailed(true);
       window.addEventListener('hono-pages:navigation-error', onError);
-      return () => { update = undefined; updateDeferred = undefined; window.removeEventListener('hono-pages:navigation-error', onError); };
+      return () => { updateNavigation = undefined; update = undefined; updateDeferred = undefined; window.removeEventListener('hono-pages:navigation-error', onError); };
     }, []);
     let content = jsx(pageComponent(frame.component), frame.page.props, String(frame.revision));
     const ids = manifest.layoutTree[frame.page.component] ?? [];
@@ -69,8 +74,10 @@ export async function startHonoPages(manifest: Manifest) {
     }
     return <RouterContext.Provider value={navigation.router}>
       <PageContext.Provider value={frame.page}>
-        {failed && <p role="alert">The page could not be loaded. Please try again.</p>}
-        {content}
+        <NavigationContext.Provider value={pendingNavigation}>
+          {failed && <p role="alert">The page could not be loaded. Please try again.</p>}
+          {content}
+        </NavigationContext.Provider>
       </PageContext.Provider>
     </RouterContext.Provider>;
   }
