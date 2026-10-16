@@ -11,6 +11,7 @@ import { createServer } from 'node:net';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { parseSync } from 'vite';
+import { checkTransitionConsumer } from './check-transition-consumer.mjs';
 import { checkDeferredConsumer } from './check-deferred-consumer.mjs';
 import { checkStaticConsumer } from './check-static-consumer.mjs';
 import { checkDevelopmentConsumer } from './check-development-consumer.mjs';
@@ -78,7 +79,7 @@ async function smoke(mode, browser, staticOnly = false) {
     page.setDefaultTimeout(30000);
     const errors = [];
     page.on('pageerror', (error) => errors.push(error.message));
-    page.on('console', (message) => { if (message.type() === 'error' && !((message.location().url.endsWith('/links?fail') || message.location().url.endsWith('/forms?fail') || message.location().url.endsWith('/island-forms?fail')) && message.text().includes('500') || message.location().url.endsWith('/forms?quota') && message.text().includes('429') || message.location().url.endsWith('/island-forms?save') && message.text().includes('422'))) errors.push(message.text()); });
+    page.on('console', (message) => { if (message.type() === 'error' && !((message.location().url.endsWith('/links?fail') || message.location().url.endsWith('/forms?fail') || message.location().url.endsWith('/island-forms?fail') || message.location().url.endsWith('/transitions?value=error')) && message.text().includes('500') || message.location().url.endsWith('/forms?quota') && message.text().includes('429') || message.location().url.endsWith('/island-forms?save') && message.text().includes('422'))) errors.push(message.text()); });
     try {
       const staticScripts = [];
       if (staticOnly) page.on('request', (request) => { if (request.resourceType() === 'script') staticScripts.push(request.url()); });
@@ -114,6 +115,7 @@ async function smoke(mode, browser, staticOnly = false) {
       await checkIslandGraph({ origin, page, assert, mode, consumer });
       await checkIslandForms({ origin, page, assert });
       await checkDeferredConsumer({ origin, page, mode });
+      await checkTransitionConsumer({ origin, page });
       const islandResponse = await fetch(origin + '/islands');
       assert.equal(islandResponse.status, 200);
       const islandHtml = await islandResponse.text();

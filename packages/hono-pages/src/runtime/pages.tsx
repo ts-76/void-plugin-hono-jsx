@@ -43,13 +43,14 @@ export type LinkProps = Omit<JSX.IntrinsicElements['a'], 'href' | 'onClick'> & {
   preserveState?: boolean;
   reloadDocument?: boolean;
   replace?: boolean;
+  viewTransition?: boolean;
   prefetch?: boolean | PrefetchStrategy | ReadonlyArray<PrefetchStrategy>;
   cacheFor?: CacheForInput;
   onNavigate?: (event: { preventDefault(): void }) => void;
   onClick?: (event: MouseEvent) => void;
 };
 
-export function Link({ href, method = 'GET', data, preserveScroll, preserveState, reloadDocument, replace,
+export function Link({ href, method = 'GET', data, preserveScroll, preserveState, reloadDocument, replace, viewTransition,
   prefetch = false, cacheFor, onNavigate, onClick, onMouseEnter, onMouseLeave, onFocus, onMouseDown, onTouchStart,
   ...attributes }: LinkProps) {
   const router = useRouter();
@@ -90,7 +91,7 @@ export function Link({ href, method = 'GET', data, preserveScroll, preserveState
       let cancelled = false;
       onNavigate?.({ preventDefault() { cancelled = true; } });
       event.preventDefault();
-      if (!cancelled) void router.visit(new URL(destination, window.location.href), { method: normalized, data: get ? undefined : data, preserveScroll, preserveState, replace }).catch(report);
+      if (!cancelled) void router.visit(new URL(destination, window.location.href), { method: normalized, data: get ? undefined : data, preserveScroll, preserveState, replace, viewTransition }).catch(report);
     },
     onMouseEnter(event: MouseEvent) {
       onMouseEnter?.(event); clear();

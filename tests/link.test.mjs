@@ -12,9 +12,9 @@ const { Link, RouterContext, NavigationContext, useNavigation } = await import('
 const html = async (props) => jsx(RouterContext.Provider, { value: createSsrRouter('/'), children: jsx(Link, { children: 'Go', ...props }) }).toString();
 
 test('SSR Link merges query data without leaking navigation props or browser effects', async () => {
-  const rendered = await html({ href: '/users?keep=1', data: { tag: ['one', 'two'], empty: null }, prefetch: 'mount', preserveState: true });
+  const rendered = await html({ href: '/users?keep=1', data: { tag: ['one', 'two'], empty: null }, prefetch: 'mount', preserveState: true, viewTransition: false });
   assert.match(rendered, /href="\/users\?keep=1(?:&amp;|&)tag=one(?:&amp;|&)tag=two"/);
-  assert.doesNotMatch(rendered, /prefetch=|preserveState=|empty=/);
+  assert.doesNotMatch(rendered, /prefetch=|preserveState=|viewTransition=|empty=/);
 });
 
 test('mutation Link renders a button, not a GET anchor', async () => {

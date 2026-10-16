@@ -4,7 +4,7 @@ The renderer/client entry conventions and provider integration were adapted from
 
 ## Void and @void/react
 
-Source distributions: `void@0.26.0` and `@void/react@0.26.0`, published npm packages. Link, prefetch lifecycle and form API behavior also reference the published `@void/react@0.27.0` adapter. The adapter imports framework APIs rather than bundling the framework.
+Source distributions: `void@0.26.0` and `@void/react@0.26.0`, published npm packages. Link, prefetch lifecycle and form API behavior also reference the published `@void/react@0.27.0` adapter. Hono's render/navigation integration uses the public `void@0.26.1` / `void@0.27.0` navigation engine and router facade, with lifecycle behavior adapted from Void's router. The adapter imports framework APIs rather than bundling the framework.
 
 MIT License
 

@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import { voidHonoPages } from '../packages/hono-pages/src/plugins/hono-pages.ts';
 
-async function withPages(files, check) {
+async function withPages(files, check, options) {
   const previous = process.cwd();
   const root = await mkdtemp(join(tmpdir(), 'hono-pages-contract-'));
   try {
@@ -15,7 +15,7 @@ async function withPages(files, check) {
       await writeFile(join(root, 'pages', name), source);
     }
     process.chdir(root);
-    const plugin = voidHonoPages().find((plugin) => plugin.name === 'void-hono:pages');
+    const plugin = voidHonoPages(options).find((plugin) => plugin.name === 'void-hono:pages');
     plugin.environment = { mode: 'build' };
     await check(plugin, voidHonoPages());
   } finally {
@@ -235,6 +235,24 @@ test('island components accept named provider-free form imports', async () => {
     assert.doesNotThrow(() => islands.transform(component, join(process.cwd(), 'Counter.tsx')));
   });
 });
+
+test('navigation options retain defaults and serialize shared parsed cache durations', async () => {
+  await withPages({ 'index.tsx': page }, async plugin => {
+    const entry = await plugin.load(plugin.resolveId('virtual:void-pages-client'));
+    assert.match(entry, /"viewTransitions":false/);
+    assert.match(entry, /"prefetchHoverDelay":75/);
+    assert.match(entry, /"stale":30000,"expires":30000/);
+  });
+  await withPages({ 'index.tsx': page }, async plugin => {
+    const entry = await plugin.load(plugin.resolveId('virtual:void-pages-client'));
+    assert.match(entry, /"viewTransitions":true/);
+    assert.match(entry, /"prefetchHoverDelay":20/);
+    assert.match(entry, /"stale":5000,"expires":10000/);
+  }, { viewTransitions: true, prefetch: { hoverDelay: 20, cacheFor: ['5s', '10s'] } });
+});
+for (const options of [ { viewTransitions: 'yes' }, { prefetch: { hoverDelay: -1 } }, { prefetch: { hoverDelay: Infinity } }, { prefetch: { cacheFor: -1 } }, { prefetch: { cacheFor: ['10s', '5s'] } }, { prefetch: { cacheFor: 'bad' } } ]) {
+  test('invalid navigation options fail before starting Vite: ' + JSON.stringify(options), () => assert.throws(() => voidHonoPages(options), /Hono Pages:|prefetch:/));
+}
 
 test('directory index imports and re-exports retain static graph and island identities', async () => {
   await withPages({
