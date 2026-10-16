@@ -1,4 +1,4 @@
-import { render } from 'hono/jsx/dom';
+import { ErrorBoundary, render } from 'hono/jsx/dom';
 import { jsx } from 'hono/jsx/dom/jsx-runtime';
 import { useLayoutEffect, useState } from 'hono/jsx';
 import { idleNavigationState, type NavigationState, type VoidRouterConfig } from 'void/pages-client';
@@ -19,11 +19,13 @@ function pageComponent(component: unknown) {
 export async function startHonoPages(manifest: Manifest, options: NavigationOptions) {
   const root = document.getElementById('app');
   if (!root) throw new Error('Hono Pages: app root is missing.');
-  type Frame = { page: Awaited<ReturnType<typeof createHonoRouter>>['initialPageData']; component: unknown; layouts: unknown[]; revision: number; commit: number };
+  type Frame = { page: Awaited<ReturnType<typeof createHonoRouter>>['initialPageData']; sourceProps: Record<string, unknown>; component: unknown; layouts: unknown[]; revision: number; commit: number };
   let update: ((frame: Frame) => void) | undefined;
   let revision = 0;
   let commit = 0;
-  const pendingCommits = new Map<number, () => void>();
+  const pendingCommits = new Map<number, { resolve(): void; reject(error: unknown): void }>();
+  let committedFrame: Frame | undefined;
+  const failedFrames = new Set<number>();
   let navigationState = idleNavigationState();
   let updateNavigation: ((state: NavigationState) => void) | undefined;
   let applyDocumentHead: ReturnType<typeof createDocumentHead> | undefined;
@@ -43,8 +45,8 @@ export async function startHonoPages(manifest: Manifest, options: NavigationOpti
         if (!options.preserveState) revision++;
         renderedProps = page.props;
         const nextCommit = ++commit;
-        const committed = new Promise<void>(resolve => pendingCommits.set(nextCommit, resolve));
-        update({ page: { ...page, props: { ...page.props } }, component, layouts, revision, commit: nextCommit });
+        const committed = new Promise<void>((resolve, reject) => pendingCommits.set(nextCommit, { resolve, reject }));
+        update({ page: { ...page, props: { ...page.props } }, sourceProps: page.props, component, layouts, revision, commit: nextCommit });
         await committed;
       },
     },
@@ -58,10 +60,28 @@ export async function startHonoPages(manifest: Manifest, options: NavigationOpti
   renderedProps = navigation.initialPageData.props;
   applyDocumentHead = createDocumentHead(navigation.initialPageData.head);
 
+  const initialFrame: Frame = { page: { ...navigation.initialPageData, props: { ...navigation.initialPageData.props } }, sourceProps: navigation.initialPageData.props, component: navigation.initialComponent, layouts: navigation.initialLayouts, revision, commit };
+  function PageFrame({ frame }: { frame: Frame }) {
+    useLayoutEffect(() => {
+      if (failedFrames.has(frame.commit)) return;
+      if (frame.commit > 0) applyDocumentHead?.(frame.page.head);
+      committedFrame = frame;
+      for (const id of failedFrames) if (id < frame.commit) failedFrames.delete(id);
+      for (const [id, pending] of pendingCommits) if (id <= frame.commit) { pendingCommits.delete(id); pending.resolve(); }
+    }, [frame]);
+    let content = jsx(pageComponent(frame.component), frame.page.props, String(frame.revision));
+    const ids = manifest.layoutTree[frame.page.component] ?? [];
+    for (let index = frame.layouts.length - 1; index >= 0; index--) {
+      content = jsx(pageComponent(frame.layouts[index]), { children: content }, ids[index]);
+    }
+    return <PageContext.Provider value={frame.page}>{content}</PageContext.Provider>;
+  }
+
   function App() {
-    const [frame, setFrame] = useState<Frame>({ page: { ...navigation.initialPageData, props: { ...navigation.initialPageData.props } }, component: navigation.initialComponent, layouts: navigation.initialLayouts, revision, commit });
+    const [frame, setFrame] = useState<Frame>(initialFrame);
     const [pendingNavigation, setNavigation] = useState(navigationState);
     const [failed, setFailed] = useState(false);
+    const [recovery, setRecovery] = useState(0);
     useLayoutEffect(() => {
       updateNavigation = setNavigation;
       setNavigation(navigationState);
@@ -69,26 +89,31 @@ export async function startHonoPages(manifest: Manifest, options: NavigationOpti
       update = (next) => { setFailed(false); setFrame(next); };
       const onError = () => setFailed(true);
       window.addEventListener('hono-pages:navigation-error', onError);
-      return () => { for (const resolve of pendingCommits.values()) resolve(); pendingCommits.clear(); updateNavigation = undefined; update = undefined; updateDeferred = undefined; window.removeEventListener('hono-pages:navigation-error', onError); };
+      return () => { for (const pending of pendingCommits.values()) pending.reject(new DOMException('Hono Pages: renderer unmounted.', 'AbortError')); pendingCommits.clear(); updateNavigation = undefined; update = undefined; updateDeferred = undefined; window.removeEventListener('hono-pages:navigation-error', onError); };
     }, []);
-    useLayoutEffect(() => {
-      if (frame.commit > 0) applyDocumentHead?.(frame.page.head);
-      // Hono has committed the complete child DOM before layout effects run.
-      // Coalesced frames also release older waiters using the newest snapshot.
-      for (const [id, resolve] of pendingCommits) if (id <= frame.commit) { pendingCommits.delete(id); resolve(); }
-    }, [frame]);
-    let content = jsx(pageComponent(frame.component), frame.page.props, String(frame.revision));
-    const ids = manifest.layoutTree[frame.page.component] ?? [];
-    for (let index = frame.layouts.length - 1; index >= 0; index--) {
-      content = jsx(pageComponent(frame.layouts[index]), { children: content }, ids[index]);
-    }
+    const renderFailed = (error: unknown) => {
+      if (failedFrames.has(frame.commit)) return;
+      failedFrames.add(frame.commit);
+      queueMicrotask(() => {
+      // A rejected child never reaches PageFrame's commit effect. Roll back
+      // outside the render traversal, then reject every coalesced waiter.
+      if (commit === frame.commit) {
+        if (committedFrame) { renderedProps = committedFrame.sourceProps; setFrame(committedFrame); }
+        // Discard the partially built Hono tree only after a render failure.
+        // Successful navigations keep the same boundary and layout state.
+        setRecovery(value => value + 1);
+        setFailed(true);
+      }
+      for (const [id, pending] of pendingCommits) if (id <= frame.commit) { pendingCommits.delete(id); pending.reject(error); }
+      });
+    };
     return <RouterContext.Provider value={navigation.router}>
-      <PageContext.Provider value={frame.page}>
-        <NavigationContext.Provider value={pendingNavigation}>
-          {failed && <p role="alert">The page could not be loaded. Please try again.</p>}
-          {content}
-        </NavigationContext.Provider>
-      </PageContext.Provider>
+      <NavigationContext.Provider value={pendingNavigation}>
+        {failed && <p role="alert">The page could not be loaded. Please try again.</p>}
+        <ErrorBoundary key={recovery} onError={renderFailed} fallback={<></>}>
+          <PageFrame frame={frame} />
+        </ErrorBoundary>
+      </NavigationContext.Provider>
     </RouterContext.Provider>;
   }
 

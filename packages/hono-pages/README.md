@@ -85,6 +85,8 @@ import { Form, useForm, useIslandForm, action } from 'void-plugin-hono-jsx/form'
 
 Head resolution and escaping follow Void. The adapter synchronizes document attributes and inert script metadata; navigation does not execute newly inserted scripts. Raw `script.innerHTML` is authored content. Serialize dynamic JSON-LD and escape `<` before assigning it.
 
+If a page or layout throws during browser rendering, the visit rejects and navigation returns to idle. The URL and head remain on the last successful page. Recovery rebuilds that page and its layouts, resetting their local component state; a later visit can proceed normally. State preservation during successful navigation is unchanged.
+
 ## Static output and prerendering
 
 Set `output: 'static'` in `void.config.ts`, then run `vite build`. Void collects known page routes and dynamic `getPrerenderPaths()` results and generates HTML plus `/_void/pages/*.json` under `dist/client`. The Hono adapter supplies its renderer and enables the shared router's static-data mode. It adds no route crawler.

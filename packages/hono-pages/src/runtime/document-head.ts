@@ -39,10 +39,13 @@ export function createDocumentHead(initial: HeadDescriptor | undefined) {
     const template = document.createElement('template');
     template.innerHTML = renderHeadToString({ meta: head?.meta, link: head?.link });
     const metadata = Array.from(document.head.querySelectorAll('meta[data-void-head],link[data-void-head]'));
+    let cursor = document.head.querySelector('meta[data-void-head],link[data-void-head]') as Node | null;
     for (const desired of Array.from(template.content.querySelectorAll('meta,link'))) {
       const index = metadata.findIndex(element => metadataSignature(element) === metadataSignature(desired));
-      if (index >= 0) document.head.appendChild(metadata.splice(index, 1)[0]);
-      else { desired.setAttribute('data-void-head', ''); document.head.appendChild(desired); }
+      const element = index >= 0 ? metadata.splice(index, 1)[0] : desired;
+      element.setAttribute('data-void-head', '');
+      if (element !== cursor) document.head.insertBefore(element, cursor);
+      cursor = element.nextSibling;
     }
     for (const previous of metadata) previous.remove();
     htmlKeys = attributes(document.documentElement, htmlKeys, head?.htmlAttrs);

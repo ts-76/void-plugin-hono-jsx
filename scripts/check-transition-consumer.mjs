@@ -4,6 +4,7 @@ export async function checkTransitionConsumer({ origin, page }) {
   await page.locator('#app[data-hono-pages="mounted"]').waitFor();
   assert.equal(await page.locator('meta[name=transition-value]').count(), 1);
   assert.equal(await page.locator('link[rel=canonical]').count(), 1);
+  assert.equal(await page.locator('#transition-cascade').evaluate(node => getComputedStyle(node).color), 'rgb(0, 0, 255)');
   await page.evaluate(() => {
     window.transitionSnapshots = [];
     window.nativeTransition = document.startViewTransition?.bind(document);
@@ -71,6 +72,37 @@ export async function checkTransitionConsumer({ origin, page }) {
   await visit('#transition-programmatic', 'programmatic');
   assert.equal(await page.locator('meta[name=transition-value]').count(), 1);
   assert.equal(await page.locator('link[rel=canonical]').count(), 1);
+  assert.equal(await page.locator('#transition-cascade').evaluate(node => getComputedStyle(node).color), 'rgb(0, 0, 255)', 'Head updates preserve the stylesheet cascade');
+  let guardRequests = 0;
+  const countGuard = request => { if (request.url().includes('guard=1')) guardRequests++; };
+  page.on('request', countGuard);
+  try {
+    const errors = await page.evaluate(async () => {
+      const errors = [];
+      for (const [url, options] of [['https://external.example/transitions?guard=1', { method: 'POST', data: { value: 'must not be sent' } }], ['javascript:alert(1)', {}], ['data:text/html,blocked', {}]]) {
+        try { await window.transitionRouter.visit(url, options); errors.push(null); } catch (error) { errors.push(error.message); }
+      }
+      return errors;
+    });
+    assert.match(errors[0], /current origin/); assert.match(errors[1], /javascript:/); assert.match(errors[2], /data:/);
+    assert.equal(guardRequests, 0);
+  } finally { page.off('request', countGuard); }
+  await page.evaluate(() => { document.startViewTransition = window.nativeTransition; });
+  for (const [target, viewTransition, message] of [['/transitions?value=render-error', false, 'component'], ['/transitions?value=render-error', true, 'component'], ['/layout-failure', false, 'layout']]) {
+    const previousUrl = page.url(); const previousTitle = await page.title(); const previousValue = await page.locator('#transition-value').textContent();
+    const result = await page.evaluate(async ({ target, viewTransition }) => {
+      try { await window.transitionRouter.visit(target, { viewTransition }); return 'unexpected success'; } catch (error) { return error.message; }
+    }, { target, viewTransition });
+    assert.match(result, new RegExp('Transition ' + message + ' render failed'));
+    await page.locator('#app[data-navigation="idle"]').waitFor();
+    assert.equal(page.url(), previousUrl); assert.equal(await page.title(), previousTitle);
+    assert.equal(await page.locator('#transition-value').textContent(), previousValue);
+    assert.equal(await page.locator('#transition-value').count(), 1);
+    await page.evaluate(() => window.transitionRouter.visit('/transitions?value=recovered', { viewTransition: false }));
+    await page.locator('#app[data-navigation="idle"]').waitFor();
+    assert.equal(await page.locator('#transition-value').textContent(), 'recovered');
+    assert.equal(await page.getByRole('alert').count(), 0);
+  }
   await page.goto(origin);
   await page.locator('#app[data-hono-pages="mounted"]').waitFor();
   console.log('View Transitions: native callback sees committed DOM/head, Link override, global/programmatic visits, history, delayed stale callback, cancellation/failure and absent-API fallback passed.');

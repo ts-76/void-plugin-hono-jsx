@@ -10,7 +10,7 @@ test('native animation skips do not hide failed updates or resolve before render
     let started = 0;
     globalThis.document = { startViewTransition(update) {
       started++;
-      return { ready: Promise.reject(new DOMException('Animation superseded', 'AbortError')), updateCallbackDone: update() };
+      return { ready: Promise.reject(new DOMException('Animation superseded', 'AbortError')), finished: Promise.reject(new DOMException('Animation did not finish', 'AbortError')), updateCallbackDone: update() };
     } };
     let done = false;
     const render = applyWithTransition(true, () => committed).then(() => { done = true; });

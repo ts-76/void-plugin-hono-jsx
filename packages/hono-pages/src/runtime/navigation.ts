@@ -7,6 +7,7 @@ export async function applyWithTransition(enabled: boolean, update: () => Promis
   // ready rejects for expected animation skips; updateCallbackDone separately
   // propagates rendering failures. Never patch the browser's native method.
   void transition.ready.catch(() => {});
+  void transition.finished?.catch(() => {});
   await transition.updateCallbackDone;
 }
 
@@ -15,7 +16,12 @@ export async function createHonoRouter(config: VoidRouterConfig) {
   const engine = await createPageNavigationEngine(config);
   const currentUrl = () => window.location.pathname + window.location.search + window.location.hash;
   const toUrl = (value: string | URL) => new URL(value, window.location.href);
-  const normalize = (value: string | URL) => { const url = toUrl(value); return url.pathname + url.search + url.hash; };
+  const normalize = (value: string | URL) => {
+    const url = toUrl(value);
+    // Preserve foreign origins and schemes for the shared engine's guards.
+    return url.origin === window.location.origin && ['http:', 'https:'].includes(url.protocol)
+      ? url.pathname + url.search + url.hash : url.href;
+  };
   let routeUrl = currentUrl();
   let routeParams = engine.initialPageData.params ?? {};
   let active: number | null = null;
@@ -25,6 +31,7 @@ export async function createHonoRouter(config: VoidRouterConfig) {
   };
   async function apply(resource: PageNavigationResource) {
     active = resource.id;
+    const previousParams = routeParams;
     config.onNavigationChange?.({ state: resource.method === 'GET' ? 'loading' : 'submitting', location: toUrl(resource.fetchUrl + resource.hash), method: resource.method.toUpperCase() as NavigationMethod });
     try {
       const result = await resource.shell;
@@ -40,6 +47,7 @@ export async function createHonoRouter(config: VoidRouterConfig) {
       if (active === resource.id) setRoute(currentUrl(), result.pageData.params ?? {});
       return result.pageData;
     } catch (error) {
+      if (active === resource.id) routeParams = previousParams;
       if (resource.method === 'GET' && !resource.options._resolveOnShell && isAbortError(error)) return;
       throw error;
     } finally {
