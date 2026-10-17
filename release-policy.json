@@ -23,7 +23,7 @@
   ],
   "preventSelfReview": false,
   "historyDisclosureApproved": true,
-  "dependencySecurityApproved": false,
+  "dependencySecurityApproved": true,
   "approvedDependencyAdvisories": [
     "https://github.com/advisories/GHSA-67mh-4wv8-2f99"
   ]
