@@ -22,13 +22,16 @@ test('publisher audit accepts only reviewed versions/content and fails closed on
   const f = auditFixture();
   const report = await auditPublisher(f);
   assert.equal(report.auditedCrates, 517);
-  assert.equal(report.findings.length, 4);
-  f.advisories[0].details = 'new impact';
-  await assert.rejects(auditPublisher(f), /content changed/);
-  f.advisories[0].details = 'reviewed fixture';
-  f.advisories[0].modified = 'later';
-  await assert.rejects(auditPublisher(f), /advisory changed/);
-  f.advisories[0].modified = f.policy.acceptedRustFindings[0].modified;
+  assert.equal(report.findings.length, 7);
+  assert.deepEqual(report.findings.filter(item => item.name === 'zip').map(item => item.id), ['RUSTSEC-2026-0367', 'RUSTSEC-2026-0368', 'RUSTSEC-2026-0369']);
+  for (const [index, advisory] of f.advisories.entries()) {
+    advisory.details = 'new impact';
+    await assert.rejects(auditPublisher(f), /content changed/);
+    advisory.details = 'reviewed fixture';
+    advisory.modified = 'later';
+    await assert.rejects(auditPublisher(f), /advisory changed/);
+    advisory.modified = f.policy.acceptedRustFindings[index].modified;
+  }
   f.results[0] = { vulns: [{ id: 'RUSTSEC-2026-9999' }] };
   await assert.rejects(auditPublisher({ ...f, request: async url => url.endsWith('/querybatch') ? { results: f.results } : { id: 'RUSTSEC-2026-9999' } }), /Unreviewed publisher advisory/);
   await assert.rejects(auditPublisher({ ...f, request: async () => ({ results: [] }) }), /Incomplete/);

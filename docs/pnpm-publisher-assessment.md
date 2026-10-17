@@ -1,12 +1,34 @@
 # pnpm 公開 job の依存評価と採用条件
 
-2026-10-11、**pnpm 12.11.2 の Linux x64 native binary を、固定 tarball の stage 公開に限定して採用しました。** 2026-10-17に公開CLIを **12.14.0** へ更新しました。監査対象は517 crateで、既存の4件の受け入れ条件は維持しています。監査0件や、あらゆるpnpmコマンドの安全性を示す判断ではありません。
+2026-10-11、**pnpm 12.11.2 の Linux x64 native binary を、固定 tarball の stage 公開に限定して採用しました。** 2026-10-17に公開CLIを **12.14.0** へ更新しました。監査対象は517 crateです。既存4件の条件を維持し、同日の保守者承認により `zip 8.6.0` の3件を同じ固定tgzのstage範囲だけで追加しました。現在の限定受け入れは計7件です。監査0件や、あらゆるpnpmコマンドの安全性を示す判断ではありません。
 
-12.11.2の `rustls 0.23.45` は、10月14日公開の [RUSTSEC-2026-0346](https://rustsec.org/advisories/RUSTSEC-2026-0346.html) により必須CIで停止しました。12.14.0は修正版の `rustls 0.23.46` を含みます。新しい監査例外は追加していません。配布物のintegrity・binary SHA256、ソースarchive・Cargo.lock・Linux inventoryのhashを更新し、CIは保存したinventoryとの完全一致と実バイナリの隔離protocol検証を引き続き要求します。
+12.11.2の `rustls 0.23.45` は、10月14日公開の [RUSTSEC-2026-0346](https://rustsec.org/advisories/RUSTSEC-2026-0346.html) により必須CIで停止しました。12.14.0は修正版の `rustls 0.23.46` を含みます。このrustls更新では新しい監査例外を追加していません。後述のzip 3件は、その後の個別承認による追加です。配布物のintegrity・binary SHA256、ソースarchive・Cargo.lock・Linux inventoryのhashを更新し、CIは保存したinventoryとの完全一致と実バイナリの隔離protocol検証を引き続き要求します。
 
-現在の参照ソースは [pnpm 12.14.0](https://github.com/pnpm/pnpm/tree/fe4a0c232384289de82be3d502896ca7e070050c)、commit `fe4a0c232384289de82be3d502896ca7e070050c` です。以下の12.11.2の記録は初回の到達経路評価です。更新時はstage/provenance経路の差分と新しいLinux Cargo解決を再確認し、既存の4件以外が現れた場合は停止します。
+現在の参照ソースは [pnpm 12.14.0](https://github.com/pnpm/pnpm/tree/fe4a0c232384289de82be3d502896ca7e070050c)、commit `fe4a0c232384289de82be3d502896ca7e070050c` です。以下の12.11.2の記録は初回の到達経路評価です。更新時はstage/provenance経路の差分と新しいLinux Cargo解決を再確認し、現在承認した7件以外が現れた場合や、既存指摘の内容・版・更新時刻が変わった場合は停止します。
 
 対象は `void-plugin-hono-jsx@0.1.0-alpha.0 / next` の公開 job のみです。開発・ビルド・候補作成・lockfile は npm を使います。公開フラグは無効のままです。repository visibility、Trusted Publisher、owner の最終承認は別途の設定・判断が必要です。
+
+## 2026-10-17: ZIP展開に関する3件の限定受け入れ
+
+PR #75の必須publisher CIは、新たに検出した `zip 8.6.0` の指摘で停止しました。同日時点のnpm公式 `latest-12` は12.14.0で、zip修正版を含むpnpm 12の公開版は確認できませんでした。保守者は到達経路評価を確認し、以下3件を既存のLinux x64・固定tgzのstage処理に限って受け入れることを明示的に承認しました。
+
+| 指摘 | 対象APIと影響 |
+| --- | --- |
+| [RUSTSEC-2026-0367 / GHSA-vv5m-jxxh-4627](https://github.com/zip-rs/zip2/security/advisories/GHSA-vv5m-jxxh-4627) | `ZipArchive::extract()` / stream extractionでSUID・SGID等の権限bitを保持する。特権プロセスが不正なZIPを展開すると権限昇格につながり得る |
+| [RUSTSEC-2026-0368 / GHSA-4v9h-p7m9-rh26](https://github.com/zip-rs/zip2/security/advisories/GHSA-4v9h-p7m9-rh26) | `ZipArchive::extract()`が展開先の外を指すsymlinkを作成し、その後の読み書きが外部パスへ到達し得る |
+| [RUSTSEC-2026-0369 / GHSA-4684-h2q9-2vcp](https://github.com/zip-rs/zip2/security/advisories/GHSA-4684-h2q9-2vcp) | ZIP展開中にsymlink経由で外部対象へUnix権限を適用し得る |
+
+3件の上流修正版はzip 9.0.0です。pnpmの推移依存override、独自バイナリの再ビルド、包括的な監査除外は行いません。
+
+固定source archiveのhash一致を確認し、次の呼び出しを追跡しました。
+
+1. [`stage_publish`](https://github.com/pnpm/pnpm/blob/fe4a0c232384289de82be3d502896ca7e070050c/pnpm/crates/cli/src/cli_args/stage.rs)は通常の公開処理へ `stage=true` で委譲する。
+2. 明示的な `.tgz` は [`publish_tarball`](https://github.com/pnpm/pnpm/blob/fe4a0c232384289de82be3d502896ca7e070050c/pnpm/crates/cli/src/cli_args/publish.rs) を選び、元のbytesを公開処理へ渡す。ディレクトリのpackやinstallは行わない。
+3. [`extract_publish_manifest_from_packed`](https://github.com/pnpm/pnpm/blob/fe4a0c232384289de82be3d502896ca7e070050c/pnpm/crates/publish/src/extract_manifest_from_packed.rs)はgzip/tarのentryをメモリ上で読み、対象のZIP展開APIやZIPのfilesystem展開を行わない。provenanceは元tgzのbytesをsubjectにする。
+
+別経路のZIP取込処理も `ZipArchive::by_index` でentryを走査し、権限を `& 0o777` に制限してcontent-addressed storeへ書き込みます。このinstall/runtime download経路は、今回の受け入れ範囲には含めません。
+
+これはソースの到達経路評価であり、全native命令・全エラー分岐の動的な非到達証明ではありません。既存のLinux隔離protocol検証を維持し、CI artifactへZIP関連のsource caller情報も保存します。517 crateの再照会では、既存4件とこの3件だけを検出しました。3件ともcrate/version/ID・modified・advisory全体のSHA256を固定しています。版・source・target・コマンド・指摘内容が変われば再評価し、新しい指摘では停止します。修正版pnpmの公開時もpin更新と再検証が必要です。CIの通過は、本物のOIDC/provenance付きstageの成功を意味しません。
 
 ## 実ビルドの監査範囲
 
@@ -26,7 +48,7 @@ workspace 全体の Cargo.lock にある 774 entry を、そのまま公開バ�
 ## 実装した監査・認証ゲート
 
 - publisher-policy.json に source archive、Cargo.lock、inventory、配布 tgz の SHA512、native binary の SHA256 を固定。配布物の 4 regular file のみを認め、npm installer、JS wrapper、lifecycle、暗黙の native download を使わず直接導入します。
-- CI は毎回 Cargo resolution をやり直し、保存済み inventory と一致させます。公開 job は固定 inventory の全 517 crate を OSV へ再照会します。4 件それぞれの crate/version/ID、modified、advisory 全体の hash を照合し、新規・変更・消失・不完全な応答・監査サービスの失敗で停止します。
+- CI は毎回 Cargo resolution をやり直し、保存済み inventory と一致させます。公開 job は固定 inventory の全 517 crate を OSV へ再照会します。承認した7件それぞれの crate/version/ID、modified、advisory 全体の hash を照合し、新規・変更・消失・不完全な応答・監査サービスの失敗で停止します。
 - Node の事前処理で GitHub OIDC を取得し、npm の package-scoped token exchange を完了してから CLI を起動します。npm の 201 Created 応答も検証しています。取得失敗や token 欠落は CLI 起動前に停止します。
 - CLI に既存 login、長期 token、proxy、NODE_OPTIONS、外部 pnpm config を渡しません。専用 cwd、XDG config/data/cache、PNPM_HOME、state/store、明示的 userconfig を使います。userconfig は mode 0600、直前に取得した OIDC token のみです。CLI 内部の追加 exchange が失敗しても、fallback 可能な credential はこの新しい OIDC token に限られます。
 - OIDC 後に受け入れ済み tgz を再読込し、SHA256/SHA512 を照合して同一 bytes を専用 cwd にコピーします。pack/build は実行せず、stage publish --ignore-scripts --provenance --reporter=silent で next/public を指定します。成功・失敗とも一時 credential/state を削除します。
