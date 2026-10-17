@@ -116,6 +116,10 @@ export async function checkMarkdownConsumer({ repo, consumer: original, browser,
           await writeFile(file, source.replace('Interactive Markdown', 'Edited Markdown').replace('active page script', 'edited script'));
           await page.waitForFunction(() => document.getElementById('markdown-layout-title')?.textContent === 'Edited Markdown' && document.getElementById('markdown-script')?.textContent === 'edited script');
         } finally { await writeFile(file, source); }
+        await page.waitForFunction(() => document.getElementById('markdown-layout-title')?.textContent === 'Interactive Markdown' && document.getElementById('markdown-script')?.textContent === 'active page script');
+        // Leave the HMR-connected page before triggering structural changes.
+        await page.goto(origin + '/docs/plain');
+        assert.equal(await page.locator('script[src]').count(), 0);
         const added = join(consumer, 'pages/docs/snapshot-added.md');
         const authored = '<script>window.dynamicMarkdown = true; document.getElementById("dynamic-markdown").textContent = "script active";</script>\n# Added snapshot\n<div id="dynamic-markdown">SSR</div>\n';
         const waitForRoute = async (present, script) => {
