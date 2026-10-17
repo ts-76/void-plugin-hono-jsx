@@ -3,7 +3,7 @@ import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { voidHonoPages } from '../packages/hono-pages/src/plugins/hono-pages.ts';
+import { voidHonoJsx } from '../packages/hono-pages/src/plugins/hono-pages.ts';
 
 async function withPages(files, check, options) {
   const previous = process.cwd();
@@ -15,9 +15,9 @@ async function withPages(files, check, options) {
       await writeFile(join(root, 'pages', name), source);
     }
     process.chdir(root);
-    const plugin = voidHonoPages(options).find((plugin) => plugin.name === 'void-hono:pages');
+    const plugin = voidHonoJsx(options).find((plugin) => plugin.name === 'void-hono:pages');
     plugin.environment = { mode: 'build' };
-    await check(plugin, voidHonoPages());
+    await check(plugin, voidHonoJsx());
   } finally {
     process.chdir(previous);
     await rm(root, { recursive: true, force: true });
@@ -251,7 +251,7 @@ test('navigation options retain defaults and serialize shared parsed cache durat
   }, { viewTransitions: true, prefetch: { hoverDelay: 20, cacheFor: ['5s', '10s'] } });
 });
 for (const options of [ { viewTransitions: 'yes' }, { prefetch: { hoverDelay: -1 } }, { prefetch: { hoverDelay: Infinity } }, { prefetch: { cacheFor: -1 } }, { prefetch: { cacheFor: ['10s', '5s'] } }, { prefetch: { cacheFor: 'bad' } } ]) {
-  test('invalid navigation options fail before starting Vite: ' + JSON.stringify(options), () => assert.throws(() => voidHonoPages(options), /Hono Pages:|prefetch:/));
+  test('invalid navigation options fail before starting Vite: ' + JSON.stringify(options), () => assert.throws(() => voidHonoJsx(options), /Hono Pages:|prefetch:/));
 }
 
 test('Markdown routes fail discovery with the upstream gate and exact file', async () => {
@@ -261,7 +261,7 @@ test('Markdown routes fail discovery with the upstream gate and exact file', asy
 });
 
 test('optional Markdown configuration reports the Hono boundary before the closed framework dispatch', () => {
-  const plugin = voidHonoPages().find(plugin => plugin.name === 'void-hono:pages');
+  const plugin = voidHonoJsx().find(plugin => plugin.name === 'void-hono:pages');
   assert.equal(plugin.configResolved.order, 'pre');
   assert.throws(() => plugin.configResolved.handler({ plugins: [{ name: 'void-md' }] }), /use voidHonoMarkdown.*official compiler/);
   assert.doesNotThrow(() => plugin.configResolved.handler({ plugins: [{ name: 'void-core' }] }));

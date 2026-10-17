@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { jsx } from 'hono/jsx/jsx-runtime';
 import { compileMarkdown, extractMarkdown, renderChunks } from '../packages/hono-pages/src/plugins/markdown-compiler.ts';
 import { voidHonoMarkdown } from '../packages/hono-pages/src/plugins/hono-markdown.ts';
-import { voidHonoPages } from '../packages/hono-pages/src/plugins/hono-pages.ts';
+import { voidHonoJsx } from '../packages/hono-pages/src/plugins/hono-pages.ts';
 import { MarkdownContext, useFrontmatter, useMarkdownProps } from '../packages/hono-pages/src/runtime/markdown.ts';
 
 test('Markdown compilation separates islands/client code and parses frontmatter, tables and unique heading anchors', () => {
@@ -52,7 +52,7 @@ test('configured optional Markdown participates in server manifests and island g
     await writeFile(join(root, 'pages/index.md'), '<script>\nimport Counter from "../Counter" with { island: "load" };\nwindow.script = true;\n</script>\n# Heading\n\n<Counter initial="4" />');
     await writeFile(join(root, 'pages/other.tsx'), 'export default function Page() { return <p>Other</p>; }');
     process.chdir(root);
-    const md = voidHonoMarkdown(); const plugins = [...voidHonoPages(), md];
+    const md = voidHonoMarkdown(); const plugins = [...voidHonoJsx(), md];
     md.configResolved({ root, plugins });
     const pages = plugins.find(p => p.name === 'void-hono:pages'); const islands = plugins.find(p => p.name === 'void-hono:islands');
     pages.configResolved.handler({ plugins }); islands.configResolved({ plugins });
@@ -82,7 +82,7 @@ test('Markdown symlink imports use the same canonical island key as the client r
     await symlink(join(root, 'shared/Counter.tsx'), join(root, 'LinkedCounter.tsx'));
     const source = '<script>import Counter from "../LinkedCounter" with { island: "load" };</script>\n# Linked\n\n<Counter />';
     await writeFile(join(root, 'pages/index.md'), source); process.chdir(root);
-    const md = voidHonoMarkdown(); const plugins = [...voidHonoPages(), md]; md.configResolved({ root, plugins });
+    const md = voidHonoMarkdown(); const plugins = [...voidHonoJsx(), md]; md.configResolved({ root, plugins });
     const islands = plugins.find(plugin => plugin.name === 'void-hono:islands'); islands.configResolved({ plugins }); await islands.buildStart();
     const server = md.transform.handler(source, join(root, 'pages/index.md')).code;
     const client = islands.load(islands.resolveId('virtual:void-islands-client'));

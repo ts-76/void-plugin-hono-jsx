@@ -1,6 +1,6 @@
 # Optional Hono Markdown
 
-Use a release that exports `/markdown/plugin`; alpha.3 predates this API. Install the parser peers only in projects using Markdown:
+Use a release that exports `/markdown/plugin` and `voidHonoJsx()`; alpha.3 predates these APIs. Install the parser peers only in projects using Markdown:
 
 ```sh
 npm install void-plugin-hono-jsx@next markdown-exit@1.3.0 yaml@2.9.1
@@ -9,11 +9,11 @@ npm install void-plugin-hono-jsx@next markdown-exit@1.3.0 yaml@2.9.1
 ```ts
 import { defineConfig } from 'vite';
 import { voidPlugin } from 'void';
-import { voidHonoPages } from 'void-plugin-hono-jsx/plugin';
+import { voidHonoJsx } from 'void-plugin-hono-jsx/plugin';
 import { voidHonoMarkdown } from 'void-plugin-hono-jsx/markdown/plugin';
 
 export default defineConfig({
-  plugins: [voidPlugin(), voidHonoPages(), voidHonoMarkdown()],
+  plugins: [voidPlugin(), voidHonoJsx(), voidHonoMarkdown()],
 });
 ```
 

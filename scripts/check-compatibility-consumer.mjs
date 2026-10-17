@@ -28,8 +28,8 @@ export async function checkCompatibilityConsumer({ consumer, env, stack }) {
     // Same real host and npm dependency; report a different host via the actual hook.
     const config = `import { defineConfig } from 'vite';
 import { voidPlugin } from 'void';
-import { voidHonoPages } from 'void-plugin-hono-jsx/plugin';
-const pages = voidHonoPages();
+import { voidHonoJsx } from 'void-plugin-hono-jsx/plugin';
+const pages = voidHonoJsx();
 const plugin = pages.find(p => p.name === 'void-hono:pages');
 const configHook = plugin.config;
 plugin.config = function(config, env) { return configHook.call({ ...this, meta: { ...this.meta, viteVersion: '9.0.0' } }, config, env); };

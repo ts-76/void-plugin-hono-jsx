@@ -32,7 +32,7 @@ export function voidHonoMarkdown(): Plugin {
     // Void's Markdown entry/asset convention is shared with @void/md.
     name: 'void-md', enforce: 'pre', api,
     config() { return { build: { rollupOptions: { input: { 'markdown-client': clientId } } } }; },
-    configResolved(config) { if (!config.plugins.some(plugin => plugin.name === 'void-hono:pages')) throw new Error('Hono Markdown: configure voidHonoPages() before voidHonoMarkdown().'); root = realpathSync(config.root); pagesDir = resolvePagesDir(root); rescan(); },
+    configResolved(config) { if (!config.plugins.some(plugin => plugin.name === 'void-hono:pages')) throw new Error('Hono Markdown: configure voidHonoJsx() before voidHonoMarkdown().'); root = realpathSync(config.root); pagesDir = resolvePagesDir(root); rescan(); },
     buildStart() { rescan(); },
     hotUpdate({ file, timestamp }) {
       if (!file.endsWith('.md') || !normalizePath(file).startsWith(normalizePath(pagesDir) + '/')) return;

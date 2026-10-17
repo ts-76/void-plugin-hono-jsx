@@ -23,6 +23,7 @@ export function Navigation() {
         <Link className="nav-item" href="/named" aria-current={active('/named')}><Icon name="form" />名前付きアクション</Link>
         <Link className="nav-item" href="/layouts/one" aria-current={path.startsWith('/layouts/') ? 'page' : undefined}><Icon name="layers" />レイアウト</Link>
         <Link className="nav-item" href="/head/one" aria-current={path.startsWith('/head/') ? 'page' : undefined}><Icon name="head" />メタデータ</Link>
+        <Link className="nav-item" href="/markdown" id="nav-markdown" aria-current={active('/markdown')}><Icon name="form" />Markdown</Link>
         <Link className="nav-item" href="/browser" id="nav-browser" aria-current={active('/browser')}><Icon name="browser" />ブラウザ専用ページ</Link>
       </div>
       <details className="navigation-tools" id="navigation-tools"><summary>検証ツール</summary><div className="tool-links">
