@@ -113,3 +113,31 @@ The consumer check installs the packed artifact in a temporary project and exerc
 Optional Markdown is available through `voidHonoMarkdown()` from `void-plugin-hono-jsx/markdown/plugin`, with `markdown-exit@1.3.0` and `yaml@2.9.1` installed explicitly. It supports document navigation, frontmatter/layouts, companion loaders, islands, page-specific scripts and static output. It is independent of the official `@void/md` compiler. See [setup and the supported Markdown contract](docs/markdown.md).
 
 Security reports use [private vulnerability reporting](https://github.com/ts-76/void-plugin-hono-jsx/security/advisories/new). See [SECURITY.md](SECURITY.md) for support windows.
+
+
+### Common navigation fallback (after RC.0)
+
+Register a default-exported local TSX/JSX module by path. The plugin imports the
+component into its client entry; it does not serialize a function in Vite config.
+
+```ts
+voidHonoJsx({ navigationFallback: { component: './components/NavigationFallback.tsx', delay: 150 } })
+```
+
+```tsx
+import type { NavigationFallbackProps } from 'void-plugin-hono-jsx/pages';
+export default function Fallback({ navigation }: NavigationFallbackProps) {
+  return <p>Loading {navigation.location?.pathname}…</p>;
+}
+```
+
+The optional fallback appears after 150 ms by default, only while a GET visit is
+loading. Fast/cache/prefetch visits that finish before the delay show nothing.
+It is an additional live status region: the existing page, input DOM and layout
+remain mounted and interactive. It never replaces that tree, commits navigation
+or changes history/scroll. Completion, failure and superseding visits remove it;
+a new slow visit starts its own delay. JSON/multipart submission UI remains under
+`useNavigation()`/form pending state. SSR stays idle and emits no fallback.
+Without this option, existing behavior is unchanged. The normal page reset and
+preserveState/preserveScroll rules still apply when the destination commits.
+This addition is not included in the already published RC.0.

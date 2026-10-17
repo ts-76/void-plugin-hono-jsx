@@ -1,4 +1,4 @@
-import { realpathSync } from 'node:fs';
+import { realpathSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { normalizePath } from 'vite';
 import { pagesRuntimePath, clientRuntimePath, markdownRuntimePath, publicRuntimeModules } from './runtime-paths.ts';
@@ -21,6 +21,8 @@ function assertComponentFile(file: string, kind: 'page' | 'layout', markdown = f
 
 export type HonoJsxOptions = {
   viewTransitions?: boolean;
+  /** A default-exported local TSX/JSX component; keeps the current page mounted. */
+  navigationFallback?: { component: string; delay?: number };
   prefetch?: { hoverDelay?: number; cacheFor?: CacheForInput };
 };
 
@@ -40,6 +42,15 @@ function clientOptions(options: HonoJsxOptions) {
 export function voidHonoJsx(options: HonoJsxOptions = {}): Plugin[] {
   const navigationOptions = clientOptions(options);
   const root = process.cwd();
+  const fallback = options.navigationFallback;
+  let fallbackPath: string | undefined;
+  const fallbackDelay = fallback?.delay ?? 150;
+  if (fallback !== undefined) {
+    if (!fallback || typeof fallback.component !== 'string' || !fallback.component.trim() || !/\.[jt]sx$/.test(fallback.component)) throw new Error('Hono Pages: navigationFallback.component must name a local TSX/JSX file.');
+    if (!Number.isSafeInteger(fallbackDelay) || fallbackDelay < 0 || fallbackDelay > 2147483647) throw new Error('Hono Pages: navigationFallback.delay must be an integer from 0 to 2147483647 milliseconds.');
+    fallbackPath = normalizePath(realpathSync(resolve(root, fallback.component)));
+    if (!statSync(fallbackPath).isFile()) throw new Error('Hono Pages: navigationFallback.component must be a file.');
+  }
   const pagesDir = resolvePagesDir(root);
   const staticData = resolveStaticPageDataBuildOptions(root);
   let scan: PageScanResult | undefined;
@@ -171,8 +182,9 @@ export async function renderPage(pageObj, assetTags) {
       }
       return `
 import { startHonoPages } from ${JSON.stringify(clientRuntimePath)};
+${fallbackPath ? `import __HonoNavigationFallback from ${JSON.stringify(fallbackPath)};` : ''}
 ${manifest}
-await startHonoPages({ components, layoutTree, routeMeta, matchRoute, staticPageData: ${JSON.stringify(staticData.enabled)}, staticPageDataFastPath: ${JSON.stringify(staticData.fastPath)} }, ${JSON.stringify(navigationOptions)});
+await startHonoPages({ components, layoutTree, routeMeta, matchRoute, staticPageData: ${JSON.stringify(staticData.enabled)}, staticPageDataFastPath: ${JSON.stringify(staticData.fastPath)} }, { ...${JSON.stringify(navigationOptions)}${fallbackPath ? `, navigationFallback: { component: __HonoNavigationFallback, delay: ${fallbackDelay} }` : ''} });
 `;
     },
   }];
