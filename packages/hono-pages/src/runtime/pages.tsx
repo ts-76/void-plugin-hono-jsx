@@ -3,6 +3,8 @@ import { createActionClient, mergeDataIntoHref, type NavigationState, type Navig
 import type { CacheForInput } from 'void/pages-prefetch';
 import type { PageObject } from 'void/pages-protocol';
 export type { DeferredState as Deferred } from 'void';
+export { deferredResult, type DeferredResult } from './deferred.ts';
+export type NavigationFallbackProps = { navigation: NavigationState };
 
 const actionClient = createActionClient();
 export const action = actionClient.action;

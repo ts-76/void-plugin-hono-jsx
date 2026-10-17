@@ -7,7 +7,7 @@ import { createSsrRouter } from 'void/pages-client';
 
 const source = await readFile(new URL('../packages/hono-pages/src/runtime/pages.tsx', import.meta.url), 'utf8');
 const transformed = await transformWithOxc(source, 'pages.tsx', { jsx: { runtime: 'automatic', importSource: 'hono/jsx' } });
-const code = transformed.code.replace(/from (["'])([^"']+)\1/g, (_, quote, name) => 'from ' + JSON.stringify(import.meta.resolve(name)));
+const code = transformed.code.replace(/from (["'])([^"']+)\1/g, (_, quote, name) => 'from ' + JSON.stringify(name.startsWith('.') ? new URL(name, new URL('../packages/hono-pages/src/runtime/pages.tsx', import.meta.url)).href : import.meta.resolve(name)));
 const { Link, RouterContext, NavigationContext, useNavigation } = await import('data:text/javascript;base64,' + Buffer.from(code).toString('base64'));
 const html = async (props) => jsx(RouterContext.Provider, { value: createSsrRouter('/'), children: jsx(Link, { children: 'Go', ...props }) }).toString();
 

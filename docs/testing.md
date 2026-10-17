@@ -62,3 +62,11 @@ For publication, repeat validation on the final release commit and verify the ac
 The package workflow runs common source/history/secret/type/unit/browser checks, build, pack and dry run once in the baseline job. The other supported stack download that job's accepted tarball and run `release:verify-consumer`. It verifies the originating workflow/run/attempt, source and hashes before executing the consumer, requires a new per-stack audit, then rechecks the bytes and evidence. Both supported stacks remain required.
 
 CI candidate artifact names include the stack: `npm-candidate-<sha>-<stack>-attempt-<attempt>`. Stage preparation still runs the complete `release:prepare` in its own run and keeps accepted artifact naming unchanged; it never consumes a package-workflow candidate. `evidence.json.consumerStack` records the selected fixture, launcher, Void version, direct Vite version and expected host Vite. All required stack results must be reviewed before staging.
+
+## Hono Transition diagnostic experiment
+
+[The #98 evaluation](hono-transition-evaluation.md) compares the existing frame
+update with Hono `startTransition` and `useTransition` in an isolated copy of a
+retained baseline consumer. It records state/commit behavior in dev and preview;
+it is not an artifact acceptance gate or a performance benchmark. No production
+Transition option is enabled by this experiment.

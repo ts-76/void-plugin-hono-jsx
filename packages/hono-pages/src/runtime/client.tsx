@@ -3,11 +3,12 @@ import { jsx } from 'hono/jsx/dom/jsx-runtime';
 import { useLayoutEffect, useState } from 'hono/jsx';
 import { idleNavigationState, type NavigationState, type VoidRouterConfig } from 'void/pages-client';
 import { PageContext, RouterContext, NavigationContext, setActionRouter } from './pages.tsx';
+import { NavigationFallback, type NavigationFallbackOptions } from './navigation-fallback.tsx';
 import { createHonoRouter } from './navigation.ts';
 import { createDocumentHead } from './document-head.ts';
 import { createDeferred, resolveDeferred, rejectDeferred, isLoading, bufferInitialDeferred } from './deferred.ts';
 
-type NavigationOptions = Pick<VoidRouterConfig, 'viewTransitions' | 'prefetchHoverDelay' | 'prefetchDefaultCacheFor'>;
+type NavigationOptions = Pick<VoidRouterConfig, 'viewTransitions' | 'prefetchHoverDelay' | 'prefetchDefaultCacheFor'> & { navigationFallback?: NavigationFallbackOptions };
 
 type Manifest = Pick<VoidRouterConfig, 'components' | 'layoutTree' | 'routeMeta' | 'matchRoute' | 'staticPageData' | 'staticPageDataFastPath'>;
 
@@ -17,6 +18,7 @@ function pageComponent(component: unknown) {
 }
 
 export async function startHonoPages(manifest: Manifest, options: NavigationOptions) {
+  if (options.navigationFallback && typeof options.navigationFallback.component !== 'function') throw new Error('Hono Pages: navigationFallback must default-export a component function.');
   const root = document.getElementById('app');
   if (!root) throw new Error('Hono Pages: app root is missing.');
   type Frame = { page: Awaited<ReturnType<typeof createHonoRouter>>['initialPageData']; sourceProps: Record<string, unknown>; component: unknown; layouts: unknown[]; revision: number; commit: number };
@@ -113,6 +115,7 @@ export async function startHonoPages(manifest: Manifest, options: NavigationOpti
         <ErrorBoundary key={recovery} onError={renderFailed} fallback={<></>}>
           <PageFrame frame={frame} />
         </ErrorBoundary>
+        {options.navigationFallback && <NavigationFallback state={pendingNavigation} options={options.navigationFallback} />}
       </NavigationContext.Provider>
     </RouterContext.Provider>;
   }

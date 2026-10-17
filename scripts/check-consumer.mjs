@@ -13,6 +13,7 @@ import { createServer } from 'node:net';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { parseSync } from 'vite';
+import { checkNavigationFallback } from './check-navigation-fallback.mjs';
 import { checkTransitionConsumer } from './check-transition-consumer.mjs';
 import { checkDeferredConsumer } from './check-deferred-consumer.mjs';
 import { checkStaticConsumer } from './check-static-consumer.mjs';
@@ -119,6 +120,7 @@ async function smoke(mode, browser, staticOnly = false) {
       await checkIslandForms({ origin, page, assert });
       await checkDeferredConsumer({ origin, page, mode });
       await checkTransitionConsumer({ origin, page });
+      await checkNavigationFallback({ origin, browser });
       const islandResponse = await fetch(origin + '/islands');
       assert.equal(islandResponse.status, 200);
       const islandHtml = await islandResponse.text();
@@ -239,5 +241,6 @@ try {
   console.error(process.env.KEEP_CONSUMER_FIXTURE ? `Consumer validation failed. Retained workspace: ${consumer}` : 'Consumer validation failed. Set KEEP_CONSUMER_FIXTURE=1 to retain the workspace.');
   throw error;
 } finally {
-  if (!process.env.KEEP_CONSUMER_FIXTURE) await rm(temporary, { recursive: true, force: true });
+  if (process.env.KEEP_CONSUMER_FIXTURE) console.log(`Retained consumer workspace: ${consumer}`);
+  else await rm(temporary, { recursive: true, force: true });
 }
