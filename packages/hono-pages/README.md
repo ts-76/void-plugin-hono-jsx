@@ -15,7 +15,7 @@ This package integrates Hono JSX with Void Pages. This source documents the upco
 
 The upcoming RC targets Void 1.1 and Node 24 only. Published alpha.4 retains its earlier Void 0.x contract; it does not provide this support change or multipart transport. Old Void/launcher manifests remain historical comparison records, not release-selectable configurations. The two supported Hono-only consumers use Void 1.1.11 with plain Vite 8.3.4 or aligned Vite Plus 1.3.0 (host Vite 8.3.4). Ranges admit stable updates, but only locked fixtures are observed test results. New upstream releases require refreshed fixtures, full checks and audit review; prereleases and other Void minors are excluded.
 
-The expanded Link/Form APIs, island forms and graphs, deferred contracts, page options and optional Markdown documented below are additions after alpha.3. Use a later alpha containing the corresponding exports, or a local tarball to validate this source tree. Alpha.3 does not provide these additions.
+Alpha.4 introduced the expanded Link/Form APIs, island forms and graphs, deferred contracts, page options and optional Markdown. This source adds the Void 1.1 contract and multipart transport for the RC; use the local tarball until the RC is approved. Do not combine the RC setup instructions with alpha.4.
 
 ## Install
 
@@ -171,7 +171,7 @@ The `load`, `visible`, `idle` and `media:(query)` policies use Void's shared sch
 
 ## Optional Markdown
 
-Use a later alpha exporting `/markdown/plugin`; alpha.3 predates this API. For source validation, install the adapter using the local tarball steps above. Add parser peers explicitly only when using Markdown:
+For this source and its Void 1.1 baseline, use the RC after approval or the local tarball steps above. Published alpha.4 has the Markdown exports but retains its earlier Void 0.x contract; alpha.3 predates this API. Add parser peers explicitly only when using Markdown:
 
 ```sh
 npm install markdown-exit@1.3.0 yaml@2.9.1
@@ -197,6 +197,8 @@ Markdown routes use document navigation, and static-only pages emit no executabl
 The virtual renderer/client entries follow version-specific conventions observed in Void's official adapter rather than a documented third-party registration API. Browser mounting redraws the SSR page; DOM reuse is not guaranteed. Local ISR uses Void's native direct-worker KV/Cache API runtime; managed edge behavior remains unverified. Unsupported modes fail clearly. Package publication and repository visibility are separate maintainer decisions.
 
 ## Known upstream dependency advisory
+
+The RC preparation reassessment on 2026-10-17 found the same single esbuild advisory on Void 1.1.11 in both supported consumers, including optional Markdown: Moderate 5 propagated entries, High/Critical 0. Its development-server path is outside the reviewed transform/loader path. No override is added. New or changed findings block upload, and fresh checks are required for every final candidate. The package does not ship the publisher tooling; its separate scoped findings do not imply a zero consumer audit. See the repository's `docs/rc-security-assessment.md` for evidence and limits.
 
 The initial alpha accepts [GHSA-67mh-4wv8-2f99](https://github.com/advisories/GHSA-67mh-4wv8-2f99) as a known limitation on the pinned peer baseline. The reviewed audits on 2026-10-11 reported Moderate findings propagated across multiple package entries from this single esbuild advisory; package-entry counts can differ between audit reports. The affected esbuild 0.18.20 is installed through Void 0.26.1 → drizzle-kit 0.31.11 → @esbuild-kit/esm-loader 2.6.5 → @esbuild-kit/core-utils 3.3.2.
 
