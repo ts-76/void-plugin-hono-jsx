@@ -1,5 +1,7 @@
 # Optional Hono Markdown
 
+Current release policy: see the [approved release contract](release-contract.md). Upcoming RC support is Void 1.1/Node 24 with plain Vite 8.3.4 or aligned Vite Plus 1.3.0. Old matrix results below are historical, not supported installation guidance. Production ISR is outside the initial guarantee.
+
 Use a release that exports `/markdown/plugin` and `voidHonoJsx()`; alpha.3 predates these APIs. Install the parser peers only in projects using Markdown:
 
 ```sh

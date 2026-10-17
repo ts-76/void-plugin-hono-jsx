@@ -30,7 +30,7 @@ const repo = fileURLToPath(new URL('../', import.meta.url));
 const npmCli = process.env.npm_execpath;
 if (!npmCli) throw new Error('Run this check with npm run check:consumer.');
 const [major, minor] = process.versions.node.split('.').map(Number);
-if (major < 24 || (major === 24 && minor < 21)) throw new Error('Consumer validation requires Node >=24.21.0.');
+if (major !== 24 || minor < 21) throw new Error('Consumer validation requires Node >=24.21.0 <25.0.0.');
 const temporary = await mkdtemp(join(tmpdir(), 'hono-pages-consumer-'));
 const consumer = join(temporary, 'consumer');
 const env = { ...process.env, PATH: dirname(process.execPath) + (process.platform === 'win32' ? ';' : ':') + (process.env.PATH || ''), WRANGLER_LOG_PATH: join(temporary, 'logs'), WRANGLER_SEND_METRICS: 'false', VOID_INSPECTOR_PORT: 'false', CLOUDFLARE_CF_FETCH_ENABLED: 'false' };

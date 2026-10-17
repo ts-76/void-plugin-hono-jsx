@@ -30,7 +30,7 @@ The fixed-point propagation algorithm is unchanged; there is no evidence that re
 
 ## Common CI preparation
 
-The package workflow previously scheduled a full release preparation for every framework stack. It now prepares one baseline-accepted candidate, then verifies the exact same bytes in the six other locked consumers. Common source/build/pack/dry-run work runs once; dependency audits remain separate for all seven consumers. Normal feature PRs use one package-workflow run. Main/release pushes and bot/manual dispatches retain their execution paths.
+The package workflow previously scheduled a full release preparation for every framework stack. The original shared-candidate change was verified in seven historical stacks; the approved RC support policy now selects two current stacks. It now prepares one baseline-accepted candidate, then verifies the exact same bytes in the other supported locked consumer. Common source/build/pack/dry-run work runs once; dependency audits remain separate for both supported consumers. Normal feature PRs use one package-workflow run. Main/release pushes and bot/manual dispatches retain their execution paths.
 
 This adds a baseline dependency before the six-way fan-out, so total wall time may differ from CPU work. No measured time or cost saving is claimed. Stage preparation is unchanged: it creates and validates its own same-run/attempt artifact and performs its existing fresh checks before OIDC/provenance submission.
 

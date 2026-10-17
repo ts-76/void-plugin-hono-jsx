@@ -9,7 +9,7 @@ release-please-action v5.0.0 を commit SHA で固定しています。main へ�
 - `packages/hono-pages/package.json`: `extra-files` の JSON updater が version のみを更新。private / peer ranges / publishConfig は維持。
 - `CHANGELOG.md`: 唯一の正本。package build が同じ内容を package にコピーし、tarball gate が byte単位で照合。package側のコピーは生成物としてGitから除外。
 
-`versioning: prerelease`、`prerelease: true`、`prerelease-type: alpha` を設定し、alpha番号を更新します。GitHub Releaseもprereleaseとして作成し、tagは `v<version>` です。breaking changeやstable移行では、候補version・互換性・dist-tagの方針を別途確認します。固定の `release-as` は設定しません。
+`versioning: prerelease`、`prerelease: true`、`prerelease-type: rc` を設定し、RC番号を更新します。GitHub Releaseもprereleaseとして作成し、tagは `v<version>` です。breaking changeやstable移行では、候補version・互換性・dist-tagの方針を別途確認します。固定の `release-as` は設定しません。
 
 ## main保護とCI
 
@@ -30,3 +30,9 @@ CI失敗時はrelease PRを修正・更新して両チェックを再実行し�
 release-pleaseからnpm-stageを自動dispatchせず、npmの最終approveも行いません。依存監査・publisher監査・source/history検査・environment reviewを維持します。送信bundleの承認前検証は引き続き別の取得・保持経路が必要です。[既存の公開手順](releasing.md)、[初回の実検証](stage-validation-result.md)
 
 [Release Please Action](https://github.com/googleapis/release-please-action)、[manifest設定](https://github.com/googleapis/release-please/blob/main/docs/manifest-releaser.md)
+
+## Approved RC transition (2026-10-17)
+
+Issue #85 selects 0.1.0-rc.0 / next followed by 0.1.0. Config now uses prerelease-type rc. Keep existing version manifests until the bot's consolidated release PR. The integration squash body uses the one-time `Release-As: 0.1.0-rc.0` footer; there is no permanent config release-as override. Review the generated exact version, notes and required CI before merge.
+
+For the normal release, set versioning default, prerelease false, remove prerelease-type and request 0.1.0 once. Stage the normal version on next, verify public bytes/consumer, then move latest and align next. Do not point latest at an RC. Preserve all environment/OIDC/provenance/owner approval gates. See [release-contract.md](release-contract.md).

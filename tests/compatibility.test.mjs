@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { assertSupportedFrameworks, supportsVite, supportsFramework } from '../packages/hono-pages/src/plugins/compatibility.ts';
+import { assertSupportedFrameworks, supportsVite, supportsFramework, supportsNode } from '../packages/hono-pages/src/plugins/compatibility.ts';
 import { voidHonoJsx } from '../packages/hono-pages/src/plugins/hono-pages.ts';
 
 function project(version = '8.3.3') {
@@ -31,7 +31,7 @@ test('unsupported running Vite fails despite project and adapter resolving suppo
     assert.throws(()=>assertSupportedFrameworks({root:p.root,viteVersion:'9.0.0'}), error=>{
       assert.match(error.message,/running Vite 9\.0\.0 is unsupported/);
       assert.ok(error.message.includes(join(p.root,'node_modules/vite/package.json')));
-      assert.match(error.message,/Adapter helper Vite: 8\.3\.3; package\.json: .*package\.json/);
+      assert.match(error.message,/Adapter helper Vite: 8\.3\.4; package\.json: .*package\.json/);
       assert.match(error.message,/installing project vite alone does not update the running Vite/);
       return true;
     });
@@ -53,8 +53,13 @@ test('config hook uses its own meta version and identifies its configured projec
 });
 
 test('validated Void lines and Hono major boundaries follow the declared peer policy', () => {
-  for (const version of ['0.26.1', '0.26.2', '0.27.0', '0.27.99', '1.1.11', '1.1.12', '1.1.99']) assert.equal(supportsFramework('void',version),true);
-  for (const version of ['0.26.0', '0.28.0', '1.0.0', '1.1.10', '1.2.0', '2.0.0', '1.1.12-beta.0', '0.27.1-beta.0']) assert.equal(supportsFramework('void',version),false);
+  for (const version of ['1.1.11', '1.1.12', '1.1.99']) assert.equal(supportsFramework('void',version),true);
+  for (const version of ['0.26.0', '0.26.1', '0.26.2', '0.27.0', '0.27.99', '0.28.0', '1.0.0', '1.1.10', '1.2.0', '2.0.0', '1.1.12-beta.0', '0.27.1-beta.0']) assert.equal(supportsFramework('void',version),false);
   for (const version of ['4.13.13', '4.13.14', '4.14.0']) assert.equal(supportsFramework('hono',version),true);
   for (const version of ['4.13.12', '5.0.0', '4.14.0-beta.0']) assert.equal(supportsFramework('hono',version),false);
+});
+
+test('Node support is limited to the documented 24 LTS line and minimum', () => {
+  for (const version of ['24.21.0', '24.21.1', '24.99.0']) assert.equal(supportsNode(version), true);
+  for (const version of ['22.0.0', '24.20.9', '25.0.0', '26.0.0', '24.21.0-rc.0', '24.021.0', undefined]) assert.equal(supportsNode(version), false);
 });

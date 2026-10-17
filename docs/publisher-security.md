@@ -1,6 +1,6 @@
 # 以前の npm 公開ツールの比較評価
 
-現在の公開 job は pnpm 12.11.2 に切り替えています。[pnpm の Rust 評価と採用条件](pnpm-publisher-assessment.md)を参照してください。以下は切替前の npm CLI の限定評価を保存した記録であり、現行 job の構成を示すものではありません。
+現在の公開 job は pnpm 12.14.0 に切り替えています。[pnpm の Rust 評価と採用条件](pnpm-publisher-assessment.md)を参照してください。以下は切替前の npm CLI の限定評価を保存した記録であり、現行 job の構成を示すものではありません。
 
 確認日: 2026-10-11。評価対象は source commit `d1d7e05af9fe70485c7dc063743af67db4e18b5e` の stage 公開手順、npm CLI 11.21.0、Node 24.21.0、固定した `void-plugin-hono-jsx@0.1.0-alpha.0` の tarball です。
 

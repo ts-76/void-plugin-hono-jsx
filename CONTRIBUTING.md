@@ -4,7 +4,7 @@ This adapter is experimental; alpha releases are published on npm with the `next
 
 ## Setup and checks
 
-Use Node.js 24.21.0 or newer and the repository lockfile:
+Use Node.js >=24.21.0 <25.0.0 and the repository lockfile:
 
 ```sh
 npm ci
@@ -41,3 +41,5 @@ Use Conventional Commit titles for squash merges: `feat:`, `fix:`, `perf:`, `doc
 Package publication, repository visibility and npm ownership are maintainer decisions. Contributors can prepare artifacts and evidence; they must not infer publication approval from a merged code change. Follow the [release checklist](docs/release-checklist.md).
 
 `npm run check:source` starts and stops its own development and preview servers on allocated local ports and uses Playwright. No Python, agent-browser installation or pre-existing browser session is required. Run checks sequentially when they share example build output. Keep generated logs and screenshots outside Git; include concise sanitized results and the CI run URL in the PR.
+
+Report vulnerabilities through the private reporting link in [SECURITY.md](SECURITY.md). The [approved release contract](docs/release-contract.md) defines upcoming RC support; historical alpha evidence is not normal-release acceptance.

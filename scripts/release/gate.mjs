@@ -27,7 +27,7 @@ export function metadataBlockers(pkg, policy, { ref, changelog, license }) {
   require(Boolean(pkg.license && pkg.license !== 'UNLICENSED' && license.trim()), 'license');
   require(changelog.split('\n').some(line => line.startsWith(`## ${pkg.version} `) || line === `## ${pkg.version}` || line.startsWith(`## [${pkg.version}](`)), 'release-notes');
   require(/^[a-z0-9][a-z0-9._-]*$/.test(policy.npmOwner), 'npm-owner');
-  require(/^[a-zA-Z][\w-]*$/.test(policy.distTag) && !(pkg.version.includes('-') && policy.distTag === 'latest'), 'dist-tag');
+  require((pkg.version.includes('-') ? policy.distTag === 'next' : ['next', 'latest'].includes(policy.distTag)), 'dist-tag');
   require(policy.provenance === true, 'provenance-required');
   require(/^\d+\.\d+\.\d+$/.test(policy.pnpmVersion), 'publisher-version');
   require(policy.historyDisclosureApproved === true, 'history-disclosure-unapproved');
