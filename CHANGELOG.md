@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.0-rc.1](https://github.com/ts-76/void-plugin-hono-jsx/compare/v0.1.0-rc.0...v0.1.0-rc.1) (2026-10-17)
+
+
+### Features
+
+* add navigation fallback and Hono deferred rendering ([8475a73](https://github.com/ts-76/void-plugin-hono-jsx/commit/8475a737931df4bfb62b9d32c877eb03c76ef644))
+
 ## [0.1.0-rc.0](https://github.com/ts-76/void-plugin-hono-jsx/compare/v0.1.0-alpha.4...v0.1.0-rc.0) (2026-10-17)
 
 
