@@ -98,7 +98,8 @@ export async function checkDeferredConsumer({ origin, page, mode }) {
   try {
     await page.goto(origin + '/deferred?token=early', { waitUntil: 'commit' });
     await Promise.race([requested, new Promise((_, reject) => setTimeout(() => reject(new Error('Initial deferred component was not requested')), 5000))]);
-    await page.waitForFunction(() => typeof window.__resolveDeferred === 'function');
+    // The production chunk graph may hold client initialization with this
+    // component. Void's inline callback queues even before handlers exist.
     await control('early');
     await page.waitForFunction(() => window.__deferredQueue?.some((entry) => entry[0] === 'slow'));
     assert.equal(await page.locator('#deferred-state').textContent(), 'Loading slow value');
