@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.0.0-alpha.3](https://github.com/ts-76/void-plugin-hono-jsx/compare/v0.1.0-alpha.3...v1.0.0-alpha.3) (2026-10-17)
+## [0.1.0-alpha.4](https://github.com/ts-76/void-plugin-hono-jsx/compare/v0.1.0-alpha.3...v0.1.0-alpha.4) (2026-10-17)
 
 
 ### ⚠ BREAKING CHANGES
