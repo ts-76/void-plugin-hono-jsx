@@ -1,5 +1,6 @@
 import { useState } from 'hono/jsx';
 import { Link, useRouter, type Deferred } from 'void-plugin-hono-jsx/pages';
+import DeferredPromise from '../components/DeferredPromise';
 import type { Props } from './deferred.server';
 function Slow({ value }: { value: Deferred<string> }) {
   if (value.loading) return <p id="deferred-state">Loading slow value</p>;
@@ -9,7 +10,7 @@ function Slow({ value }: { value: Deferred<string> }) {
 export default function Page({ immediate, token, slow }: Props) {
   const [count, setCount] = useState(0);
   const router = useRouter();
-  return <main><h1 id="deferred-immediate">{immediate}</h1><Slow value={slow} />
+  return <main><h1 id="deferred-immediate">{immediate}</h1><Slow value={slow} /><DeferredPromise id="deferred-promise" state={slow} />
     <output id="deferred-local">{count}</output><button id="deferred-local-increment" onClick={() => setCount((value) => value + 1)}>Increment page</button>
     <button id="deferred-next" onClick={() => void router.visit(`/deferred?token=${token}-next`)}>Next slow page</button>
     <Link id="deferred-away" href="/other">Leave slow page</Link>
