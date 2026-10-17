@@ -241,5 +241,6 @@ try {
   console.error(process.env.KEEP_CONSUMER_FIXTURE ? `Consumer validation failed. Retained workspace: ${consumer}` : 'Consumer validation failed. Set KEEP_CONSUMER_FIXTURE=1 to retain the workspace.');
   throw error;
 } finally {
-  if (!process.env.KEEP_CONSUMER_FIXTURE) await rm(temporary, { recursive: true, force: true });
+  if (process.env.KEEP_CONSUMER_FIXTURE) console.log(`Retained consumer workspace: ${consumer}`);
+  else await rm(temporary, { recursive: true, force: true });
 }
