@@ -47,7 +47,9 @@ export function honoIslands(): Plugin {
     return found;
   }
 
+  // Refresh before graph analysis, regardless of Markdown hot-hook order.
   async function rescan() {
+    markdown?.refresh();
     scan = await scanPages(root, { pagesDir });
     // Never pass Markdown text to the JavaScript static-graph parser.
     for (const file of [...scan.pages.map(page => page.componentPath), ...scan.layouts.map(layout => layout.filePath), ...scan.namedLayouts.map(layout => layout.filePath)]) {

@@ -14,20 +14,31 @@ const literal = (value: unknown) => `JSON.parse(${JSON.stringify(JSON.stringify(
 export function voidHonoMarkdown(): Plugin {
   let root = process.cwd();
   let pagesDir = resolvePagesDir(root);
-  const scripts = new Map<string, string>();
-  const files = new Map<string, string>();
+  let scripts = new Map<string, string>();
+  let files = new Map<string, string>();
+  let sources = new Map<string, ReturnType<typeof extractMarkdown>>();
   function rescan() {
-    scripts.clear(); files.clear();
-    if (!existsSync(pagesDir)) return;
-    for (const entry of readdirSync(pagesDir, { recursive: true, withFileTypes: true })) {
+    const nextScripts = new Map<string, string>();
+    const nextFiles = new Map<string, string>();
+    const nextSources = new Map<string, ReturnType<typeof extractMarkdown>>();
+    for (const entry of existsSync(pagesDir) ? readdirSync(pagesDir, { recursive: true, withFileTypes: true }) : []) {
       if (!entry.isFile() || !entry.name.endsWith('.md')) continue;
       const file = join(entry.parentPath, entry.name);
       const id = normalizePath(relative(pagesDir, file)).replace(/\.md$/, '').replace(/\.island$/, '').replace(/\/index$/, '').replace(/^index$/, '') || 'index';
-      const { clientCode } = extractMarkdown(readFileSync(file, 'utf8'));
-      if (clientCode) { scripts.set(id, clientCode); files.set(id, file); }
+      const canonical = realpathSync(file);
+      const extracted = nextSources.get(canonical) ?? extractMarkdown(readFileSync(canonical, 'utf8'));
+      nextSources.set(canonical, extracted);
+      if (extracted.clientCode) { nextScripts.set(id, extracted.clientCode); nextFiles.set(id, file); }
     }
+    // Commit complete generations only; a parse error must not publish partial data.
+    scripts = nextScripts; files = nextFiles; sources = nextSources;
   }
-  const api: HonoMarkdownApi = { adapter: 'hono', clientEntryId: clientId, getClientScripts() { rescan(); return scripts; }, getGraphSource(file) { return extractMarkdown(readFileSync(file, 'utf8')).graphSource; } };
+  function source(file: string) {
+    const extracted = sources.get(realpathSync(file));
+    if (!extracted) throw new Error(`Hono Markdown: file is absent from the current page scan: ${file}`);
+    return extracted;
+  }
+  const api: HonoMarkdownApi = { adapter: 'hono', clientEntryId: clientId, refresh: rescan, getClientScripts() { return scripts; }, getGraphSource(file) { return source(file).graphSource; } };
   return {
     // Void's Markdown entry/asset convention is shared with @void/md.
     name: 'void-md', enforce: 'pre', api,
@@ -42,9 +53,8 @@ export function voidHonoMarkdown(): Plugin {
     },
     resolveId(id) { if (id === clientId) return `\0${id}`; },
     load(id) {
-      if (id.endsWith(scriptQuery)) return extractMarkdown(readFileSync(id.slice(0, -scriptQuery.length), 'utf8')).clientCode || 'export {};';
+      if (id.endsWith(scriptQuery)) return source(id.slice(0, -scriptQuery.length)).clientCode || 'export {};';
       if (id !== `\0${clientId}`) return;
-      rescan();
       if (!files.size) return 'export {};';
       return `const scripts = {${[...files].map(([id, file]) => `${JSON.stringify(id)}: () => import(${JSON.stringify(normalizePath(file) + scriptQuery)})`).join(',')}};
 const id = document.getElementById('app')?.getAttribute('data-md-script');
