@@ -35,16 +35,18 @@ npm install --save-dev void@0.27.0 vite@8.3.4 typescript@7.0.2
 
 ## Configure
 
+`voidHonoJsx()` and `HonoJsxOptions` replace the earlier `voidHonoPages()` and `HonoPagesOptions` names. This is a breaking alpha API change; the old names are not exported. Alpha.3 uses the earlier names. Use a local tarball or a release containing this rename for the configuration below.
+
 ```ts
 // vite.config.ts
 import { defineConfig } from 'vite';
 import { voidPlugin } from 'void';
-import { voidHonoPages } from 'void-plugin-hono-jsx/plugin';
+import { voidHonoJsx } from 'void-plugin-hono-jsx/plugin';
 
-export default defineConfig({ plugins: [voidPlugin(), voidHonoPages()] });
+export default defineConfig({ plugins: [voidPlugin(), voidHonoJsx()] });
 ```
 
-Configure project settings in `void.config.ts` using `defineConfig` from `void/config`. Run Vite from that project's root. `voidHonoPages()` includes the Hono JSX transform, so do not register a separate transform. Configure charset, viewport and favicon through Void's `head` settings.
+Configure project settings in `void.config.ts` using `defineConfig` from `void/config`. Run Vite from that project's root. `voidHonoJsx()` includes the Hono JSX transform, so do not register a separate transform. Configure charset, viewport and favicon through Void's `head` settings.
 
 Use `jsx: "react-jsx"` and `jsxImportSource: "hono/jsx"` in TypeScript. The plugin chooses the server or DOM factory for application JSX; the plugin resolves package runtime exports using Vite's actual consumer environment. Cloudflare worker environments may enable the browser condition, so that condition alone cannot select the renderer.
 
@@ -61,7 +63,7 @@ If the project version is already correct, inspect the paths in the diagnostic a
 Void's init wizard currently offers React, Vue, Svelte and Solid adapters rather than Hono JSX. A React scaffold can be adapted without replacing its Vite Plus scripts:
 
 1. Install this adapter and `hono`; use a candidate/new release with the support policy above.
-2. Replace `voidReact()` / `@void/react/plugin` in `vite.config.ts` with `voidHonoPages()` / `void-plugin-hono-jsx/plugin`, keeping `voidPlugin()`.
+2. Replace `voidReact()` / `@void/react/plugin` in `vite.config.ts` with `voidHonoJsx()` / `void-plugin-hono-jsx/plugin`, keeping `voidPlugin()`.
 3. Set TypeScript `jsx` to `react-jsx` and `jsxImportSource` to `hono/jsx`. Change page/component React imports and hooks to Hono JSX APIs.
 4. Once React code is removed, uninstall `@void/react`, `react`, `react-dom`, `@types/react`, `@types/react-dom` and `oxc-transform-react` if they are otherwise unused. The Hono plugin supplies its own JSX transform.
 5. Keep `vp dev`, `vp build`, `vp preview`, or use the plain Vite scaffold. Verify the app's loaders/actions and database migrations locally.
@@ -155,11 +157,11 @@ npm install markdown-exit@1.3.0 yaml@2.9.1
 ```ts
 import { defineConfig } from 'vite';
 import { voidPlugin } from 'void';
-import { voidHonoPages } from 'void-plugin-hono-jsx/plugin';
+import { voidHonoJsx } from 'void-plugin-hono-jsx/plugin';
 import { voidHonoMarkdown } from 'void-plugin-hono-jsx/markdown/plugin';
 
 export default defineConfig({
-  plugins: [voidPlugin(), voidHonoPages(), voidHonoMarkdown()],
+  plugins: [voidPlugin(), voidHonoJsx(), voidHonoMarkdown()],
 });
 ```
 

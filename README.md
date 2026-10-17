@@ -45,12 +45,14 @@ npm install --save-dev void@0.27.0 vite@8.3.4 typescript@7.0.2
 
 Configure the Vite plugins in `vite.config.ts`:
 
+`voidHonoJsx()` and `HonoJsxOptions` replace the earlier `voidHonoPages()` and `HonoPagesOptions` names. This is a breaking alpha API change; the old names are not exported. Alpha.3 uses the earlier names. Use a local tarball or a release containing this rename for the configuration below.
+
 ```ts
 import { defineConfig } from 'vite';
 import { voidPlugin } from 'void';
-import { voidHonoPages } from 'void-plugin-hono-jsx/plugin';
+import { voidHonoJsx } from 'void-plugin-hono-jsx/plugin';
 
-export default defineConfig({ plugins: [voidPlugin(), voidHonoPages()] });
+export default defineConfig({ plugins: [voidPlugin(), voidHonoJsx()] });
 ```
 
 Use standard Vite scripts (`vite`, `vite build`, `vite preview`) or keep the scaffold's `vp dev`, `vp build`, `vp preview` scripts. Both the scaffold Vite Plus 0.1.24 and latest 1.1.0 are consumer fixtures. The gate checks the actual hook version and reports resolved package paths. See [launcher diagnostics](packages/hono-pages/README.md#running-vite-and-launcher-diagnostics).
@@ -83,7 +85,7 @@ The repository separates the publishable adapter, runnable examples and automate
 | Directory | Purpose |
 | --- | --- |
 | `packages/hono-pages` | Package metadata, user guide, adapter source and build configuration. Only `dist`, `src`, the guide, changelog and license/notices are packed. |
-| `examples/pages` | Full Pages example using the adapter source, including navigation, layouts, forms and head metadata. |
+| `examples/pages` | Pages and Markdown example using the adapter source, including navigation, layouts, forms, head metadata and independent Hono islands. |
 | `examples/custom-ssr` | Original minimal Custom SSR counter, kept as a separate example. |
 | `fixtures` | Isolated packed-consumer, static-output and local ISR test inputs. |
 | `scripts` and `tests` | Build, release-content audit and automated behavioral checks. |
@@ -102,6 +104,6 @@ The consumer check installs the packed artifact in a temporary project and exerc
 
 [Contribution guidance](CONTRIBUTING.md) explains local checks and bug reports. [Architecture](docs/architecture.md) describes the framework boundary and development renderer. [Release preparation](docs/releasing.md) explains exact-artifact verification, security gates and staged publishing. [Release checklist](docs/release-checklist.md) records remaining release decisions. [Third-party notices](THIRD_PARTY_NOTICES.md) document upstream adapter references and dependency licenses.
 
-`voidHonoPages()` retains its existing defaults (transitions disabled, 75ms hover delay, 30s cache). Opt in with `viewTransitions`, set `prefetch.hoverDelay` in milliseconds and `prefetch.cacheFor` using Void durations or a stale/expiry tuple. `<Link viewTransition={false}>` overrides the global transition setting; programmatic `router.visit(url, { viewTransition: true })` uses the same router. Native View Transitions fall back to normal navigation when the browser API is absent. The transition callback waits for Hono DOM commit and document-head synchronization. Hono integrates with Void's public navigation engine/facade and handles native animation skips separately from rendering failures ([View Transitions promise semantics](https://www.w3.org/TR/css-view-transitions-1/#viewtransition)).
+`voidHonoJsx()` retains its existing defaults (transitions disabled, 75ms hover delay, 30s cache). Opt in with `viewTransitions`, set `prefetch.hoverDelay` in milliseconds and `prefetch.cacheFor` using Void durations or a stale/expiry tuple. `<Link viewTransition={false}>` overrides the global transition setting; programmatic `router.visit(url, { viewTransition: true })` uses the same router. Native View Transitions fall back to normal navigation when the browser API is absent. The transition callback waits for Hono DOM commit and document-head synchronization. Hono integrates with Void's public navigation engine/facade and handles native animation skips separately from rendering failures ([View Transitions promise semantics](https://www.w3.org/TR/css-view-transitions-1/#viewtransition)).
 
 Optional Markdown is available through `voidHonoMarkdown()` from `void-plugin-hono-jsx/markdown/plugin`, with `markdown-exit@1.3.0` and `yaml@2.9.1` installed explicitly. It supports document navigation, frontmatter/layouts, companion loaders, islands, page-specific scripts and static output. It is independent of the official `@void/md` compiler. See [setup and the supported Markdown contract](docs/markdown.md).

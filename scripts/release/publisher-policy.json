@@ -51,6 +51,30 @@
       "modified": "2026-10-02T18:45:04.881140605Z",
       "advisorySha256": "36111fd04f113b37198725c3492d00be831b4ca6a7713aef4a9caa073729babc",
       "reason": "Publisher uses SHA512; ssri uses default Xxh3 only in other modes, with no short custom-secret caller."
+    },
+    {
+      "name": "zip",
+      "version": "8.6.0",
+      "id": "RUSTSEC-2026-0367",
+      "modified": "2026-10-16T23:30:02.392172556Z",
+      "advisorySha256": "57d60beae31a98e2d77ebc16db6bc00d1141dc9dcaa44b5e2f165c681be52539",
+      "reason": "Scoped to the unchanged Linux x64 pnpm 12.14.0 binary and exact accepted tgz stage command. Publish reads gzip/tar entries in memory and uploads the original bytes; no ZIP extraction, install, runtime download or server command. The vulnerable ZipArchive::extract / ZipStreamReader::extract APIs were not found in this publisher call path. Reassess on any version/source/target/command/advisory change."
+    },
+    {
+      "name": "zip",
+      "version": "8.6.0",
+      "id": "RUSTSEC-2026-0368",
+      "modified": "2026-10-16T23:30:02.383750571Z",
+      "advisorySha256": "e46788767f42cf23f665aba64112148f97b18a60e7831ee897581376645b6daa",
+      "reason": "Scoped to the unchanged Linux x64 pnpm 12.14.0 binary and exact accepted tgz stage command. Publish reads gzip/tar entries in memory and uploads the original bytes; no ZIP extraction, install, runtime download or server command. The vulnerable ZipArchive::extract / ZipStreamReader::extract APIs were not found in this publisher call path. Reassess on any version/source/target/command/advisory change."
+    },
+    {
+      "name": "zip",
+      "version": "8.6.0",
+      "id": "RUSTSEC-2026-0369",
+      "modified": "2026-10-16T23:30:02.387698467Z",
+      "advisorySha256": "641c968dcdd39b4e1708e7c391bb319299f30a378c183a0f0f328187f27114d2",
+      "reason": "Scoped to the unchanged Linux x64 pnpm 12.14.0 binary and exact accepted tgz stage command. Publish reads gzip/tar entries in memory and uploads the original bytes; no ZIP extraction, install, runtime download or server command. The vulnerable ZipArchive::extract / ZipStreamReader::extract APIs were not found in this publisher call path. Reassess on any version/source/target/command/advisory change."
     }
   ],
   "scope": "Linux x64 pnpm stage publish; exact accepted tgz; no install/runtime download/query/server; explicit provenance; isolated config/cache; mandatory OIDC preflight."

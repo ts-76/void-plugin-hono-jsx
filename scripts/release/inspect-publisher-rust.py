@@ -61,7 +61,7 @@ for package, result in zip(inventory, results):
         advisory = json.load(urllib.request.urlopen(f"https://api.osv.dev/v1/vulns/{item['id']}", timeout=30))
         findings.append(dict(package=package, advisory=advisory))
 (report / 'findings.json').write_text(json.dumps(findings, indent=2) + '\n')
-patterns = ['downcast_mut', 'with_tag', 'listener!', 'xxh3_64_with_secret', 'xxh3_128_with_secret', 'RsaPrivateKey', 'decrypt(', 'http3']
+patterns = ['downcast_mut', 'with_tag', 'listener!', 'xxh3_64_with_secret', 'xxh3_128_with_secret', 'RsaPrivateKey', 'decrypt(', 'http3', 'ZipArchive', 'ZipStreamReader']
 hits = []
 for package in inventory:
     crate_root = pathlib.Path(external[(package['name'], package['version'])]['manifest_path']).parent
@@ -70,4 +70,12 @@ for package in inventory:
             if any(pattern in line for pattern in patterns):
                 hits.append(dict(crate=f"{package['name']}@{package['version']}", file=str(file.relative_to(crate_root)), line=number, text=line.strip()[:240]))
 (report / 'function-hits.json').write_text(json.dumps(hits, indent=2) + '\n')
+# Preserve the pinned publisher/ZIP caller evidence as well as registry-crate hits.
+zip_patterns = ['ZipArchive', 'ZipStreamReader', 'publish_tarball', 'extract_publish_manifest_from_packed', 'is_tarball_path', '& 0o777']
+zip_hits = []
+for file in sorted((source / 'pnpm/crates').rglob('*.rs')):
+    for number, line in enumerate(file.read_text(errors='replace').splitlines(), 1):
+        if any(pattern in line for pattern in zip_patterns):
+            zip_hits.append(dict(file=str(file.relative_to(source)), line=number, text=line.strip()[:240]))
+(report / 'zip-publisher-source-hits.json').write_text(json.dumps(zip_hits, indent=2) + '\n')
 print(json.dumps(dict(sourceCommit=COMMIT, registryPackages=len(inventory), findings=[dict(name=f['package']['name'], version=f['package']['version'], id=f['advisory']['id']) for f in findings]), indent=2))

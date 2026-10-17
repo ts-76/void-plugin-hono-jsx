@@ -113,6 +113,27 @@ details[open] > summary::before { transform: rotate(90deg); }
 .skip-link { position: absolute; left: 16px; top: -100px; z-index: 10; background: var(--surface); padding: 12px 16px; border: 1px solid var(--accent); }
 .skip-link:focus { top: 16px; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.markdown-grid { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 24px; align-items: start; }
+.markdown-prose { overflow-wrap: anywhere; }
+.markdown-prose > :first-child { margin-top: 0; }
+.markdown-prose h2 { margin: 32px 0 16px; font-size: 20px; scroll-margin-top: 24px; }
+.markdown-prose p, .markdown-prose ul { margin: 16px 0; }
+.markdown-prose ul { padding-left: 24px; }
+.markdown-prose li + li { margin-top: 8px; }
+.markdown-prose table { width: 100%; margin: 24px 0; border-collapse: collapse; font-size: 12px; }
+.markdown-prose th, .markdown-prose td { padding: 12px; border: 1px solid var(--border); text-align: left; }
+.markdown-prose th { background: var(--canvas); font-weight: 600; }
+.markdown-prose pre { max-width: 100%; margin: 20px 0; overflow-x: auto; padding: 16px; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas); font-size: 12px; }
+.markdown-prose code { font-family: ui-monospace, SFMono-Regular, monospace; }
+.markdown-counters { display: grid; gap: 16px; margin: 24px 0; }
+.markdown-counter { padding: 20px; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas); }
+.markdown-counter .muted { margin: 8px 0 16px; }
+.markdown-counter .counter-controls output { font-size: 36px; }
+.markdown-meta .data-list > div { grid-template-columns: 1fr; gap: 6px; }
+.markdown-outline { margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border); }
+.markdown-outline ol { margin: 12px 0 0; padding-left: 20px; font-size: 12px; }
+.markdown-outline a { display: inline-block; padding: 8px 0; }
+@media (max-width: 1100px) { .markdown-grid { grid-template-columns: 1fr; } }
 @media (max-width: 1100px) { .workspace-header { padding: 0 24px; } .workspace-body { padding: 20px 24px 40px; } .workspace-footer { padding: 20px 24px; } .content-grid { grid-template-columns: 1fr; } }
 @media (max-width: 800px) {
   .app-shell { flex-direction: column; }

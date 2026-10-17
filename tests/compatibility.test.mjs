@@ -4,7 +4,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { assertSupportedFrameworks, supportsVite, supportsFramework } from '../packages/hono-pages/src/plugins/compatibility.ts';
-import { voidHonoPages } from '../packages/hono-pages/src/plugins/hono-pages.ts';
+import { voidHonoJsx } from '../packages/hono-pages/src/plugins/hono-pages.ts';
 
 function project(version = '8.3.3') {
   const root = mkdtempSync(join(tmpdir(), 'hono-vite-identity-'));
@@ -46,7 +46,7 @@ test('missing host version fails closed instead of using resolved package metada
 
 test('config hook uses its own meta version and identifies its configured project root', () => {
   const p=project('8.3.4'); try {
-    const plugin=voidHonoPages().find(p=>p.name==='void-hono:pages');
+    const plugin=voidHonoJsx().find(p=>p.name==='void-hono:pages');
     assert.throws(()=>plugin.config.call({meta:{viteVersion:'9.0.0'}},{root:p.root},{}), error=>error.message.includes('running Vite 9.0.0') && error.message.includes(join(p.root,'node_modules/vite/package.json')));
     assert.ok(plugin.config.call({meta:{viteVersion:'8.3.4'}},{root:p.root},{}).resolve);
   } finally {p.cleanup();}

@@ -45,7 +45,9 @@ export CLOUDFLARE_CF_FETCH_ENABLED=false
 npm run dev
 ```
 
-The Pages example is served at `http://127.0.0.1:5174/`. Its loader starts the counter at 7. In another terminal with the same environment settings, run `npm run build` and `npm run preview`; preview uses port 4174. Explicit `dev:pages`, `build:pages` and `preview:pages` aliases remain available.
+The Pages example is served at `http://127.0.0.1:5174/`. Its overview loader starts the counter at 7. In another terminal with the same environment settings, run `npm run build` and `npm run preview`; preview uses port 4174. Explicit `dev:pages`, `build:pages` and `preview:pages` aliases remain available.
+
+The same example includes `/markdown`: authored Markdown with the shared app shell, frontmatter, a companion loader, a mobile menu and two independent Hono islands. Enter from the sidebar or overview; Markdown uses document navigation.
 
 The original Custom SSR counter is available through `dev:custom-ssr`, `build:custom-ssr` and `preview:custom-ssr`, using development port 5173 and preview port 4173. Both examples resolve dependencies from the root installation. No cloud provisioning or deployment is needed for these local checks.
 

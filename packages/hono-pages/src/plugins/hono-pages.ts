@@ -19,12 +19,12 @@ function assertComponentFile(file: string, kind: 'page' | 'layout', markdown = f
 }
 
 
-export type HonoPagesOptions = {
+export type HonoJsxOptions = {
   viewTransitions?: boolean;
   prefetch?: { hoverDelay?: number; cacheFor?: CacheForInput };
 };
 
-function clientOptions(options: HonoPagesOptions) {
+function clientOptions(options: HonoJsxOptions) {
   const viewTransitions = options.viewTransitions ?? false;
   const prefetchHoverDelay = options.prefetch?.hoverDelay ?? 75;
   if (typeof viewTransitions !== 'boolean') throw new Error('Hono Pages: viewTransitions must be a boolean.');
@@ -37,7 +37,7 @@ function clientOptions(options: HonoPagesOptions) {
 }
 
 /** Experimental Pages contract verified against Void 0.26.1 and 0.27.0. */
-export function voidHonoPages(options: HonoPagesOptions = {}): Plugin[] {
+export function voidHonoJsx(options: HonoJsxOptions = {}): Plugin[] {
   const navigationOptions = clientOptions(options);
   const root = process.cwd();
   const pagesDir = resolvePagesDir(root);
