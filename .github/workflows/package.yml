@@ -1,6 +1,7 @@
 name: Package and clean consumer
 on:
   push:
+    branches: ['main', 'release/**']
   pull_request:
   workflow_dispatch:
 permissions:
@@ -8,20 +9,52 @@ permissions:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+env:
+  WRANGLER_SEND_METRICS: 'false'
+  VOID_INSPECTOR_PORT: 'false'
+  CLOUDFLARE_CF_FETCH_ENABLED: 'false'
 jobs:
+  baseline:
+    name: baseline consumer on Node 24.21.0
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Configure local runtime logs
+        run: echo "WRANGLER_LOG_PATH=$RUNNER_TEMP/void-hono-logs" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.21.0'
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Install browser runtime
+        run: npx playwright install --with-deps chromium
+      - name: Validate common source and prepare the baseline-accepted candidate once
+        env:
+          RELEASE_CONSUMER_STACK: baseline
+        run: npm run release:prepare
+      - name: Report disabled publication gates
+        run: npm run release:plan
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: npm-candidate-${{ github.sha }}-baseline-attempt-${{ github.run_attempt }}
+          path: artifacts/
+          retention-days: 7
+          if-no-files-found: error
   consumer:
     name: ${{ matrix.stack }} consumer on Node ${{ matrix.node }}
+    needs: baseline
     strategy:
       matrix:
         node: ['24.21.0']
-        stack: ['baseline', 'vite-patch', 'latest-vite', 'scaffold-vp', 'latest-vp', 'void-1-vite', 'void-1-vp']
+        stack: ['vite-patch', 'latest-vite', 'scaffold-vp', 'latest-vp', 'void-1-vite', 'void-1-vp']
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
       RELEASE_CONSUMER_STACK: ${{ matrix.stack }}
-      WRANGLER_SEND_METRICS: 'false'
-      VOID_INSPECTOR_PORT: 'false'
-      CLOUDFLARE_CF_FETCH_ENABLED: 'false'
     steps:
       - name: Configure local runtime logs
         run: echo "WRANGLER_LOG_PATH=$RUNNER_TEMP/void-hono-logs" >> "$GITHUB_ENV"
@@ -36,8 +69,12 @@ jobs:
         run: npm ci
       - name: Install browser runtime
         run: npx playwright install --with-deps chromium
-      - name: Verify the exact npm release candidate
-        run: npm run release:prepare
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: npm-candidate-${{ github.sha }}-baseline-attempt-${{ github.run_attempt }}
+          path: artifacts
+      - name: Verify these accepted bytes with this locked consumer
+        run: npm run release:verify-consumer
       - name: Report disabled publication gates
         run: npm run release:plan
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -48,10 +85,10 @@ jobs:
           if-no-files-found: error
   required-baseline:
     name: Pinned framework baseline on Node 24.21.0
-    needs: consumer
+    needs: [baseline, consumer]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - name: Require all reviewed consumer stack results
-        run: test "${{ needs.consumer.result }}" = success
+        run: test "${{ needs.baseline.result }}" = success && test "${{ needs.consumer.result }}" = success

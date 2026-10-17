@@ -27,3 +27,9 @@ Issue #81 shares canonical source, primary syntax and import-edge results within
 Every analysis uses a fresh cache. Interactive validation shares its visited set while retaining the distinct static/interactive rules. Resolved dependencies and unresolved import candidates trigger updates; unrelated/generated files do not trigger a graph reload. Failed dependencies remain observable until a successful rebuild prunes the watch set. Tests include edits, creation/deletion, re-exports/index resolution, symlink paths and recovery from parsing/boundary failures.
 
 The fixed-point propagation algorithm is unchanged; there is no evidence that replacing it is currently necessary. No request-time performance or production Workers behavior is inferred from these measurements.
+
+## Common CI preparation
+
+The package workflow previously scheduled a full release preparation for every framework stack. It now prepares one baseline-accepted candidate, then verifies the exact same bytes in the six other locked consumers. Common source/build/pack/dry-run work runs once; dependency audits remain separate for all seven consumers. Normal feature PRs use one package-workflow run. Main/release pushes and bot/manual dispatches retain their execution paths.
+
+This adds a baseline dependency before the six-way fan-out, so total wall time may differ from CPU work. No measured time or cost saving is claimed. Stage preparation is unchanged: it creates and validates its own same-run/attempt artifact and performs its existing fresh checks before OIDC/provenance submission.

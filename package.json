@@ -25,7 +25,8 @@
     "release:prepare": "node scripts/release/prepare.mjs",
     "release:plan": "node scripts/release/plan.mjs",
     "audit:history": "node scripts/audit-history.mjs",
-    "audit:secrets": "bash scripts/gitleaks.sh"
+    "audit:secrets": "bash scripts/gitleaks.sh",
+    "release:verify-consumer": "node scripts/release/verify-consumer.mjs"
   },
   "dependencies": {
     "hono": "4.13.13"
