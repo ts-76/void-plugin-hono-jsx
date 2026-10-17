@@ -10,6 +10,10 @@ function checkLegacy() {
 function checkBound() {
   const form = useForm('/forms?save', { name: 'Original' });
   form.post();
+  const multipart = new FormData();
+  form.post(multipart); form.post('/forms?save', multipart); form.submit('put', multipart);
+  // @ts-expect-error multipart body must be FormData
+  form.post('/forms?save', { name: 'invalid' });
   // @ts-expect-error unknown action URL
   useForm('/missing?save', { name: 'Original' });
   // @ts-expect-error unknown one-shot action URL
