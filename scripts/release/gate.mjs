@@ -58,21 +58,22 @@ export function inspectArtifact({ root = process.cwd(), artifactRoot = path.join
     assert.equal(sha256(readFileSync(path.join(artifactRoot, file))), digest, `Audit report changed: ${file}`);
   }
   assert.deepEqual(evidence.validation, { typecheck: true, build: true, test: true, source: true, history: true, secrets: true, dryRun: true, externalConsumer: true });
-  const packed = JSON.parse(execFileSync('tar', ['-xOzf', tarball, 'package/package.json'], { encoding: 'utf8' }));
+  const { files, contents } = inspectArchive(bytes, evidence.files);
+  const packed = JSON.parse(contents.get('package.json'));
   assert.deepEqual(packed, { ...pkg, private: false }, 'Packed metadata changed');
-  const files = inspectTarball(tarball, evidence.files);
   const sourceFiles = directory => readdirSync(path.join(pkgRoot, directory), { withFileTypes: true }).flatMap(entry => entry.isDirectory() ? sourceFiles(`${directory}/${entry.name}`) : [`${directory}/${entry.name}`]);
   assert.deepEqual(files.filter(file => file.startsWith('src/')).sort(), sourceFiles('src').sort(), 'Packaged source file set changed');
   for (const file of files.filter(file => file.startsWith('src/'))) {
-    assert.equal(execFileSync('tar', ['-xOzf', tarball, 'package/' + file], { encoding: 'utf8' }), readFileSync(inside(pkgRoot, file), 'utf8'), `Packaged source changed: ${file}`);
+    assert.equal(contents.get(file), readFileSync(inside(pkgRoot, file), 'utf8'), `Packaged source changed: ${file}`);
   }
-  assert.equal(execFileSync('tar', ['-xOzf', tarball, 'package/THIRD_PARTY_NOTICES.md'], { encoding: 'utf8' }), readFileSync(path.join(pkgRoot, 'THIRD_PARTY_NOTICES.md'), 'utf8'));
+  assert.equal(contents.get('THIRD_PARTY_NOTICES.md'), readFileSync(path.join(pkgRoot, 'THIRD_PARTY_NOTICES.md'), 'utf8'));
   for (const entry of Object.values(packed.exports)) {
     for (const target of Object.values(entry)) assert.ok(evidence.files.includes(target.replace(/^\.\//, '')), 'Missing export target');
   }
-  assert.equal(execFileSync('tar', ['-xOzf', tarball, 'package/CHANGELOG.md'], { encoding: 'utf8' }), readFileSync(path.join(root, 'CHANGELOG.md'), 'utf8'), 'Packed release notes changed');
+  assert.equal(contents.get('CHANGELOG.md'), readFileSync(path.join(root, 'CHANGELOG.md'), 'utf8'), 'Packed release notes changed');
   const license = readFileSync(path.join(pkgRoot, 'LICENSE'), 'utf8');
-  assert.equal(execFileSync('tar', ['-xOzf', tarball, 'package/LICENSE'], { encoding: 'utf8' }), license);
+  assert.equal(contents.get('LICENSE'), license);
+  assert.equal(sha256(readFileSync(tarball)), evidence.sha256, 'Tarball changed during inspection');
   return { pkg: packed, policy, evidence, tarball, license, integrity: `sha512-${createHash('sha512').update(bytes).digest('base64')}` };
 }
 export function createPlan(options) {
@@ -119,9 +120,30 @@ export function stageReceipt(stdout, plan) {
 }
 
 export function inspectTarball(tarball, expectedFiles) {
-  const names = execFileSync('tar', ['-tzf', tarball], { encoding: 'utf8' }).trim().split('\n');
-  const listing = execFileSync('tar', ['-tvzf', tarball], { encoding: 'utf8' }).trim().split('\n');
-  assert.ok(listing.every(line => line.startsWith('-')), 'Tarball must contain only regular files');
+  return inspectTarballContents(tarball, expectedFiles).files;
+}
+
+export function inspectTarballContents(tarball, expectedFiles) {
+  const bytes = readFileSync(tarball);
+  const inspected = inspectArchive(bytes, expectedFiles);
+  assert.equal(sha256(readFileSync(tarball)), sha256(bytes), 'Tarball changed during inspection');
+  return inspected;
+}
+
+function inspectArchive(bytes, expectedFiles) {
+  const maxEntryBytes = 1024 * 1024;
+  const maxArchiveBytes = 8 * 1024 * 1024;
+  const env = { ...process.env, LC_ALL: 'C', TZ: 'UTC' };
+  delete env.TAR_OPTIONS;
+  // Every pass sees the same compressed snapshot, even if the file is replaced.
+  // -P preserves original paths for validation; -O never extracts to the filesystem.
+  // Ignore zero padding so a concatenated second archive cannot hide entries.
+  const tar = args => execFileSync('tar', ['--ignore-zeros', ...args], { input: bytes, env, maxBuffer: maxArchiveBytes });
+  const lines = buffer => { const rows = buffer.toString('utf8').split('\n'); if (rows.at(-1) === '') rows.pop(); return rows; };
+  const names = lines(tar(['-tPzf', '-']));
+  const listing = lines(tar(['-tPvzf', '-']));
+  assert.equal(names.length, listing.length, 'Archive listings disagree');
+  assert.ok(listing.length && listing.every(line => line.startsWith('-')), 'Tarball must contain only regular files');
   const files = names.map(name => {
     assert.ok(name.startsWith('package/'), 'Unexpected archive root');
     const file = name.slice(8);
@@ -131,9 +153,26 @@ export function inspectTarball(tarball, expectedFiles) {
   });
   assert.equal(new Set(files).size, files.length, 'Duplicate archive entry');
   if (expectedFiles) assert.deepEqual([...files].sort(), [...expectedFiles].sort(), 'Packed file list changed');
+  const sizes = listing.map((line, index) => {
+    assert.ok(line.endsWith(' ' + names[index]), 'Archive listing path changed');
+    const columns = line.slice(0, -names[index].length).trim().split(/\s+/);
+    let size;
+    // GNU and BSD tar have different owner/date columns. Reject other formats.
+    if (columns.length === 5 && /^\d{4}-\d{2}-\d{2}$/.test(columns[3]) && /^\d{2}:\d{2}$/.test(columns[4])) size = columns[2];
+    if (columns.length === 8 && /^\d+$/.test(columns[1]) && /^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)$/.test(columns[5]) && /^\d{1,2}$/.test(columns[6]) && /^(\d{4}|\d{2}:\d{2})$/.test(columns[7])) size = columns[4];
+    assert.match(size ?? '', /^\d+$/, 'Unsupported archive size listing');
+    const number = Number(size);
+    assert.ok(Number.isSafeInteger(number) && number <= maxEntryBytes, 'Packed file exceeds inspection size limit');
+    return number;
+  });
+  const total = sizes.reduce((sum, size) => sum + size, 0);
+  assert.ok(total <= maxArchiveBytes, 'Archive exceeds inspection size limit');
+  const payload = tar(['-xPOzf', '-']);
+  assert.equal(payload.length, total, 'Archive payload size changed');
+  let offset = 0;
   const contents = new Map();
-  for (const file of files) {
-    const content = execFileSync('tar', ['-xOzf', tarball, 'package/' + file], { encoding: 'utf8' });
+  for (const [index, file] of files.entries()) {
+    const content = payload.subarray(offset, offset + sizes[index]).toString('utf8'); offset += sizes[index];
     contents.set(file, content);
     assert.doesNotMatch(content, /\/(?:Users|home)\/[^/\s]+\/|\/private\/var\/|\/var\/folders\//, 'Machine-specific packed content');
   }
@@ -141,5 +180,5 @@ export function inspectTarball(tarball, expectedFiles) {
   const pkg = JSON.parse(contents.get('package.json'));
   assert.ok(!pkg.scripts, 'Publishable adapter must not run package lifecycle scripts');
   assert.ok(!pkg.dependencies && !pkg.devDependencies, 'Only documented peer dependencies are shipped');
-  return files;
+  return { files, contents };
 }
