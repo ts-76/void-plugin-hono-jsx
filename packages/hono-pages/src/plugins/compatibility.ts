@@ -4,21 +4,21 @@ import { dirname, join } from 'node:path';
 import { version as helperViteVersion } from 'vite';
 
 export const supportedFrameworkRanges = {
-  void: '>=0.26.1 <0.28.0',
+  void: '>=0.26.1 <0.28.0 || >=1.1.11 <1.2.0',
   hono: '>=4.13.13 <5.0.0',
   vite: '>=8.0.16 <9.0.0',
 };
 export const supportedViteRange = supportedFrameworkRanges.vite;
 
-// Only stable releases are admitted. Void is pre-1.0, so its next minor
-// requires explicit validation; Hono and Vite use their current major lines.
+// Only stable releases are admitted. Void minors are validated explicitly
+// because the adapter also uses its virtual-module integration contracts.
 export function supportsFramework(name: keyof typeof supportedFrameworkRanges, version: unknown): boolean {
   if (typeof version !== 'string') return false;
   const match = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.exec(version);
   if (!match) return false;
   const [major, minor, patch] = match.slice(1).map(Number);
   if (![major, minor, patch].every(Number.isSafeInteger)) return false;
-  if (name === 'void') return major === 0 && ((minor === 26 && patch >= 1) || minor === 27);
+  if (name === 'void') return (major === 0 && ((minor === 26 && patch >= 1) || minor === 27)) || (major === 1 && minor === 1 && patch >= 11);
   if (name === 'hono') return major === 4 && (minor > 13 || (minor === 13 && patch >= 13));
   return major === 8 && (minor > 0 || patch >= 16);
 }

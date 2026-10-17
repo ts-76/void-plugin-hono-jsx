@@ -7,13 +7,13 @@ This experimental package integrates Hono JSX with Void Pages. The package name 
 | Component | Accepted stable range | Full consumer fixtures |
 | --- | --- | --- |
 | Node.js | >=24.21.0 | 24.21.0 |
-| Void | >=0.26.1 <0.28.0 | 0.26.1, 0.27.0 |
+| Void | >=0.26.1 <0.28.0 or >=1.1.11 <1.2.0 | 0.26.1, 0.27.0, 1.1.11 |
 | Hono | >=4.13.13 <5.0.0 | 4.13.13 |
 | Vite | >=8.0.16 <9.0.0 | 8.0.16 (Vite Plus), 8.3.3, 8.3.4 |
-| Vite Plus | Host Vite must satisfy the Vite range | 0.1.24 (scaffold), 1.1.0 (latest) |
+| Vite Plus | Host Vite must satisfy the Vite range | 0.1.24 (historical scaffold), 1.1.0, 1.3.0 |
 | TypeScript | Project tooling | 7.0.2 |
 
-Published alpha.3 includes these peer ranges, running-Vite diagnostics and packaged source/maps. Alpha.1 and alpha.2 retain their exact-version gate. Stable Vite/Hono updates within the accepted ranges are admitted by compatibility policy; Void 0.28 and later require explicit validation. Prereleases are excluded. The fixture versions above are the 2026-10-12 snapshot; admitting a range does not mean every future version has already been tested. New upstream releases require refreshed fixtures, full checks and dependency audit review.
+Published alpha.3 includes these peer ranges, running-Vite diagnostics and packaged source/maps. Alpha.1 and alpha.2 retain their exact-version gate. The unreleased preparation branch adds Void 1.1.11 and Vite Plus 1.3.0 (host Vite 8.3.4); published alpha.4 retains the earlier Void 0.x range. Stable Vite/Hono updates within the accepted ranges are admitted by compatibility policy; other Void minor lines require explicit validation. Prereleases are excluded. The original fixtures are the 2026-10-12 snapshot and the Void 1.1.11 fixtures are pinned on 2026-10-17; admitting a range does not mean every future version has already been tested. New upstream releases require refreshed fixtures, full checks and dependency audit review.
 
 The expanded Link/Form APIs, island forms and graphs, deferred contracts, page options and optional Markdown documented below are additions after alpha.3. Use a later alpha containing the corresponding exports, or a local tarball to validate this source tree. Alpha.3 does not provide these additions.
 
@@ -195,7 +195,7 @@ Page and companion-loader edits reload the document and reset page/layout state.
 
 In development, the SSR renderer eagerly imports server-rendered page and layout modules with their providers. This keeps in-flight requests within the same module generation during a reload. Server-side module initialization therefore happens when the renderer loads, including pages not yet visited. Browser-only page components are excluded from this server graph. Production keeps lazy component imports. The packed-consumer regression also sends parallel SSR requests during six simultaneous page/loader revisions and requires every response to succeed.
 
-The packed-consumer check edits a page, changes its loader value, adds and removes a route, checks counter interaction after reloading, and asserts that the server stays running. It also verifies resolved dependency paths and rejection of an unsupported running Vite even when a supported npm Vite is installed. Five locked consumers cover the original baseline, the Vite patch update, latest Void with plain Vite, the scaffold Vite Plus, and latest Vite Plus on Node 24.21.0. The existing required baseline context aggregates all five results. It also runs `npm run check:source` for navigation, persistent layouts, action forms and head metadata in development and production preview. Inspect the GitHub Actions result on the commit being reviewed.
+The packed-consumer check edits a page, changes its loader value, adds and removes a route, checks counter interaction after reloading, and asserts that the server stays running. It also verifies resolved dependency paths and rejection of an unsupported running Vite even when a supported npm Vite is installed. Seven locked consumers cover the original baseline, the Vite patch update, latest Void with plain Vite, the scaffold Vite Plus, and latest Vite Plus on Node 24.21.0. Two current fixtures add Void 1.1.11 with plain Vite 8.3.4 and aligned Vite Plus 1.3.0. These are Hono-only projects without React starter dependencies. The existing required baseline context aggregates all seven results. It also runs `npm run check:source` for navigation, persistent layouts, action forms and head metadata in development and production preview. Inspect the GitHub Actions result on the commit being reviewed.
 
 ## Local ISR
 

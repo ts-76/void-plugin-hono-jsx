@@ -36,7 +36,7 @@ function clientOptions(options: HonoJsxOptions) {
   return { viewTransitions, prefetchHoverDelay, prefetchDefaultCacheFor };
 }
 
-/** Experimental Pages contract verified against Void 0.26.1 and 0.27.0. */
+/** Experimental Pages contract verified against the pinned consumer matrix. */
 export function voidHonoJsx(options: HonoJsxOptions = {}): Plugin[] {
   const navigationOptions = clientOptions(options);
   const root = process.cwd();

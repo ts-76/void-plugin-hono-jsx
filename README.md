@@ -9,13 +9,13 @@ Alpha versions are published on the `next` dist-tag under the [MIT license](LICE
 | Component | Accepted stable range | Full consumer fixtures |
 | --- | --- | --- |
 | Node.js | >=24.21.0 | 24.21.0 |
-| Void | >=0.26.1 <0.28.0 | 0.26.1, 0.27.0 |
+| Void | >=0.26.1 <0.28.0 or >=1.1.11 <1.2.0 | 0.26.1, 0.27.0, 1.1.11 |
 | Hono | >=4.13.13 <5.0.0 | 4.13.13 |
 | Vite | >=8.0.16 <9.0.0 | 8.0.16 (Vite Plus), 8.3.3, 8.3.4 |
-| Vite Plus | Host Vite must satisfy the Vite range | 0.1.24 (scaffold), 1.1.0 (latest) |
+| Vite Plus | Host Vite must satisfy the Vite range | 0.1.24 (historical scaffold), 1.1.0, 1.3.0 |
 | TypeScript | Project tooling | 7.0.2 |
 
-Published alpha.3 includes these peer ranges, running-Vite diagnostics and packaged source/maps. Alpha.1 and alpha.2 retain their exact-version gate. Stable Vite/Hono updates within the accepted ranges are admitted by compatibility policy; Void 0.28 and later require explicit validation. Prereleases are excluded. The fixture versions above are the 2026-10-12 snapshot; admitting a range does not mean every future version has already been tested. New upstream releases require refreshed fixtures, full checks and dependency audit review.
+Published alpha.3 includes these peer ranges, running-Vite diagnostics and packaged source/maps. Alpha.1 and alpha.2 retain their exact-version gate. The unreleased preparation branch adds Void 1.1.11 and Vite Plus 1.3.0 (host Vite 8.3.4); published alpha.4 retains the earlier Void 0.x range. Stable Vite/Hono updates within the accepted ranges are admitted by compatibility policy; other Void minor lines require explicit validation. Prereleases are excluded. The original fixtures are the 2026-10-12 snapshot and the Void 1.1.11 fixtures are pinned on 2026-10-17; admitting a range does not mean every future version has already been tested. New upstream releases require refreshed fixtures, full checks and dependency audit review.
 
 The expanded Link/Form APIs, island forms and graphs, deferred contracts, page options and optional Markdown documented below are additions after alpha.3. Use a later alpha containing the corresponding exports, or a local tarball to validate this source tree. Alpha.3 does not provide these additions.
 
@@ -55,7 +55,7 @@ import { voidHonoJsx } from 'void-plugin-hono-jsx/plugin';
 export default defineConfig({ plugins: [voidPlugin(), voidHonoJsx()] });
 ```
 
-Use standard Vite scripts (`vite`, `vite build`, `vite preview`) or keep the scaffold's `vp dev`, `vp build`, `vp preview` scripts. Both the scaffold Vite Plus 0.1.24 and latest 1.1.0 are consumer fixtures. The gate checks the actual hook version and reports resolved package paths. See [launcher diagnostics](packages/hono-pages/README.md#running-vite-and-launcher-diagnostics).
+Use standard Vite scripts (`vite`, `vite build`, `vite preview`) or keep the scaffold's `vp dev`, `vp build`, `vp preview` scripts. The historical scaffold Vite Plus 0.1.24, 1.1.0 and current 1.3.0 are consumer fixtures. The gate checks the actual hook version and reports resolved package paths. See [launcher diagnostics](packages/hono-pages/README.md#running-vite-and-launcher-diagnostics).
 
 Keep project settings in `void.config.ts`, using `defineConfig` from `void/config`. These files have different roles. Run Vite from your project root. The adapter includes JSX transformation; set TypeScript's `jsx` to `react-jsx` and `jsxImportSource` to `hono/jsx`.
 

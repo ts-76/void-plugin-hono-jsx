@@ -14,7 +14,7 @@ jobs:
     strategy:
       matrix:
         node: ['24.21.0']
-        stack: ['baseline', 'vite-patch', 'latest-vite', 'scaffold-vp', 'latest-vp']
+        stack: ['baseline', 'vite-patch', 'latest-vite', 'scaffold-vp', 'latest-vp', 'void-1-vite', 'void-1-vp']
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:

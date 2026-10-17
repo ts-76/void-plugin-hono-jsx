@@ -22,7 +22,7 @@ export async function checkMarkdownConsumer({ repo, consumer: original, browser,
   Object.assign(pkg.devDependencies, overlay.devDependencies);
   Object.assign(lock.packages[''].devDependencies, overlay.devDependencies);
   for (const [name, entry] of Object.entries(overlay.packages)) {
-    assert.equal(lock.packages[name], undefined, `Review parser lock collision with ${name}`);
+    if (lock.packages[name] !== undefined) assert.deepEqual(lock.packages[name], entry, `Review parser lock collision with ${name}`);
     lock.packages[name] = entry;
   }
   await writeFile(join(consumer, 'package.json'), JSON.stringify(pkg, null, 2) + '\n');
