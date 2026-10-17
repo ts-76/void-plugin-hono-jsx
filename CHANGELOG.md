@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.1.0-rc.0](https://github.com/ts-76/void-plugin-hono-jsx/compare/v0.1.0-alpha.4...v0.1.0-rc.0) (2026-10-17)
+
+
+### ⚠ BREAKING CHANGES
+
+* the release candidate supports Void >=1.1.11 <1.2 and Node >=24.21.0 <25; old Void 0.x launchers are historical fixtures only.
+
+### Features
+
+* consolidate the Void 1.1 release candidate ([#92](https://github.com/ts-76/void-plugin-hono-jsx/issues/92)) ([2793b54](https://github.com/ts-76/void-plugin-hono-jsx/commit/2793b54937a01a890d8df858f82ae2f612e5aacf))
+
 ## [0.1.0-alpha.4](https://github.com/ts-76/void-plugin-hono-jsx/compare/v0.1.0-alpha.3...v0.1.0-alpha.4) (2026-10-17)
 
 
