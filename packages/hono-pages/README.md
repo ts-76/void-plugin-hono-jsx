@@ -235,3 +235,31 @@ On the tested macOS Void/Miniflare development runtime, a POST to an undefined n
 ## RC and normal-release policy
 
 The planned first candidate is 0.1.0-rc.0 on next, followed by 0.1.0 after public-consumer and real Workers verification. It is not yet a published-release claim. Production ISR remains outside the initial guarantee. Patches in 0.1.x preserve documented APIs; breaking changes move to 0.2.0 or later. Read the [release contract](https://github.com/ts-76/void-plugin-hono-jsx/blob/main/docs/release-contract.md) and [security policy](https://github.com/ts-76/void-plugin-hono-jsx/blob/main/SECURITY.md). Report vulnerabilities [privately](https://github.com/ts-76/void-plugin-hono-jsx/security/advisories/new).
+
+
+### Common navigation fallback (after RC.0)
+
+Register a default-exported local TSX/JSX module by path. The plugin imports the
+component into its client entry; it does not serialize a function in Vite config.
+
+```ts
+voidHonoJsx({ navigationFallback: { component: './components/NavigationFallback.tsx', delay: 150 } })
+```
+
+```tsx
+import type { NavigationFallbackProps } from 'void-plugin-hono-jsx/pages';
+export default function Fallback({ navigation }: NavigationFallbackProps) {
+  return <p>Loading {navigation.location?.pathname}…</p>;
+}
+```
+
+The optional fallback appears after 150 ms by default, only while a GET visit is
+loading. Fast/cache/prefetch visits that finish before the delay show nothing.
+It is an additional live status region: the existing page, input DOM and layout
+remain mounted and interactive. It never replaces that tree, commits navigation
+or changes history/scroll. Completion, failure and superseding visits remove it;
+a new slow visit starts its own delay. JSON/multipart submission UI remains under
+`useNavigation()`/form pending state. SSR stays idle and emits no fallback.
+Without this option, existing behavior is unchanged. The normal page reset and
+preserveState/preserveScroll rules still apply when the destination commits.
+This addition is not included in the already published RC.0.

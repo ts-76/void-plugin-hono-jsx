@@ -296,3 +296,20 @@ test('directory imports do not bypass the interactive component boundary', async
     await assert.rejects(() => plugins.find(plugin => plugin.name === 'void-hono:islands').buildStart(), /inside an interactive component/);
   });
 });
+
+
+test('navigation fallback registers a component module only in the client entry', async () => {
+  await withPages({ 'index.tsx': page, '../Fallback.tsx': page }, async plugin => {
+    await plugin.buildStart();
+    const client = await plugin.load(plugin.resolveId('virtual:void-pages-client'));
+    const server = await plugin.load(plugin.resolveId('virtual:void-pages-renderer'));
+    assert.match(client, /import __HonoNavigationFallback from .*Fallback\.tsx/);
+    assert.match(client, /component: __HonoNavigationFallback, delay: 150/);
+    assert.doesNotMatch(server, /__HonoNavigationFallback|Fallback\.tsx/);
+  }, { navigationFallback: { component: './Fallback.tsx' } });
+});
+for (const navigationFallback of [null, { component: () => null }, { component: 'fallback.ts' }, { component: 'fallback.tsx', delay: -1 }, { component: 'fallback.tsx', delay: Infinity }, { component: 'fallback.tsx', delay: 0.5 }]) {
+  test('invalid navigation fallback fails before starting Vite: ' + JSON.stringify(navigationFallback), () => {
+    assert.throws(() => voidHonoJsx({ navigationFallback }), /Hono Pages:/);
+  });
+}
