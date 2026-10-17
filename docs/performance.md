@@ -14,4 +14,16 @@ Script-list and graph-source getters perform no additional Markdown reads. The s
 
 Snapshots are local to each plugin instance and replaced only after a complete successful extraction. Graph analysis refreshes before reading the snapshot, so its result does not depend on whether the Markdown hot-update hook runs first. Tests cover script and route addition/removal, extraction failure/recovery, project separation and symlink island identities. Packed-browser checks cover development edits, preview and static output.
 
-Shared TSX component/layout analysis remains separate work in Issue #81. No request-time performance or production Workers behavior is inferred from these measurements.
+## Shared component analysis
+
+Issue #81 shares canonical source, primary syntax and import-edge results within each graph analysis. The same 10/50/100-page fixture imports a shared component from every page and the root layout.
+
+| Pages | Previous shared-component reads | Current reads | Previous root-layout reads | Current reads |
+| ---: | ---: | ---: | ---: | ---: |
+| 10 | 20 | 1 | 10 | 1 |
+| 50 | 100 | 1 | 50 | 1 |
+| 100 | 200 | 1 | 100 | 1 |
+
+Every analysis uses a fresh cache. Interactive validation shares its visited set while retaining the distinct static/interactive rules. Resolved dependencies and unresolved import candidates trigger updates; unrelated/generated files do not trigger a graph reload. Failed dependencies remain observable until a successful rebuild prunes the watch set. Tests include edits, creation/deletion, re-exports/index resolution, symlink paths and recovery from parsing/boundary failures.
+
+The fixed-point propagation algorithm is unchanged; there is no evidence that replacing it is currently necessary. No request-time performance or production Workers behavior is inferred from these measurements.
