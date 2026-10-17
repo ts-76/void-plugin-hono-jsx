@@ -1,5 +1,6 @@
 import { useState } from 'hono/jsx';
 import { Link, useRouter, type Deferred } from 'void-plugin-hono-jsx/pages';
+import DeferredPromise from '../components/DeferredPromise';
 import type { Props } from './deferred-group.server';
 function Value({ id, value }: { id: string; value: Deferred<string> }) {
   return <output id={id}>{value.loading ? 'pending' : value.error ? value.error.message : value.value}</output>;
@@ -10,7 +11,7 @@ export default function Page({ token, version, left, right }: Props) {
   const [prefetched, setPrefetched] = useState(false);
   const next = `/deferred-group?token=${token}-prefetch`;
   return <main><h1>Grouped deferred</h1><output id="group-version">{version}</output>
-    <Value id="group-left" value={left} /><Value id="group-right" value={right} />
+    <Value id="group-left" value={left} /><Value id="group-right" value={right} /><DeferredPromise id="group-left-promise" state={left} /><DeferredPromise id="group-right-promise" state={right} />
     <button id="group-increment" onClick={() => setCount(count + 1)}>{count}</button>
     <Link id="group-save" href={`/deferred-group?token=${token}`} method="post" data={{ save: true }}>Save</Link>
     <button id="group-prefetch" onClick={() => void router.prefetch(next).then(() => setPrefetched(true))}>Prefetch</button>

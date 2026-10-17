@@ -141,3 +141,51 @@ a new slow visit starts its own delay. JSON/multipart submission UI remains unde
 Without this option, existing behavior is unchanged. The normal page reset and
 preserveState/preserveScroll rules still apply when the destination commits.
 This addition is not included in the already published RC.0.
+
+
+### Hono use() / Suspense for deferred props (after RC.0)
+
+`deferredResult(state)` gives Hono a stable, render-only Promise. Void still runs
+the resolver, delivers HTML callbacks/NDJSON and manages prefetch/navigation.
+The existing `Deferred<T>` loading/value/error API remains available.
+
+```tsx
+import { ErrorBoundary, Suspense, use, useState } from 'hono/jsx';
+import { deferredResult, type Deferred, type DeferredResult } from 'void-plugin-hono-jsx/pages';
+function Result({ result }: { result: DeferredResult<string> }) {
+  if (result.error) throw result.error;
+  return <p>{result.value}</p>;
+}
+function Value({ slow }: { slow: Deferred<string> }) {
+  const [failed, setFailed] = useState<DeferredResult<string> | null>(null);
+  const result = use(deferredResult(slow));
+  const fallback = <p role="alert">Could not load data.</p>;
+  if (failed === result) return fallback;
+  return <ErrorBoundary fallback={fallback}
+    onError={() => queueMicrotask(() => setFailed(result))}>
+    <Result result={result} />
+  </ErrorBoundary>;
+}
+export default function Page({ slow }: { slow: Deferred<string> }) {
+  return <Suspense fallback={<p>Loading…</p>}><Value slow={slow} /></Suspense>;
+}
+```
+
+Results fulfill with `{ value, error }`. Throw the error in a child of
+ErrorBoundary, after `use()` returns. The example remembers that result after
+`onError`: Hono 4 can leave an incomplete tree if the same failed child is thrown
+again during a parent's navigation-state update. This also keeps its async SSR
+ErrorBoundary out of the pending shell. The Promise itself never rejects,
+avoiding an unhandled derived rejection from Hono Suspense's `finally(retry)`.
+The Promise is allocated on first use and remains identical across Void's ref
+replacement and JSON action retention. Each navigation/prop owns a separate
+weakly held resource; cancellation/disposal is reported through Void's existing
+reject callback. Do not cache a resource outside its page or start another fetch.
+
+SSR deliberately uses an inert pending Promise so Hono emits its initial
+fallback immediately; never await this helper on the server. Void alone delivers
+the later result to the browser. The adapter does not send Hono replacement HTML
+or wait for deferred data in its server renderer. Only full Pages are supported;
+deferred islands/static remain unsupported. Upstream failed-prefetch null values
+remain null (the success value type includes null); this helper does not repair
+that upstream limitation. This API is not in published RC.0.
