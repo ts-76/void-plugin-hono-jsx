@@ -6,7 +6,7 @@ import { cp, mkdtemp, mkdir, readFile, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { createHash } from 'node:crypto';
-import { inspectTarball } from './release/gate.mjs';
+import { inspectTarballContents } from './release/gate.mjs';
 import { inspectSourceMaps } from './release/source-maps.mjs';
 import { dependencyAudit } from './release/dependency-audit.mjs';
 import { createServer } from 'node:net';
@@ -179,8 +179,8 @@ try {
   }
   const digest = async () => createHash('sha256').update(await readFile(tarball)).digest('hex');
   const acceptedDigest = await digest();
-  const entries = inspectTarball(tarball);
-  const metadata = JSON.parse(execFileSync('tar', ['-xOzf', tarball, 'package/package.json'], { encoding: 'utf8' }));
+  const { files: entries, contents: archiveContents } = inspectTarballContents(tarball);
+  const metadata = JSON.parse(archiveContents.get('package.json'));
   const expected = JSON.parse(await readFile(join(repo, 'packages/hono-pages/package.json'), 'utf8'));
   assert.deepEqual(metadata, args.length ? { ...expected, private: false } : expected, 'Unexpected consumer artifact metadata');
   await cp(join(repo, 'fixtures/consumer'), consumer, { recursive: true, filter: (path) => !path.includes('node_modules') && !path.includes('/.void') && !path.includes('/dist') });
@@ -196,7 +196,7 @@ try {
   const installedContents = new Map();
   for (const file of entries) {
     const installed = await readFile(join(consumer, 'node_modules', expected.name, file), 'utf8');
-    assert.equal(installed, execFileSync('tar', ['-xOzf', tarball, 'package/' + file], { encoding: 'utf8' }), `Installed artifact changed: ${file}`);
+    assert.equal(installed, archiveContents.get(file), `Installed artifact changed: ${file}`);
     installedContents.set(file, installed);
   }
   inspectSourceMaps(installedContents);
