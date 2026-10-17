@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { jsx } from 'hono/jsx/jsx-runtime';
 import { compileMarkdown, extractMarkdown, renderChunks } from '../packages/hono-pages/src/plugins/markdown-compiler.ts';
 import { voidHonoMarkdown } from '../packages/hono-pages/src/plugins/hono-markdown.ts';
-import { voidHonoJsx } from '../packages/hono-pages/src/plugins/hono-pages.ts';
+import { voidHonoJsx } from '../packages/hono-pages/src/plugins/hono-jsx.ts';
 import { MarkdownContext, useFrontmatter, useMarkdownProps } from '../packages/hono-pages/src/runtime/markdown.ts';
 
 test('Markdown compilation separates islands/client code and parses frontmatter, tables and unique heading anchors', () => {

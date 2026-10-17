@@ -4,7 +4,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { assertSupportedFrameworks, supportsVite, supportsFramework, supportsNode } from '../packages/hono-pages/src/plugins/compatibility.ts';
-import { voidHonoJsx } from '../packages/hono-pages/src/plugins/hono-pages.ts';
+import { voidHonoJsx } from '../packages/hono-pages/src/plugins/hono-jsx.ts';
 
 function project(version = '8.3.3') {
   const root = mkdtempSync(join(tmpdir(), 'hono-vite-identity-'));

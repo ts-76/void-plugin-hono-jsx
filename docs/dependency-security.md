@@ -1,5 +1,7 @@
 # Known dependency advisory for the initial alpha
 
+Current RC reassessment is in [rc-security-assessment.md](rc-security-assessment.md). The dated alpha investigation below used the original filenames; the current JSX transform is `src/plugins/jsx-transform.ts`, while `src/plugins/hono-jsx.ts` is the composition entry.
+
 On 2026-10-11, the maintainer accepted the remaining upstream esbuild advisory as a known limitation for preparing `void-plugin-hono-jsx@0.1.0-alpha.0` on `next`, without adding dependency overrides. This records acceptance of one advisory on the pinned peer baseline, not approval to upload, publish, disclose Git history or change repository visibility.
 
 ## Finding and dependency path

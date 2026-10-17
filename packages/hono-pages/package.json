@@ -18,8 +18,8 @@
   ],
   "exports": {
     "./plugin": {
-      "types": "./dist/plugins/hono-pages.d.ts",
-      "import": "./dist/plugins/hono-pages.js"
+      "types": "./dist/plugins/hono-jsx.d.ts",
+      "import": "./dist/plugins/hono-jsx.js"
     },
     "./pages": {
       "types": "./dist/server/pages.d.ts",
