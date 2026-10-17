@@ -15,3 +15,9 @@ Script-list and graph-source getters perform no additional Markdown reads. The s
 Snapshots are local to each plugin instance and replaced only after a complete successful extraction. Graph analysis refreshes before reading the snapshot, so its result does not depend on whether the Markdown hot-update hook runs first. Tests cover script and route addition/removal, extraction failure/recovery, project separation and symlink island identities. Packed-browser checks cover development edits, preview and static output.
 
 Shared TSX component/layout analysis remains separate work in Issue #81. No request-time performance or production Workers behavior is inferred from these measurements.
+
+## Common CI preparation
+
+The package workflow previously scheduled a full release preparation for every framework stack. It now prepares one baseline-accepted candidate, then verifies the exact same bytes in the six other locked consumers. Common source/build/pack/dry-run work runs once; dependency audits remain separate for all seven consumers. Normal feature PRs use one package-workflow run. Main/release pushes and bot/manual dispatches retain their execution paths.
+
+This adds a baseline dependency before the six-way fan-out, so total wall time may differ from CPU work. No measured time or cost saving is claimed. Stage preparation is unchanged: it creates and validates its own same-run/attempt artifact and performs its existing fresh checks before OIDC/provenance submission.

@@ -17,7 +17,7 @@ npm run check:source
 npm run check:consumer
 ```
 
-For installed Google Chrome, set `PLAYWRIGHT_CHANNEL=chrome` for the browser check commands. CI installs Chromium with system dependencies and runs the [package workflow](../.github/workflows/package.yml) on pushes and pull requests. A successful run must match the commit being reviewed; earlier reports are historical evidence.
+For installed Google Chrome, set `PLAYWRIGHT_CHANNEL=chrome` for the browser check commands. CI installs Chromium with system dependencies and runs the [package workflow](../.github/workflows/package.yml) on pull requests, main/release-branch pushes and manual dispatches. Feature branches use the PR run rather than duplicating the package workflow on each push. A successful run must match the commit being reviewed; earlier reports are historical evidence.
 
 | Check | Coverage |
 | --- | --- |
@@ -59,4 +59,6 @@ Generated logs, screenshots, runtime caches and tarballs are not committed. The 
 
 For publication, repeat validation on the final release commit and verify the actual npm artifact in a fresh consumer. Follow the [release checklist](release-checklist.md), including artifact checksums and post-publication verification. A local pack or dry run alone does not verify npm authentication, upload or registry behavior.
 
-CI candidate artifact names include the stack: `npm-candidate-<sha>-<stack>-attempt-<attempt>`. Stage preparation uses the default baseline and keeps accepted artifact naming unchanged. `evidence.json.consumerStack` records the selected fixture, launcher, Void version, direct Vite version and expected host Vite. All required stack results must be reviewed before staging.
+The package workflow runs common source/history/secret/type/unit/browser checks, build, pack and dry run once in the baseline job. The remaining six stacks download that job's accepted tarball and run `release:verify-consumer`. It verifies the originating workflow/run/attempt, source and hashes before executing the consumer, requires a new per-stack audit, then rechecks the bytes and evidence. All seven stacks remain required.
+
+CI candidate artifact names include the stack: `npm-candidate-<sha>-<stack>-attempt-<attempt>`. Stage preparation still runs the complete `release:prepare` in its own run and keeps accepted artifact naming unchanged; it never consumes a package-workflow candidate. `evidence.json.consumerStack` records the selected fixture, launcher, Void version, direct Vite version and expected host Vite. All required stack results must be reviewed before staging.
