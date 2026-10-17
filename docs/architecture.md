@@ -8,8 +8,8 @@ All adapter source lives under `packages/hono-pages/src`:
 
 | Source | Responsibility |
 | --- | --- |
-| `plugins/hono-pages.ts` | Void page discovery, component manifests, virtual renderer/client entries and reload invalidation. |
-| `plugins/hono-jsx.ts` | Environment-aware Oxc JSX transformation for Hono server and DOM factories. |
+| `plugins/hono-jsx.ts` | Public `voidHonoJsx()` composition entry; Pages discovery/manifests, virtual renderer/client entries and reload invalidation. |
+| `plugins/jsx-transform.ts` | Low-level `honoJsxTransform()`; environment-aware Oxc JSX transformation for Hono server and DOM factories. |
 | `plugins/hono-islands.ts` | Supported load/visible/idle/media imports, island markers and unsupported-mode diagnostics. |
 | `plugins/compatibility.ts` | Accepted stable ranges, running-Vite hook identity and resolved-package diagnostics. |
 | `plugins/resolve-component.ts` | File and directory-index resolution shared by static island graphs and Markdown imports. |
@@ -53,3 +53,5 @@ Static output uses Void's generated HTML and Pages JSON with a file-only server.
 Load/visible/idle/media islands use Void's scheduler to mount interactive components once their condition is met. Static-only island pages emit no executable client scripts. Unknown policies, attributed imports inside interactive components and ordinary Pages forms in islands fail with diagnostics. Static page/layout/component graphs are scanned with cycle-safe propagation so nested static imports and named island layouts receive client scripts only when their active chain needs them. Local ISR uses Void's own KV/Cache API worker path; see [ISR validation](isr.md) for observed behavior and unverified managed-edge scope.
 
 The original Custom SSR proof of concept remains in `examples/custom-ssr`: `defineRender` creates Hono HTML, Void supplies asset tags, and a browser entry redraws a counter. It exercises the shared JSX transform without depending on the Pages renderer.
+
+The public composition entry returns role-specific Vite plugins. `void-hono:pages` still identifies the Pages integration and is checked by optional Markdown; `void-hono:jsx-transform` identifies only the Oxc transform. Void virtual entry names and Pages runtime/protocol names are unchanged. Public package imports remain `/plugin`, `/pages`, `/form`, `/markdown` and `/markdown/plugin`; source and distribution file names are internal.

@@ -1,7 +1,7 @@
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 import { voidPlugin } from 'void';
-import { voidHonoJsx } from '../../packages/hono-pages/src/plugins/hono-pages.ts';
+import { voidHonoJsx } from '../../packages/hono-pages/src/plugins/hono-jsx.ts';
 import { voidHonoMarkdown } from '../../packages/hono-pages/src/plugins/hono-markdown.ts';
 
 export default defineConfig({

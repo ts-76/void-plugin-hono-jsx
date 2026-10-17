@@ -1,0 +1,5 @@
+node_modules/
+.void/
+dist/
+void.lock.json
+.env

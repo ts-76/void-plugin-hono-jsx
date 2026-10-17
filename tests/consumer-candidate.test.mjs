@@ -59,7 +59,7 @@ test('candidate mutation, a missing fresh audit or a failed consumer never yield
   }
 });
 
-test('workflow prepares once, covers all seven stacks and leaves stage acceptance in its own run', () => {
+test('workflow prepares once, covers both supported stacks and leaves stage acceptance in its own run', () => {
   const workflow = parse(readFileSync(new URL('../.github/workflows/package.yml', import.meta.url), 'utf8'));
   assert.deepEqual(workflow.on.push.branches, ['main', 'release/**']); assert.ok(Object.hasOwn(workflow.on, 'pull_request')); assert.ok(Object.hasOwn(workflow.on, 'workflow_dispatch'));
   const jobs = workflow.jobs;
@@ -77,4 +77,10 @@ test('workflow prepares once, covers all seven stacks and leaves stage acceptanc
   assert.ok(stage.jobs.prepare.steps.some(step => step.run === 'npm run release:prepare'));
   assert.ok(!stage.jobs.prepare.steps.some(step => step.run === 'npm run release:verify-consumer'));
   assert.match(stage.jobs.stage.steps.find(step => step.uses?.startsWith('actions/download-artifact@')).with.name, /^accepted-node-.*github\.run_attempt/);
+});
+
+test('release preparation cannot select historical unsupported frameworks', () => {
+  for (const name of ['vite-patch', 'latest-vite', 'scaffold-vp', 'latest-vp', 'void-1-vite']) assert.throws(() => consumerStack({ RELEASE_CONSUMER_STACK: name }), /Unknown consumer stack/);
+  assert.equal(consumerStack({}).void, '1.1.11');
+  assert.equal(consumerStack({}).fixture, 'consumer-void-1-vite');
 });

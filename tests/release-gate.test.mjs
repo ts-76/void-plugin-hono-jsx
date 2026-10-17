@@ -86,3 +86,17 @@ test('artifact inspection rejects packaged source differing from the reviewed ch
     assert.throws(() => inspectArtifact(f.options), /Packaged source changed/);
   } finally { f.cleanup(); }
 });
+
+test('RC and normal-release tags cannot silently target the wrong installation channel', () => {
+  const f = fixture();
+  try {
+    const base = { ...f.policy, stageEnabled: true, publicPackageEnabled: true, historyDisclosureApproved: true, dependencySecurityApproved: true, npmOwner: 'publisher', reviewers: [{ type: 'User', login: 'reviewer' }] };
+    for (const [version, tag, accepted] of [['0.1.0-rc.0','next',true], ['0.1.0-rc.0','latest',false], ['0.1.0','next',true], ['0.1.0','latest',true], ['0.1.0','other',false]]) {
+      const pkg = { ...f.pkg, private: false, version, publishConfig: { ...f.pkg.publishConfig, tag } };
+      const blockers = metadataBlockers(pkg, { ...base, distTag: tag }, { ref: `refs/tags/v${version}`, changelog: `## ${version}`, license: 'MIT' });
+      assert.equal(blockers.includes('dist-tag'), !accepted, `${version}/${tag}`);
+      if (accepted) assert.deepEqual(blockers, []);
+      assert.ok(metadataBlockers(pkg, { ...base, distTag: tag === 'next' ? 'latest' : 'next' }, { ref: `refs/tags/v${version}`, changelog: `## ${version}`, license: 'MIT' }).includes('publish-config'));
+    }
+  } finally { f.cleanup(); }
+});

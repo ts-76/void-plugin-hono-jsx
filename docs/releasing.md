@@ -1,8 +1,10 @@
-# Preparing an experimental npm release
+# Preparing the 0.1.0 RC and normal release
 
-As checked on 2026-10-17 JST, `next` selects published `0.1.0-alpha.3`, while `latest` remains `0.1.0-alpha.1` by the maintainer's earlier decision. Alpha.3 includes running-Vite identity checks, stable peer ranges and original source/maps. Alpha.0 was the first candidate and used exact framework peers; its stage/signature record below is historical evidence for that version only.
+Issue #85 selects `0.1.0-rc.0 / next`, followed by `0.1.0` after public RC and real Workers/D1 verification. As checked against the public registry on 2026-10-17 JST, `next` selects published `0.1.0-alpha.4`, `latest` remains `0.1.0-alpha.1`, and no RC is public yet. Alpha.4 has its earlier Void 0.x contract; it does not contain the upcoming Void 1.1 support or multipart transport. The alpha stage/signature and tag-cleanup records below are historical evidence for those versions only.
 
-The accepted ranges are Void `>=0.26.1 <0.28.0`, Hono `>=4.13.13 <5.0.0` and Vite `>=8.0.16 <9.0.0`, with five locked consumers covering the original baseline and the 2026-10-12 fixture snapshot. Void 0.28 and later, a new Hono/Vite major and prereleases require explicit reassessment. Refresh fixtures and review every audit when upstream dependencies change; passing a build alone is insufficient. Managed deployment is unverified, browser mounting redraws SSR content, and unsupported features are listed in the package guide.
+The upcoming release accepts Void `>=1.1.11 <1.2.0`, Hono `>=4.13.13 <5.0.0`, Vite `>=8.0.16 <9.0.0` and Node `>=24.21.0 <25.0.0`. Two active locked consumers cover Void 1.1.11 with plain Vite 8.3.4 and aligned Vite Plus/core 1.3.0. Old Void 0.26/0.27 and launcher fixtures remain historical inputs, not release-selectable targets. Refresh fixtures and review audits when upstream versions change; an accepted range is not evidence that future releases have already passed. See [the release contract](release-contract.md) for multipart, SSR mount, HMR, deferred, Markdown and platform boundaries.
+
+RC preparation records the [fresh security reassessment](rc-security-assessment.md). Every final run repeats root/consumer/publisher checks under the same bounded acceptance; new or changed findings stop upload. The private reporting channel is enabled and [SECURITY.md](../SECURITY.md) defines support. Normal release additionally requires the dedicated real Workers/D1 check and cleanup; local ISR tests do not verify production ISR, which stays outside the guarantee.
 
 ## Release PR, version and tag
 
@@ -68,14 +70,14 @@ On 2026-10-12 (Asia/Tokyo), direct deletion of `latest: 0.0.0-stage` returned HT
 | `next` | `0.1.0-alpha.1` |
 | `bootstrap` | `0.0.0-bootstrap.0` |
 
-That table records the 2026-10-12 retag operation. A new public-registry check on 2026-10-17 JST found `latest: 0.1.0-alpha.1`, `next: 0.1.0-alpha.3` and the same bootstrap tag. Source/maps are included in alpha.2 and alpha.3; alpha.1 retains its original dist-only archive. Prefer `@next` or an explicit version for alpha testing. Do not infer stable support from the `latest` label. No tag was changed during this release preparation.
+That table records the 2026-10-12 retag operation. A public-registry check on 2026-10-17 JST found `latest: 0.1.0-alpha.1`, `next: 0.1.0-alpha.4` and the same bootstrap tag. Source/maps are included from alpha.2 onward; alpha.1 retains its original dist-only archive. Prefer `@next` or an explicit version for alpha testing. Do not infer stable support from the `latest` label. No tag was changed during this release preparation.
 
-Future alpha staging continues to use `next`; it does not automatically move `latest`. Updating the default version is a separate maintainer decision after public artifact verification. Use owner write authentication and the tag-specific web 2FA; the stage-only Trusted Publisher cannot manage dist-tags. Re-read tags before changing them, preserve the accepted version's integrity and verify the public registry afterward. No registration version is unpublished.
+RC staging uses `next` and does not move `latest`. The approved normal-release policy is to stage `0.1.0` on `next`, verify public bytes/signatures/provenance and a registry consumer, then move `latest` and align `next` to the normal version. Use owner write authentication and the tag-specific web 2FA; the stage-only Trusted Publisher cannot manage dist-tags. Re-read tags before changing them, preserve the accepted version's integrity and verify the public registry afterward. No registration version is unpublished.
 
 ```sh
 npm dist-tag ls void-plugin-hono-jsx
 # Only for an explicitly selected and publicly verified default version:
-npm dist-tag add void-plugin-hono-jsx@0.1.0-alpha.1 latest
+npm dist-tag add void-plugin-hono-jsx@0.1.0 latest
 npm dist-tag ls void-plugin-hono-jsx
 ```
 
@@ -83,4 +85,4 @@ The dedicated owner session used for this change was logged out/revoked and remo
 
 ## Alpha.2 stage and compatibility fix
 
-Alpha.2 source/tag `96b9cc4edf439d8cad7bb90f5814128cf7fd0099` completed stage run `38202776733`, stage ID `1a79d282-2aa2-48f2-96da-013b63e62ecb`. Its 63-file tarball includes src/maps and matches the successful main candidate. Receipt verification found only the accepted dependency/publisher findings. The version remained unpublished when the running-Vite identity problem was reported. The run had already completed when cancellation was attempted; the repository stage gate was returned to false. Those staged bytes do not contain the compatibility fix. The 2026-10-17 registry check lists alpha.2 and alpha.3 as published, with `next` selecting alpha.3. Alpha.3 contains the fix; neither version's historical stage/signature evidence is evidence for the next release.
+Alpha.2 source/tag `96b9cc4edf439d8cad7bb90f5814128cf7fd0099` completed stage run `38202776733`, stage ID `1a79d282-2aa2-48f2-96da-013b63e62ecb`. Its 63-file tarball includes src/maps and matches the successful main candidate. Receipt verification found only the accepted dependency/publisher findings. The version remained unpublished when the running-Vite identity problem was reported. The run had already completed when cancellation was attempted; the repository stage gate was returned to false. Those staged bytes do not contain the compatibility fix. The 2026-10-17 registry check lists alpha.2 through alpha.4 as published, with `next` selecting alpha.4. Alpha.3 contains the fix; neither version's historical stage/signature evidence is evidence for the next release.

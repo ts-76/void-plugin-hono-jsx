@@ -1,0 +1,1 @@
+void-hono-rc-synthetic-asset
