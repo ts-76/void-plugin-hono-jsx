@@ -1,3 +1,4 @@
+import { checkMultipartConsumer } from './check-multipart-consumer.mjs';
 import { checkMarkdownConsumer } from './check-markdown-consumer.mjs';
 import assert from 'node:assert/strict';
 import { spawn, execFileSync } from 'node:child_process';
@@ -80,7 +81,7 @@ async function smoke(mode, browser, staticOnly = false) {
     page.setDefaultTimeout(30000);
     const errors = [];
     page.on('pageerror', (error) => errors.push(error.message));
-    page.on('console', (message) => { if (message.type() === 'error' && !((message.location().url.endsWith('/links?fail') || message.location().url.endsWith('/forms?fail') || message.location().url.endsWith('/island-forms?fail') || message.location().url.endsWith('/transitions?value=error')) && message.text().includes('500') || message.location().url.endsWith('/forms?quota') && message.text().includes('429') || message.location().url.endsWith('/island-forms?save') && message.text().includes('422'))) errors.push(message.text()); });
+    page.on('console', (message) => { if (message.type() === 'error' && !((message.location().url.endsWith('/links?fail') || message.location().url.endsWith('/forms?fail') || message.location().url.endsWith('/island-forms?fail') || message.location().url.endsWith('/transitions?value=error')) && message.text().includes('500') || message.location().url.endsWith('/forms?quota') && message.text().includes('429') || (message.location().url.endsWith('/island-forms?save') || message.location().url.endsWith('/multipart?upload') || message.location().url.endsWith('/multipart-island?upload')) && message.text().includes('422'))) errors.push(message.text()); });
     try {
       const staticScripts = [];
       if (staticOnly) page.on('request', (request) => { if (request.resourceType() === 'script') staticScripts.push(request.url()); });
@@ -112,6 +113,7 @@ async function smoke(mode, browser, staticOnly = false) {
       if (mode === 'development') await checkDevelopmentConsumer({ origin, page, consumer, assertRunning: () => { assert.equal(child.exitCode, null); assert.equal(child.signalCode, null); assert.doesNotMatch(logs, /server restarted|restarting server/i); } });
       await checkLinkConsumer({ origin, page, assert });
       await checkFormConsumer({ origin, page, assert });
+      await checkMultipartConsumer({ origin, page, assert });
       await checkIslandPolicies({ origin, page, assert });
       await checkIslandGraph({ origin, page, assert, mode, consumer });
       await checkIslandForms({ origin, page, assert });

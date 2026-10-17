@@ -11,9 +11,9 @@ type SetData<T> = { (next: T | ((current: T) => T)): void; <K extends keyof T & 
 export type HonoForm<T extends Fields> = {
   data: T; setData: SetData<T>; errors: Record<string, string>; pending: boolean;
   error: VoidActionError | null; hasChanges: boolean; wasSuccessful: boolean; recentlySuccessful: boolean;
-  submit(method: FormMethod, target?: string | FormData): Promise<void>; cancel(): void;
+  submit(method: FormMethod, target?: string | FormData, body?: FormData): Promise<void>; cancel(): void;
   reset: { (): void; (...fields: Array<keyof T & string>): void }; clearErrors(...fields: Array<keyof T & string>): void; clearError(): void;
-} & Record<FormMethod, (target?: string | FormData) => Promise<void>>;
+} & Record<FormMethod, (target?: string | FormData, body?: FormData) => Promise<void>>;
 
 function toFormError(failure: unknown, url: string): VoidActionError {
   if (failure instanceof VoidActionError) return failure;
@@ -45,7 +45,8 @@ export function useIslandForm<T extends Fields>(defaults: T): HonoForm<T> {
     const target = new URL(url, window.location.href);
     if (target.origin !== window.location.origin || !['http:', 'https:'].includes(target.protocol)) throw new Error('Hono island form: actions must target the current origin.');
     controller.current = new AbortController();
-    const response = await fetch(target, { method: method.toUpperCase(), headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data), signal: controller.current.signal });
+    const multipart = data instanceof FormData;
+    const response = await fetch(target, { method: method.toUpperCase(), headers: multipart ? undefined : { 'Content-Type': 'application/json' }, body: multipart ? data : JSON.stringify(data), signal: controller.current.signal });
     if (response.redirected && response.ok) { window.location.assign(response.url); return { ok: true, pageData: undefined }; }
     if (response.ok) { window.location.reload(); return { ok: true, pageData: undefined }; }
     let body: unknown;
@@ -54,7 +55,7 @@ export function useIslandForm<T extends Fields>(defaults: T): HonoForm<T> {
   }, () => controller.current?.abort());
 }
 
-type FormTransport = (method: FormMethod, url: string, data: Fields) => Promise<ActionResult>;
+type FormTransport = (method: FormMethod, url: string, data: Fields | FormData) => Promise<ActionResult>;
 function useFormModel<T extends Fields>(initial: T, initialErrors: Record<string, string>, send: FormTransport, abort: () => void | Promise<unknown>, bound?: string): HonoForm<T> {
   const defaults = useRef({ ...initial });
   const current = useRef({ ...defaults.current });
@@ -73,18 +74,22 @@ function useFormModel<T extends Fields>(initial: T, initialErrors: Record<string
     current.current = typeof next === 'string' ? { ...current.current, [next]: value } as T : typeof next === 'function' ? next(current.current) : { ...next };
     updateData(current.current); setSuccessful(false); setErrors({}); setError(null); setRecent(false); clearTimeout(timer.current);
   };
-  async function submit(method: FormMethod, target?: string | FormData) {
+  async function submit(method: FormMethod, target?: string | FormData, body?: FormData) {
+    if (target instanceof FormData && body) throw new Error('Hono Form: supply FormData once.');
+    const multipart = target instanceof FormData ? target : body;
     const url = typeof target === 'string' ? target : bound;
     if (!url) throw new Error('Hono Form: supply an action URL to useForm or submit.');
     if (active.current) return;
     active.current = true; const id = ++generation.current;
     setPending(true); setSuccessful(false); setRecent(false); clearTimeout(timer.current); setError(null); setErrors({});
     const submitted = { ...current.current };
+    const payload = multipart ? new FormData() : submitted;
+    if (multipart) for (const [name, value] of multipart) (payload as FormData).append(name, value);
     try {
-      const result = await send(method, url, submitted);
+      const result = await send(method, url, payload);
       if (id !== generation.current) return;
       if (result.ok) {
-        if (bound) defaults.current = submitted;
+        if (bound && !multipart) defaults.current = submitted;
         setSuccessful(true); setRecent(true);
         timer.current = setTimeout(() => { if (id === generation.current) setRecent(false); }, 2000);
       } else { setError(result.error); setErrors(fieldErrors(result.error)); }
@@ -107,6 +112,6 @@ function useFormModel<T extends Fields>(initial: T, initialErrors: Record<string
     reset(...fields: Array<string | MouseEvent>) { const keys = fields.filter((field): field is string => typeof field === 'string'); setData(keys.length ? { ...current.current, ...Object.fromEntries(keys.map((key) => [key, defaults.current[key]])) } as T : { ...defaults.current }); },
     clearErrors(...fields) { setErrors((previous) => fields.length ? Object.fromEntries(Object.entries(previous).filter(([field]) => !fields.includes(field))) : {}); },
     clearError() { setError(null); },
-    post: (target) => submit('post', target), put: (target) => submit('put', target), patch: (target) => submit('patch', target), delete: (target) => submit('delete', target),
+    post: (target, body) => submit('post', target, body), put: (target, body) => submit('put', target, body), patch: (target, body) => submit('patch', target, body), delete: (target, body) => submit('delete', target, body),
   };
 }
