@@ -87,6 +87,24 @@ export async function checkNavigationFallback({ origin, browser }) {
     assert.equal(await page.title(), 'Transition fallback-new');
     assert.equal(await page.evaluate(() => window.fallbackErrors.length), 1);
 
+    // A presentation component can fail while the GET is still held. This
+    // must not retry the same failed Hono subtree during parent state updates.
+    await page.evaluate(() => {
+      window.fallbackRenderErrors = [];
+      window.addEventListener('hono-pages:navigation-error', event => window.fallbackRenderErrors.push(event.detail?.message));
+    });
+    const broken = await hold('/transitions?value=fallback-render-error');
+    await visit('/transitions?value=fallback-render-error'); await broken.seen;
+    await page.waitForFunction(() => window.fallbackRenderErrors.length === 1);
+    await page.waitForTimeout(180);
+    assert.deepEqual(await page.evaluate(() => window.fallbackRenderErrors), ['Fallback component failed']);
+    assert.equal(await page.locator('[data-hono-navigation-fallback]').count(), 0);
+    assert.equal(await page.locator('#transition-value').textContent(), 'fallback-new');
+    assert.equal(await page.locator('#consumer-layout-input').inputValue(), 'retained layout input');
+    await visit('/transitions?value=fallback-recovered'); await finish();
+    broken.release(); await broken.dispose();
+    await visit('/transitions?value=fallback-new'); await finish();
+
     await page.locator('#transition-local').click();
     await page.waitForFunction(() => document.getElementById('transition-local')?.textContent === '1');
     await page.evaluate(async () => {
@@ -112,7 +130,7 @@ export async function checkNavigationFallback({ origin, browser }) {
     assert.equal(await page.locator('#consumer-layout-input').inputValue(), 'retained layout input');
     assert.equal(await page.evaluate(() => window.fallbackLayout === document.getElementById('consumer-layout-input')), true);
     assert.deepEqual(errors, []);
-    console.log(`Navigation fallback: SSR idle, delayed GET (${Math.round(firstDelay)}ms), retained page/layout/input DOM, reset/preserveState, cancellation, failure, history and completed-prefetch (${Math.round(fast.duration)}ms, ${fast.displayed} fallback observations) passed.`);
+    console.log(`Navigation fallback: SSR idle, delayed GET (${Math.round(firstDelay)}ms), retained page/layout/input DOM, reset/preserveState, cancellation, fetch/fallback-render failure, history and completed-prefetch (${Math.round(fast.duration)}ms, ${fast.displayed} fallback observations) passed.`);
   } catch (error) {
     console.error('Fallback diagnostic', await page.evaluate(() => ({ url: location.href, title: document.title, value: document.getElementById('transition-value')?.textContent, navigation: document.getElementById('app')?.dataset.navigation, errors: window.fallbackErrors, history: history.length })).catch(() => 'page unavailable'));
     throw error;

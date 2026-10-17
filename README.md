@@ -136,7 +136,10 @@ loading. Fast/cache/prefetch visits that finish before the delay show nothing.
 It is an additional live status region: the existing page, input DOM and layout
 remain mounted and interactive. It never replaces that tree, commits navigation
 or changes history/scroll. Completion, failure and superseding visits remove it;
-a new slow visit starts its own delay. JSON/multipart submission UI remains under
+a new slow visit starts its own delay. If the fallback component throws, it is
+hidden for that visit and reported through the existing navigation-error event;
+the page tree remains mounted, and a new visit can try the fallback again.
+JSON/multipart submission UI remains under
 `useNavigation()`/form pending state. SSR stays idle and emits no fallback.
 Without this option, existing behavior is unchanged. The normal page reset and
 preserveState/preserveScroll rules still apply when the destination commits.
