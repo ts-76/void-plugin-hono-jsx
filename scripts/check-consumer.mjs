@@ -1,3 +1,4 @@
+import { checkMultipartConsumer } from './check-multipart-consumer.mjs';
 import { checkMarkdownConsumer } from './check-markdown-consumer.mjs';
 import assert from 'node:assert/strict';
 import { spawn, execFileSync } from 'node:child_process';
@@ -5,7 +6,7 @@ import { cp, mkdtemp, mkdir, readFile, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { createHash } from 'node:crypto';
-import { inspectTarball } from './release/gate.mjs';
+import { inspectTarballContents } from './release/gate.mjs';
 import { inspectSourceMaps } from './release/source-maps.mjs';
 import { dependencyAudit } from './release/dependency-audit.mjs';
 import { createServer } from 'node:net';
@@ -29,7 +30,7 @@ const repo = fileURLToPath(new URL('../', import.meta.url));
 const npmCli = process.env.npm_execpath;
 if (!npmCli) throw new Error('Run this check with npm run check:consumer.');
 const [major, minor] = process.versions.node.split('.').map(Number);
-if (major < 24 || (major === 24 && minor < 21)) throw new Error('Consumer validation requires Node >=24.21.0.');
+if (major !== 24 || minor < 21) throw new Error('Consumer validation requires Node >=24.21.0 <25.0.0.');
 const temporary = await mkdtemp(join(tmpdir(), 'hono-pages-consumer-'));
 const consumer = join(temporary, 'consumer');
 const env = { ...process.env, PATH: dirname(process.execPath) + (process.platform === 'win32' ? ';' : ':') + (process.env.PATH || ''), WRANGLER_LOG_PATH: join(temporary, 'logs'), WRANGLER_SEND_METRICS: 'false', VOID_INSPECTOR_PORT: 'false', CLOUDFLARE_CF_FETCH_ENABLED: 'false' };
@@ -80,7 +81,7 @@ async function smoke(mode, browser, staticOnly = false) {
     page.setDefaultTimeout(30000);
     const errors = [];
     page.on('pageerror', (error) => errors.push(error.message));
-    page.on('console', (message) => { if (message.type() === 'error' && !((message.location().url.endsWith('/links?fail') || message.location().url.endsWith('/forms?fail') || message.location().url.endsWith('/island-forms?fail') || message.location().url.endsWith('/transitions?value=error')) && message.text().includes('500') || message.location().url.endsWith('/forms?quota') && message.text().includes('429') || message.location().url.endsWith('/island-forms?save') && message.text().includes('422'))) errors.push(message.text()); });
+    page.on('console', (message) => { if (message.type() === 'error' && !((message.location().url.endsWith('/links?fail') || message.location().url.endsWith('/forms?fail') || message.location().url.endsWith('/island-forms?fail') || message.location().url.endsWith('/transitions?value=error')) && message.text().includes('500') || message.location().url.endsWith('/forms?quota') && message.text().includes('429') || (message.location().url.endsWith('/island-forms?save') || message.location().url.endsWith('/multipart?upload') || message.location().url.endsWith('/multipart-island?upload')) && message.text().includes('422'))) errors.push(message.text()); });
     try {
       const staticScripts = [];
       if (staticOnly) page.on('request', (request) => { if (request.resourceType() === 'script') staticScripts.push(request.url()); });
@@ -112,6 +113,7 @@ async function smoke(mode, browser, staticOnly = false) {
       if (mode === 'development') await checkDevelopmentConsumer({ origin, page, consumer, assertRunning: () => { assert.equal(child.exitCode, null); assert.equal(child.signalCode, null); assert.doesNotMatch(logs, /server restarted|restarting server/i); } });
       await checkLinkConsumer({ origin, page, assert });
       await checkFormConsumer({ origin, page, assert });
+      await checkMultipartConsumer({ origin, page, assert });
       await checkIslandPolicies({ origin, page, assert });
       await checkIslandGraph({ origin, page, assert, mode, consumer });
       await checkIslandForms({ origin, page, assert });
@@ -177,8 +179,8 @@ try {
   }
   const digest = async () => createHash('sha256').update(await readFile(tarball)).digest('hex');
   const acceptedDigest = await digest();
-  const entries = inspectTarball(tarball);
-  const metadata = JSON.parse(execFileSync('tar', ['-xOzf', tarball, 'package/package.json'], { encoding: 'utf8' }));
+  const { files: entries, contents: archiveContents } = inspectTarballContents(tarball);
+  const metadata = JSON.parse(archiveContents.get('package.json'));
   const expected = JSON.parse(await readFile(join(repo, 'packages/hono-pages/package.json'), 'utf8'));
   assert.deepEqual(metadata, args.length ? { ...expected, private: false } : expected, 'Unexpected consumer artifact metadata');
   await cp(join(repo, 'fixtures/consumer'), consumer, { recursive: true, filter: (path) => !path.includes('node_modules') && !path.includes('/.void') && !path.includes('/dist') });
@@ -194,7 +196,7 @@ try {
   const installedContents = new Map();
   for (const file of entries) {
     const installed = await readFile(join(consumer, 'node_modules', expected.name, file), 'utf8');
-    assert.equal(installed, execFileSync('tar', ['-xOzf', tarball, 'package/' + file], { encoding: 'utf8' }), `Installed artifact changed: ${file}`);
+    assert.equal(installed, archiveContents.get(file), `Installed artifact changed: ${file}`);
     installedContents.set(file, installed);
   }
   inspectSourceMaps(installedContents);

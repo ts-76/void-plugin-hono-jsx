@@ -20,6 +20,16 @@ export async function checkCompatibilityConsumer({ consumer, env, stack }) {
       assert.ok(diagnostic.includes(`Running Vite from hook context: ${stack.hostVite}`));
     } finally { await writeFile(path, original); }
   }
+  const voidPath = join(consumer, 'node_modules/void/package.json');
+  const originalVoid = await readFile(voidPath, 'utf8');
+  try {
+    for (const version of ['0.26.1', '0.27.0', '1.2.0']) {
+      await writeFile(voidPath, JSON.stringify({ ...JSON.parse(originalVoid), version }));
+      const result = build();
+      assert.notEqual(result.status, 0, `Unsupported Void ${version} must fail`);
+      assert.ok((result.stdout + result.stderr).includes(`void ${version} is unsupported`));
+    }
+  } finally { await writeFile(voidPath, originalVoid); }
   const configPath = join(consumer, 'vite.config.ts');
   const originalConfig = await readFile(configPath, 'utf8');
   const vitePath = join(consumer, 'node_modules/vite/package.json');

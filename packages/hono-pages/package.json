@@ -2,11 +2,11 @@
   "name": "void-plugin-hono-jsx",
   "version": "0.1.0-alpha.4",
   "private": true,
-  "description": "Experimental Hono JSX Pages adapter for Void",
+  "description": "Hono JSX Pages adapter for Void",
   "type": "module",
   "license": "MIT",
   "engines": {
-    "node": ">=24.21.0"
+    "node": ">=24.21.0 <25.0.0"
   },
   "files": [
     "dist",
@@ -18,8 +18,8 @@
   ],
   "exports": {
     "./plugin": {
-      "types": "./dist/plugins/hono-pages.d.ts",
-      "import": "./dist/plugins/hono-pages.js"
+      "types": "./dist/plugins/hono-jsx.d.ts",
+      "import": "./dist/plugins/hono-jsx.js"
     },
     "./pages": {
       "types": "./dist/server/pages.d.ts",
@@ -40,7 +40,7 @@
   },
   "peerDependencies": {
     "hono": ">=4.13.13 <5.0.0",
-    "void": ">=0.26.1 <0.28.0",
+    "void": ">=1.1.11 <1.2.0",
     "vite": ">=8.0.16 <9.0.0",
     "markdown-exit": ">=1.3.0 <2.0.0",
     "yaml": ">=2.9.1 <3.0.0"

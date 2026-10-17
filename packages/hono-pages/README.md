@@ -1,36 +1,38 @@
 # Experimental Hono Pages adapter for Void
 
-This experimental package integrates Hono JSX with Void Pages. The package name is `void-plugin-hono-jsx`. Alpha releases are published on the `next` dist-tag under the [MIT license](LICENSE). Use `@next` or an explicit alpha version. The maintainer also assigned `latest` to the published `0.1.0-alpha.1`; an unqualified install currently selects this experimental alpha, not a stable release. It is not an official Void adapter.
+This package integrates Hono JSX with Void Pages. This source documents the upcoming 0.1.0 RC/normal release; published alpha.4 has a different compatibility contract. Prereleases use `next`; normal releases move to `latest` after public verification. Before registry approval, use a local tarball. The package is [MIT licensed](LICENSE) and is not an official Void adapter.
 
 ## Supported versions
 
 | Component | Accepted stable range | Full consumer fixtures |
 | --- | --- | --- |
-| Node.js | >=24.21.0 | 24.21.0 |
-| Void | >=0.26.1 <0.28.0 | 0.26.1, 0.27.0 |
+| Node.js | >=24.21.0 <25.0.0 | 24.21.0 |
+| Void | >=1.1.11 <1.2.0 | 1.1.11 |
 | Hono | >=4.13.13 <5.0.0 | 4.13.13 |
-| Vite | >=8.0.16 <9.0.0 | 8.0.16 (Vite Plus), 8.3.3, 8.3.4 |
-| Vite Plus | Host Vite must satisfy the Vite range | 0.1.24 (scaffold), 1.1.0 (latest) |
+| Vite | >=8.0.16 <9.0.0 | 8.3.4 |
+| Vite Plus | Host Vite must satisfy the Vite range | 1.3.0 |
 | TypeScript | Project tooling | 7.0.2 |
 
-Published alpha.3 includes these peer ranges, running-Vite diagnostics and packaged source/maps. Alpha.1 and alpha.2 retain their exact-version gate. Stable Vite/Hono updates within the accepted ranges are admitted by compatibility policy; Void 0.28 and later require explicit validation. Prereleases are excluded. The fixture versions above are the 2026-10-12 snapshot; admitting a range does not mean every future version has already been tested. New upstream releases require refreshed fixtures, full checks and dependency audit review.
+The upcoming RC targets Void 1.1 and Node 24 only. Published alpha.4 retains its earlier Void 0.x contract; it does not provide this support change or multipart transport. Old Void/launcher manifests remain historical comparison records, not release-selectable configurations. The two supported Hono-only consumers use Void 1.1.11 with plain Vite 8.3.4 or aligned Vite Plus 1.3.0 (host Vite 8.3.4). Ranges admit stable updates, but only locked fixtures are observed test results. New upstream releases require refreshed fixtures, full checks and audit review; prereleases and other Void minors are excluded.
 
-The expanded Link/Form APIs, island forms and graphs, deferred contracts, page options and optional Markdown documented below are additions after alpha.3. Use a later alpha containing the corresponding exports, or a local tarball to validate this source tree. Alpha.3 does not provide these additions.
+Alpha.4 introduced the expanded Link/Form APIs, island forms and graphs, deferred contracts, page options and optional Markdown. This source adds the Void 1.1 contract and multipart transport for the RC; use the local tarball until the RC is approved. Do not combine the RC setup instructions with alpha.4.
 
 ## Install
 
-Use Node 24.21.0 or newer:
+Use Node 24.21.0 or newer within Node 24:
+
+The commands below target the RC line. Check registry availability after owner approval. Published alpha.4 does not accept Void 1.1; use a local tarball until the RC has been approved. Use Node >=24.21.0 <25.0.0.
 
 ```sh
-npm install void-plugin-hono-jsx@next hono@4.13.13
-npm install --save-dev void@0.27.0 vite@8.3.4 typescript@7.0.2
+npm install void-plugin-hono-jsx@0.1.0-rc.0 hono@4.13.13
+npm install --save-dev void@1.1.11 vite@8.3.4 typescript@7.0.2
 ```
 
 For a local validation tarball, in the repository, run `npm ci`, `npm run build:package`, then `npm pack ./packages/hono-pages`. Install the resulting tarball in your project alongside the supported peer versions:
 
 ```sh
 npm install ./void-plugin-hono-jsx-<version>.tgz hono@4.13.13
-npm install --save-dev void@0.27.0 vite@8.3.4 typescript@7.0.2
+npm install --save-dev void@1.1.11 vite@8.3.4 typescript@7.0.2
 ```
 
 ## Configure
@@ -54,7 +56,7 @@ Use `jsx: "react-jsx"` and `jsxImportSource: "hono/jsx"` in TypeScript. The plug
 
 The config hook reads `this.meta.viteVersion` from the Vite instance executing the hook. Resolving `vite/package.json` from the adapter or project is not evidence of the running host. The adapter also checks the actual Vite helper module it imports. Errors include the host version, helper version, and absolute adapter/project package.json paths; different pnpm peer copies therefore remain visible.
 
-Bundled launchers such as `vp dev` can execute another Vite even when the project has a direct `vite` dependency. The Void 0.27.0 scaffold requests `vite-plus: ^0.1.21`, resolving to 0.1.24 with host Vite 8.0.16. Latest Vite Plus 1.1.0 runs host Vite 8.3.3. The scaffold fixture retains direct npm Vite 8.3.4. Latest Vite Plus requires its official aligned toolchain: `vite` aliases `npm:@voidzero-dev/vite-plus-core@1.1.0`, and the fixture follows its documented consumer-only Vite/Vitest overrides (Vitest 5.0.3). Both are exercised in independent locked consumers, including dev, build and preview. These settings align the toolchain; they do not replace vulnerable transitive dependencies. Standard Vite 8.3.3/8.3.4 is also covered. Installing project Vite alone does not change a bundled host; unsupported host errors identify the launcher action separately from stale helper peer resolution.
+Bundled launchers such as `vp dev` can execute another Vite even when a direct npm `vite` is installed. The supported Vite Plus 1.3.0 configuration aliases `vite` to `npm:@voidzero-dev/vite-plus-core@1.3.0` and uses `overrides: { vite: "$vite" }` to keep helper and host peers aligned. The real config-hook host is Vite 8.3.4. Plain Vite 8.3.4 is independently exercised. Installing npm Vite alone does not change a bundled host; diagnostics identify launcher and helper peer paths separately. Historical 0.x scaffold settings are outside RC support. The alias aligns the launcher; it is not a vulnerability override.
 
 If the project version is already correct, inspect the paths in the diagnostic and refresh stale adapter peer resolutions/lockfiles. Do not infer the host identity from the project dependency alone. Missing hook version information fails closed. [Vite plugin context metadata](https://vite.dev/guide/api-plugin.html#plugin-context-meta)
 
@@ -68,7 +70,7 @@ Void's init wizard currently offers React, Vue, Svelte and Solid adapters rather
 4. Once React code is removed, uninstall `@void/react`, `react`, `react-dom`, `@types/react`, `@types/react-dom` and `oxc-transform-react` if they are otherwise unused. The Hono plugin supplies its own JSX transform.
 5. Keep `vp dev`, `vp build`, `vp preview`, or use the plain Vite scaffold. Verify the app's loaders/actions and database migrations locally.
 
-The latest consumer fixtures also install React scaffold dependencies (React/DOM/types 19.3.0, `@void/react` 0.27.0 and `oxc-transform-react` 0.153.0), showing that their presence does not block the Hono adapter. This is not a React-to-Hono source conversion or a claim that other UI frameworks run through this adapter.
+The supported RC fixtures are Hono-only. Historical React/Void 0.x scaffold metadata is retained for comparison and is not a supported installation path.
 
 ## Source and debugging files
 
@@ -83,11 +85,32 @@ import { Link, useRouter, useShared, useParams, useErrors, useNavigation } from 
 import { Form, useForm, useIslandForm, action } from 'void-plugin-hono-jsx/form';
 ```
 
-`Link` and `useRouter` use Void's shared navigation protocol. Link accepts `method`, `data`, `preserveScroll`, `preserveState`, `replace`, `reloadDocument` and cancellable `onNavigate`. GET data is serialized into its href; mutation links render buttons. Prefetch supports `true` (hover), `hover`, `click`, `mount`, `visible` or an array, with optional `cacheFor`. Prefetch and document reload are GET-only. User event handlers can prevent the adapter's action; external/download/target links retain native behavior. Ordinary GET visits reset page state; refresh preserves it. Root/nested/named layouts retain state while they remain in the active chain. Shared data, route params and field errors are available in SSR and browser components. `useNavigation()` returns Void's reactive `{ state, location, method }` (`idle`, `loading`, `submitting`); SSR starts idle and pending visits clear on completion, failure or cancellation. `useForm` supports all mutation methods, named actions, validation, duplicate suppression and cancellation. Existing `useForm(defaults)` with `post(url)` remains supported. The bound `useForm('/edit?save', defaults, options)` form also supports `post()`/`put()`/`patch()`/`delete()` and `<Form form={form}>`; provide `url` to Form for a legacy unbound model. `setData` accepts a complete object/updater or a typed field/value pair. `hasChanges`, `recentlySuccessful` (two seconds), selective `reset`/`clearErrors`, and `clearError` describe and reset state. A successful bound submission becomes the new defaults. `Form` displays field/action errors (customizable with `renderError`), respects quota retry deadlines, and never automatically resubmits. The typed `action(url, options)` helper performs a single action through the initialized Pages router. Cancellation does not undo server writes.
+`Link` and `useRouter` use Void's shared navigation protocol. Link accepts `method`, `data`, `preserveScroll`, `preserveState`, `replace`, `reloadDocument` and cancellable `onNavigate`. GET data is serialized into its href; mutation links render buttons. Prefetch supports `true` (hover), `hover`, `click`, `mount`, `visible` or an array, with optional `cacheFor`. Prefetch and document reload are GET-only. User event handlers can prevent the adapter's action; external/download/target links retain native behavior. Ordinary GET visits reset page state; refresh preserves it. Root/nested/named layouts retain state while they remain in the active chain. Shared data, route params and field errors are available in SSR and browser components. `useNavigation()` returns Void's reactive `{ state, location, method }` (`idle`, `loading`, `submitting`); SSR starts idle and pending visits clear on completion, failure or cancellation. `useForm` supports all mutation methods, named actions, validation, duplicate suppression and cancellation. Existing `useForm(defaults)` with `post(url)` remains supported. The bound `useForm('/edit?save', defaults, options)` form also supports `post()`/`put()`/`patch()`/`delete()` and `<Form form={form}>`; provide `url` to Form for a legacy unbound model. `setData` accepts a complete object/updater or a typed field/value pair. `hasChanges`, `recentlySuccessful` (two seconds), selective `reset`/`clearErrors`, and `clearError` describe and reset state. A successful bound JSON submission becomes the new defaults. `Form` displays field/action errors (customizable with `renderError`), respects quota retry deadlines, and never automatically resubmits. The typed `action(url, options)` helper performs a single action through the initialized Pages router. Cancellation does not undo server writes.
 
 Head resolution and escaping follow Void. The adapter synchronizes document attributes and inert script metadata; navigation does not execute newly inserted scripts. Raw `script.innerHTML` is authored content. Serialize dynamic JSON-LD and escape `<` before assigning it.
 
 If a page or layout throws during browser rendering, the visit rejects and navigation returns to idle. The URL and head remain on the last successful page. Recovery rebuilds that page and its layouts, resetting their local component state; a later visit can proceed normally. State preservation during successful navigation is unchanged.
+
+### Multipart forms (unreleased)
+
+JSON remains the default: `<Form form={form}>` sends `form.data`. Opt into browser form fields with `encType="multipart/form-data"`. Give inputs a `name`; files, repeated names and the clicked submit button are included without converting them into a JSON object.
+
+```tsx
+const form = useForm('/profile?save', { name: 'Initial' });
+return <Form form={form} encType="multipart/form-data">
+  <input name="name" value="Native field" />
+  <input name="files" type="file" multiple />
+  <button name="intent" value="save">Save</button>
+</Form>;
+```
+
+For direct calls use `form.post(data)` on a bound form, `form.post('/profile?save', data)` with an explicit URL, or `form.submit('patch', data)`. All four mutation methods accept FormData. Unbound forms require a URL. For an island, use `useIslandForm(defaults)` and `<Form form={form} url="/profile?save" encType="multipart/form-data">`.
+
+The adapter snapshots FormData at submission and leaves `Content-Type` unset so fetch generates the multipart boundary. Validation retains native field/file values. FormData submission does not replace the JSON model or its defaults: `data`, `hasChanges` and `reset()` continue to describe the JSON model, not uncontrolled DOM/file inputs. Use the native form's reset operation to clear those controls. Cancellation prevents a late response from updating the view, but cannot undo a server write.
+
+Full Pages multipart uses a dedicated same-origin mutation request followed by **one explicit GET** through Void's public router on success. Void's public engine cannot consume a raw multipart body or an externally fetched page shell. The GET commits through normal Hono rendering, history, layout/head, navigation state and cancellation checks while preserving component state. It also reruns loaders and may re-evaluate deferred data; the resolved-deferred retention contract for JSON mutations does not apply to multipart. The destination must support a GET. Island multipart retains its existing success behavior: reload or redirect the document.
+
+This API is part of the release preparation branch and is not in published alpha.4. It does not add a multipart-capable public transport hook to Void or change the one-shot `action()` helper's body contract.
 
 ## Static output and prerendering
 
@@ -103,7 +126,7 @@ export const loader = defineHandler((c) => ({ id: c.req.param('id') }));
 
 Known routes auto-prerender in static output. `prerender = true` explicitly selects a route; `prerender = false` excludes it. Excluded routes and undeclared dynamic paths have no generated HTML or page-data file and require a server to work. Serve `dist/client` with clean URL mapping such as `/users/alice` to `users/alice.html`, including the generated assets and `/_void/pages` JSON files. Direct requests, reload and counters use the generated output; Pages links fetch the static JSON and keep the document.
 
-Actions and named actions require a server. The plugin rejects them during static discovery. Deferred props are unsupported in static output and produce an explicit renderer error. Void 0.26.1 reports failed prerender paths as warnings, continues the build, and omits that path's HTML; verify the expected file set before release. The consumer check exercises both diagnostics and rejects any unexpected prerender failures in the supported fixture.
+Actions and named actions require a server. The plugin rejects them during static discovery. Deferred props are unsupported in static output and produce an explicit renderer error. The tested Void runtime reports failed prerender paths as warnings, continues the build, and omits that path's HTML; verify the expected file set before release. The consumer check exercises both diagnostics and rejects any unexpected prerender failures in the supported fixture.
 
 `fixtures/static` demonstrates loader-backed counters, declared dynamic paths and true/false overrides. `scripts/check-static-consumer.mjs`, called by `npm run check:consumer`, builds with Void's own collection and serves only generated files. ISR, CDN configuration and managed deployment are separate follow-up work.
 
@@ -124,9 +147,9 @@ The server renders immediate props and a loading state before the resolver compl
 
 A resolved value or error updates the current page without resetting page-local state or surviving layouts. Updates from a pending page are ignored until that page commits. Void aborts and disposes old navigation resources; the adapter additionally accepts only updates belonging to the rendered props object.
 
-Void 0.26.1 forwards ordinary deferred resolver error messages in development; production streams use `Internal Server Error`. Deliberate HTTP exception messages may be forwarded in production. The adapter turns the received message into an `Error` and exposes it through `error`; server stack traces are not included. Author deliberate HTTP exception messages suitable for display to users. This follows the verified streaming error behavior of the pinned Void version.
+The tested Void runtime forwards ordinary deferred resolver error messages in development; production streams use `Internal Server Error`. Deliberate HTTP exception messages may be forwarded in production. The adapter turns the received message into an `Error` and exposes it through `error`; server stack traces are not included. Author deliberate HTTP exception messages suitable for display to users. This follows the verified streaming error behavior of the pinned Void version.
 
-The verified contract covers single and grouped deferred props during GET document requests and SPA navigation, successful prefetch followed by a visit, and retention of resolved values after actions. Void preserves these values until the next load/navigation; mutation actions do not rerun the deferred resolver. Failed deferred prefetch currently becomes a resolved `null` because Void does not transmit its error; use document/SPA streaming when error state is required. Grouped resolver projections require explicit prop types with the current Void `defer<T>` declaration. Deferred island pages and static deferred output remain unsupported. The ordinary Pages action APIs remain documented under runtime exports.
+For JSON actions, the verified contract covers single and grouped deferred props during GET document requests and SPA navigation, successful prefetch followed by a visit, and retention of resolved values after actions. Void preserves these values until the next load/navigation; mutation actions do not rerun the deferred resolver. Failed deferred prefetch currently becomes a resolved `null` because Void does not transmit its error; use document/SPA streaming when error state is required. Grouped resolver projections require explicit prop types with the current Void `defer<T>` declaration. Deferred island pages and static deferred output remain unsupported. The ordinary Pages action APIs remain documented under runtime exports.
 
 ## Islands
 
@@ -144,11 +167,11 @@ Place the counter outside the pages directory. It can use Hono hooks and event h
 
 A static-only island page emits no client script or module preload tags. Static page modules stay outside the normal Pages browser manifest. A project containing only static island pages builds empty client entry modules with no framework code. Void's own automatic prerender policy still applies to eligible island pages. Full static output and explicit prerender configuration follow the static output contract below.
 
-The `load`, `visible`, `idle` and `media:(query)` policies use Void's shared scheduler. Use a single default relative TSX/JSX import, with attributes directly in the island page. Unknown policies and obvious malformed media queries fail discovery; the browser checks the media query through CSSOM before scheduling. Each island mounts once when its condition is met. Island layouts and attributed imports in their static TSX/JSX component graph are supported, including named layouts and repeated components with independent JSON props. The graph handles cycles and invalidates island entries when a known static component changes. Static chains without interactive imports emit no client script. Interactive components form a boundary: use ordinary imports inside them; another attributed island inside an already interactive component is rejected to avoid overlapping mounts. Full Pages cannot inherit an island layout (Void diagnoses the mixed mode). `useIslandForm(defaults)` provides the same data/dirty/error/submit/reset/clear state without a Pages provider. Submit to an explicit same-origin URL, or use `<Form form={form} url="/blog?save">`. Island success reloads or redirects the document, so state is rebuilt from SSR props. Duplicate submissions are suppressed; cancellation aborts the owned fetch but does not roll back a server write. Fields are sent as JSON. Ordinary `useForm` and the one-shot Pages `action` still require full Pages; use named imports of `useIslandForm`/`Form` in islands. Pages-only form imports (`useForm`, `action`) and ambiguous namespace/default form imports fail with a diagnostic in an island page or component. `useForm` also requires a full Pages provider at runtime. Use ordinary document links in static island pages. Pages navigation falls back to a document request for island routes. Static layouts remain server content and do not retain interactive state.
+The `load`, `visible`, `idle` and `media:(query)` policies use Void's shared scheduler. Use a single default relative TSX/JSX import, with attributes directly in the island page. Unknown policies and obvious malformed media queries fail discovery; the browser checks the media query through CSSOM before scheduling. Each island mounts once when its condition is met. Island layouts and attributed imports in their static TSX/JSX component graph are supported, including named layouts and repeated components with independent JSON props. The graph handles cycles and invalidates island entries when a known static component changes. Static chains without interactive imports emit no client script. Interactive components form a boundary: use ordinary imports inside them; another attributed island inside an already interactive component is rejected to avoid overlapping mounts. Full Pages cannot inherit an island layout (Void diagnoses the mixed mode). `useIslandForm(defaults)` provides the same data/dirty/error/submit/reset/clear state without a Pages provider. Submit to an explicit same-origin URL, or use `<Form form={form} url="/blog?save">`. Island success reloads or redirects the document, so state is rebuilt from SSR props. Duplicate submissions are suppressed; cancellation aborts the owned fetch but does not roll back a server write. Fields are sent as JSON by default; explicit FormData/multipart is described above. Ordinary `useForm` and the one-shot Pages `action` still require full Pages; use named imports of `useIslandForm`/`Form` in islands. Pages-only form imports (`useForm`, `action`) and ambiguous namespace/default form imports fail with a diagnostic in an island page or component. `useForm` also requires a full Pages provider at runtime. Use ordinary document links in static island pages. Pages navigation falls back to a document request for island routes. Static layouts remain server content and do not retain interactive state.
 
 ## Optional Markdown
 
-Use a later alpha exporting `/markdown/plugin`; alpha.3 predates this API. For source validation, install the adapter using the local tarball steps above. Add parser peers explicitly only when using Markdown:
+For this source and its Void 1.1 baseline, use the RC after approval or the local tarball steps above. Published alpha.4 has the Markdown exports but retains its earlier Void 0.x contract; alpha.3 predates this API. Add parser peers explicitly only when using Markdown:
 
 ```sh
 npm install markdown-exit@1.3.0 yaml@2.9.1
@@ -175,13 +198,15 @@ The virtual renderer/client entries follow version-specific conventions observed
 
 ## Known upstream dependency advisory
 
+The RC preparation reassessment on 2026-10-17 found the same single esbuild advisory on Void 1.1.11 in both supported consumers, including optional Markdown: Moderate 5 propagated entries, High/Critical 0. Its development-server path is outside the reviewed transform/loader path. No override is added. New or changed findings block upload, and fresh checks are required for every final candidate. The package does not ship the publisher tooling; its separate scoped findings do not imply a zero consumer audit. See the repository's `docs/rc-security-assessment.md` for evidence and limits.
+
 The initial alpha accepts [GHSA-67mh-4wv8-2f99](https://github.com/advisories/GHSA-67mh-4wv8-2f99) as a known limitation on the pinned peer baseline. The reviewed audits on 2026-10-11 reported Moderate findings propagated across multiple package entries from this single esbuild advisory; package-entry counts can differ between audit reports. The affected esbuild 0.18.20 is installed through Void 0.26.1 → drizzle-kit 0.31.11 → @esbuild-kit/esm-loader 2.6.5 → @esbuild-kit/core-utils 3.3.2.
 
 The advisory concerns esbuild's own development server. The adapter uses Vite/Oxc for JSX and TypeScript for package compilation; the inspected upstream loader uses esbuild transforms. No esbuild serve invocation was found in the adapter or these loader modules, but other upstream commands and consumer configurations have not been exhaustively assessed. Avoid the affected esbuild serve feature. This is an accepted audit finding, not a claim of overall security or an audit-zero result.
 
 The package adds no overrides and does not force changes to Void's internal dependencies. Consumers install the framework peers and their dependencies even though this archive contains no dependency implementation. Follow compatible upstream fixes; a peer upgrade requires renewed validation. New unreviewed advisories continue to block release preparation policy.
 
-The scaffold Vite Plus 0.1.24 additionally brings `oxfmt 0.52.0 → tinypool 2.1.0`. On 2026-10-12 its consumer audit reported three propagated Critical package entries from [GHSA-5gmw-xhrv-c9v3](https://github.com/advisories/GHSA-5gmw-xhrv-c9v3) and [GHSA-85c8-ppgw-ccpr](https://github.com/advisories/GHSA-85c8-ppgw-ccpr). These require prototype pollution followed by pool worker creation/run options; `oxfmt/dist/cli.js` imports Tinypool. Dev/build/preview worked, but that does not prove formatter paths safe. These advisories are unapproved and continue to block that stack's release plan. Prefer latest Vite Plus 1.1.0 with its aligned alias or plain Vite; both retain only the existing esbuild advisory in reviewed audits. No tinypool override or security exception was added. See the repository `docs/scaffold-compatibility.md` for the complete matrix and audit assessment.
+The historical scaffold Vite Plus 0.1.24 brings unapproved tinypool Critical findings. It is outside the RC support range; use the tested Vite Plus 1.3.0/core alias or plain Vite 8.3.4. Old functional CI success does not accept those findings. See the repository `docs/scaffold-compatibility.md` for historical evidence.
 
 ## Verification
 
@@ -195,7 +220,7 @@ Page and companion-loader edits reload the document and reset page/layout state.
 
 In development, the SSR renderer eagerly imports server-rendered page and layout modules with their providers. This keeps in-flight requests within the same module generation during a reload. Server-side module initialization therefore happens when the renderer loads, including pages not yet visited. Browser-only page components are excluded from this server graph. Production keeps lazy component imports. The packed-consumer regression also sends parallel SSR requests during six simultaneous page/loader revisions and requires every response to succeed.
 
-The packed-consumer check edits a page, changes its loader value, adds and removes a route, checks counter interaction after reloading, and asserts that the server stays running. It also verifies resolved dependency paths and rejection of an unsupported running Vite even when a supported npm Vite is installed. Five locked consumers cover the original baseline, the Vite patch update, latest Void with plain Vite, the scaffold Vite Plus, and latest Vite Plus on Node 24.21.0. The existing required baseline context aggregates all five results. It also runs `npm run check:source` for navigation, persistent layouts, action forms and head metadata in development and production preview. Inspect the GitHub Actions result on the commit being reviewed.
+The packed-consumer check edits pages/loaders, adds/removes routes and verifies interaction without restarting the server. It rejects old Void lines and an unsupported running Vite even when installed metadata is supported. Both required consumers use Node 24.21.0/Void 1.1.11: plain Vite 8.3.4 and Vite Plus/core 1.3.0. They run the complete dev/build/preview/browser/static/islands/deferred/Markdown/local-ISR checks on identical packed bytes. Local ISR checks do not guarantee production ISR.
 
 ## Local ISR
 
@@ -205,4 +230,8 @@ The fixture binds local `ISR_CACHE` storage for Void production preview. Real de
 
 ## Known local development limitation
 
-On the tested macOS Void/Miniflare development runtime, a POST to an undefined named action can reset the next request on a reused connection. Declared-action browser behavior is verified; this transport edge case remains unresolved upstream. Managed runtime behavior for the edge case is unverified. Review this limitation before adopting the initial alpha.
+On the tested macOS Void/Miniflare development runtime, a POST to an undefined named action can reset the next request on a reused connection. Declared-action browser behavior is verified; this transport edge case remains unresolved upstream. Managed runtime behavior for the edge case is unverified. This historical local limitation must be rechecked on the selected RC baseline; it is not evidence about managed production behavior.
+
+## RC and normal-release policy
+
+The planned first candidate is 0.1.0-rc.0 on next, followed by 0.1.0 after public-consumer and real Workers verification. It is not yet a published-release claim. Production ISR remains outside the initial guarantee. Patches in 0.1.x preserve documented APIs; breaking changes move to 0.2.0 or later. Read the [release contract](https://github.com/ts-76/void-plugin-hono-jsx/blob/main/docs/release-contract.md) and [security policy](https://github.com/ts-76/void-plugin-hono-jsx/blob/main/SECURITY.md). Report vulnerabilities [privately](https://github.com/ts-76/void-plugin-hono-jsx/security/advisories/new).

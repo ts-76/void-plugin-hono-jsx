@@ -1,5 +1,7 @@
 # Void scaffold and current-latest compatibility
 
+Current release policy: see the [approved release contract](release-contract.md). Upcoming RC support is Void 1.1/Node 24 with plain Vite 8.3.4 or aligned Vite Plus 1.3.0. Old matrix results below are historical, not supported installation guidance. Production ISR is outside the initial guarantee.
+
 These ranges and running-Vite checks shipped in alpha.3; alpha.1/alpha.2 retain the exact-version gate. The following is a versioned fixture snapshot, with registry versions read on 2026-10-12. Void 0.27.0's packaged init source requests Hono `^4.11.9`, Vite `^8.0.10`, TypeScript `^7.0.2`, and (by default) Vite Plus `^0.1.21`. The React choice adds `@void/react`, React/DOM/types and `oxc-transform-react`; Hono JSX replaces that adapter and compiler. [Void quickstart](https://void.cloud/guide/quickstart)
 
 | Locked consumer | Void | Direct `vite` dependency | Launcher / actual hook Vite |

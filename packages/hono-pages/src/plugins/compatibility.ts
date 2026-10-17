@@ -4,21 +4,27 @@ import { dirname, join } from 'node:path';
 import { version as helperViteVersion } from 'vite';
 
 export const supportedFrameworkRanges = {
-  void: '>=0.26.1 <0.28.0',
+  void: '>=1.1.11 <1.2.0',
   hono: '>=4.13.13 <5.0.0',
   vite: '>=8.0.16 <9.0.0',
 };
 export const supportedViteRange = supportedFrameworkRanges.vite;
+export const supportedNodeRange = '>=24.21.0 <25.0.0';
+export function supportsNode(version: unknown): boolean {
+  if (typeof version !== 'string') return false;
+  const match = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.exec(version);
+  return !!match && match[1] === '24' && Number.isSafeInteger(Number(match[2])) && Number.isSafeInteger(Number(match[3])) && Number(match[2]) >= 21;
+}
 
-// Only stable releases are admitted. Void is pre-1.0, so its next minor
-// requires explicit validation; Hono and Vite use their current major lines.
+// Only stable releases are admitted. Void minors are validated explicitly
+// because the adapter also uses its virtual-module integration contracts.
 export function supportsFramework(name: keyof typeof supportedFrameworkRanges, version: unknown): boolean {
   if (typeof version !== 'string') return false;
   const match = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.exec(version);
   if (!match) return false;
   const [major, minor, patch] = match.slice(1).map(Number);
   if (![major, minor, patch].every(Number.isSafeInteger)) return false;
-  if (name === 'void') return major === 0 && ((minor === 26 && patch >= 1) || minor === 27);
+  if (name === 'void') return major === 1 && minor === 1 && patch >= 11;
   if (name === 'hono') return major === 4 && (minor > 13 || (minor === 13 && patch >= 13));
   return major === 8 && (minor > 0 || patch >= 16);
 }
@@ -47,6 +53,7 @@ function describe(name: string, require: NodeRequire): string {
 }
 
 export function assertSupportedFrameworks({ root, viteVersion }: { root: string; viteVersion: unknown }) {
+  if (!supportsNode(process.versions.node)) throw new Error(`Hono Pages: Node ${process.versions.node} is unsupported; expected ${supportedNodeRange}. Use Node 24 LTS from your project root.`);
   const adapter = createRequire(import.meta.url);
   const project = createRequire(join(root, 'package.json'));
   const diagnostic = () => `Running Vite from hook context: ${typeof viteVersion === 'string' ? viteVersion : 'unavailable'}. Adapter helper Vite: ${helperViteVersion}; package.json: ${describe('vite', adapter)}. Project Vite package.json: ${describe('vite', project)}. Package paths are diagnostics, not the running Vite identity.`;

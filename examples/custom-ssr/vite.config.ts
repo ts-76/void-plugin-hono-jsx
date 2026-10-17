@@ -1,5 +1,5 @@
 import { defineConfig } from 'vite';
 import { voidPlugin } from 'void';
-import { honoJsx } from '../../packages/hono-pages/src/plugins/hono-jsx.ts';
+import { honoJsxTransform } from '../../packages/hono-pages/src/plugins/jsx-transform.ts';
 
-export default defineConfig({ plugins: [honoJsx(), voidPlugin()] });
+export default defineConfig({ plugins: [honoJsxTransform(), voidPlugin()] });

@@ -1,5 +1,5 @@
 import { readFileSync, realpathSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { join, relative, resolve, dirname, basename } from 'node:path';
 import { normalizePath, parseSync, type Plugin } from 'vite';
 import { scanPages, resolveEffectiveLayoutChain, resolvePagesDir, type PageScanResult } from 'void/pages';
 import { findIslandImports, editIslandSource, computePagesNeedingClientJS, ISLANDS_RENDERER_ID, ISLANDS_CLIENT_ENTRY_ID } from 'void/pages-islands-plugin';
@@ -14,6 +14,7 @@ export function honoIslands(): Plugin {
   const pagesDir = resolvePagesDir(root);
   const islands = new Map<string, string>();
   const pageFiles = new Set<string>();
+  let dependencyFiles = new Set<string>();
   const graph = new Map<string, Set<string>>();
   const directlyInteractive = new Set<string>();
   const interactivePages = new Set<string>();
@@ -21,15 +22,14 @@ export function honoIslands(): Plugin {
   let scan: PageScanResult | undefined;
   let markdown: HonoMarkdownApi | undefined;
 
-  function islandImports(code: string, filename: string) {
+  function islandImports(code: string, filename: string, body = parseSync(filename, code).program.body) {
     const found = findIslandImports(code, filename);
-    const attributed = parseSync(filename, code).program.body.filter((node) => node.type === 'ImportDeclaration' && node.attributes?.some(({ key }) => ('name' in key && key.name === 'island') || ('value' in key && key.value === 'island')));
+    const attributed = body.filter((node) => node.type === 'ImportDeclaration' && node.attributes?.some(({ key }) => ('name' in key && key.name === 'island') || ('value' in key && key.value === 'island')));
     if (attributed.length !== found.length) throw new Error(`Hono islands: use one default import with exactly one island attribute using load, visible, idle or media:query in ${filename}.`);
     return found;
   }
 
-  function imports(code: string, filename: string) {
-    const found = islandImports(code, filename);
+  function imports(code: string, filename: string, found = islandImports(code, filename)) {
     for (const entry of found) {
       if (!['load', 'visible', 'idle'].includes(entry.hydrate)) {
         const query = entry.hydrate.startsWith('media:') ? entry.hydrate.slice(6).trim() : '';
@@ -47,51 +47,83 @@ export function honoIslands(): Plugin {
     return found;
   }
 
+  // Refresh before graph analysis, regardless of Markdown hot-hook order.
   async function rescan() {
+    markdown?.refresh();
     scan = await scanPages(root, { pagesDir });
     // Never pass Markdown text to the JavaScript static-graph parser.
     for (const file of [...scan.pages.map(page => page.componentPath), ...scan.layouts.map(layout => layout.filePath), ...scan.namedLayouts.map(layout => layout.filePath)]) {
       if (/\.md$/.test(file) && !markdown) throw new Error(`${markdownDiagnostic} ${file}`);
     }
     islands.clear(); pageFiles.clear(); graph.clear(); directlyInteractive.clear(); interactivePages.clear(); scriptOnlyPages.clear();
-    const visit = (filename: string) => {
-      const canonical = realpathSync(filename);
-      if (graph.has(canonical)) return;
-      const dependencies = new Set<string>(); graph.set(canonical, dependencies); pageFiles.add(canonical);
-      const code = canonical.endsWith('.md') && markdown ? markdown.getGraphSource(canonical) : readFileSync(canonical, 'utf8');
-      const found = imports(code, canonical);
-      if (found.length) {
-        if (!/\.[jt]sx$/.test(canonical) && !(canonical.endsWith('.md') && markdown)) throw new Error('Hono islands: attributed imports require a static TSX/JSX module.');
-        directlyInteractive.add(canonical);
+    // Source and syntax results live for one analysis only, never across edits.
+    type Analysis = { code: string; found: ReturnType<typeof findIslandImports>; edges: Array<{ specifier: string; target: string }> };
+    const analyses = new Map<string, Analysis>();
+    const watched = new Set<string>();
+    const watchedBases = new Set<string>();
+    const watch = (file: string) => { const path = normalizePath(file); watched.add(path); dependencyFiles.add(path); };
+    const watchImport = (specifier: string, filename: string) => {
+      const base = resolve(dirname(filename), specifier);
+      if (watchedBases.has(base)) return; watchedBases.add(base);
+      const bases = new Set([base]);
+      // Keep missing targets observable through symlinked directories too.
+      try { bases.add(join(realpathSync(dirname(base)), basename(base))); } catch {}
+      try { bases.add(realpathSync(base)); } catch {}
+      for (const candidate of bases) {
+        watch(candidate);
+        for (const extension of ['.tsx', '.jsx', '.ts', '.js']) { watch(candidate + extension); watch(join(candidate, 'index' + extension)); }
       }
-      for (const node of parseSync(canonical, code).program.body) {
-        const source = node.type === 'ImportDeclaration' ? node.source : node.type === 'ExportNamedDeclaration' || node.type === 'ExportAllDeclaration' ? node.source : undefined;
-        const typeOnly = node.type === 'ImportDeclaration' ? node.importKind === 'type' || (node.specifiers.length > 0 && node.specifiers.every((entry) => entry.type === 'ImportSpecifier' && entry.importKind === 'type')) : (node.type === 'ExportNamedDeclaration' || node.type === 'ExportAllDeclaration') && node.exportKind === 'type';
-        if (!source || typeOnly || !source.value.startsWith('.') || found.some((entry) => entry.specifier === source.value)) continue;
-        const target = resolveComponent(source.value, join(canonical, '..'), ['.tsx', '.jsx', '.ts', '.js']);
-        if (!target || !/\.[jt]sx?$/.test(target)) continue;
-        dependencies.add(realpathSync(target)); visit(target);
-      }
-
     };
-    for (const entry of [...scan.pages.filter((page) => page.island).map((page) => page.componentPath), ...scan.layouts.filter((layout) => layout.island).map((layout) => layout.filePath), ...scan.namedLayouts.filter((layout) => layout.island).map((layout) => layout.filePath)]) visit(join(pagesDir, entry));
-    const validateInteractive = (filename: string, seen = new Set<string>()) => {
-      const canonical = realpathSync(filename);
-      if (seen.has(canonical)) return; seen.add(canonical);
+    const analyze = (canonical: string): Analysis => {
+      const previous = analyses.get(canonical);
+      if (previous) return previous;
+      // Retain failed dependencies until recovery so an edit can trigger a rescan.
+      watch(canonical);
       const code = canonical.endsWith('.md') && markdown ? markdown.getGraphSource(canonical) : readFileSync(canonical, 'utf8');
-      if (islandImports(code, canonical).length) throw new Error('Hono islands: attributed imports inside an interactive component are unsupported; use ordinary component imports there.');
-      for (const node of parseSync(canonical, code).program.body) {
+      const parsed = parseSync(canonical, code);
+      if (parsed.errors.length) throw new Error(`Hono islands: cannot parse ${canonical}: ${parsed.errors.map(error => error.message).join('; ')}`);
+      const body = parsed.program.body;
+      const found = islandImports(code, canonical, body);
+      const edges: Analysis['edges'] = [];
+      for (const node of body) {
         const source = node.type === 'ImportDeclaration' ? node.source : node.type === 'ExportNamedDeclaration' || node.type === 'ExportAllDeclaration' ? node.source : undefined;
         const typeOnly = node.type === 'ImportDeclaration' ? node.importKind === 'type' || (node.specifiers.length > 0 && node.specifiers.every((entry) => entry.type === 'ImportSpecifier' && entry.importKind === 'type')) : (node.type === 'ExportNamedDeclaration' || node.type === 'ExportAllDeclaration') && node.exportKind === 'type';
         if (!source || typeOnly || !source.value.startsWith('.')) continue;
         const target = resolveComponent(source.value, join(canonical, '..'), ['.tsx', '.jsx', '.ts', '.js']);
-        if (target && /\.[jt]sx?$/.test(target)) validateInteractive(target, seen);
+        if (!target || /\.[jt]sx?$/.test(target)) watchImport(source.value, canonical);
+        if (target && /\.[jt]sx?$/.test(target)) edges.push({ specifier: source.value, target: realpathSync(target) });
       }
+      const analysis = { code, found, edges }; analyses.set(canonical, analysis); return analysis;
+    };
+    const visit = (filename: string) => {
+      const canonical = realpathSync(filename);
+      if (graph.has(canonical)) return;
+      const dependencies = new Set<string>(); graph.set(canonical, dependencies); pageFiles.add(canonical);
+      const { code, found, edges } = analyze(canonical);
+      imports(code, canonical, found);
+      if (found.length) {
+        if (!/\.[jt]sx$/.test(canonical) && !(canonical.endsWith('.md') && markdown)) throw new Error('Hono islands: attributed imports require a static TSX/JSX module.');
+        directlyInteractive.add(canonical);
+      }
+      for (const edge of edges) {
+        if (found.some(entry => entry.specifier === edge.specifier)) continue;
+        dependencies.add(edge.target); visit(edge.target);
+      }
+    };
+    for (const entry of [...scan.pages.filter((page) => page.island).map((page) => page.componentPath), ...scan.layouts.filter((layout) => layout.island).map((layout) => layout.filePath), ...scan.namedLayouts.filter((layout) => layout.island).map((layout) => layout.filePath)]) visit(join(pagesDir, entry));
+    const validated = new Set<string>();
+    const validateInteractive = (filename: string) => {
+      const canonical = realpathSync(filename);
+      if (validated.has(canonical)) return; validated.add(canonical);
+      const { found, edges } = analyze(canonical);
+      if (found.length) throw new Error('Hono islands: attributed imports inside an interactive component are unsupported; use ordinary component imports there.');
+      for (const edge of edges) validateInteractive(edge.target);
     };
     for (const target of islands.values()) validateInteractive(target);
     for (const page of scan.pages.filter((page) => !page.island)) {
       for (const file of [page.componentPath, ...resolveEffectiveLayoutChain(page, scan.layouts, scan.namedLayouts).map((layout) => layout.filePath)]) validateInteractive(join(pagesDir, file));
     }
+    dependencyFiles = watched;
     const needsJS = new Set(directlyInteractive);
     let changed = true;
     while (changed) {
@@ -114,7 +146,7 @@ export function honoIslands(): Plugin {
     buildStart: rescan,
     async hotUpdate({ file, modules, timestamp }) {
       const inPages = normalizePath(file).startsWith(normalizePath(pagesDir) + '/');
-      if (!inPages && ![...pageFiles, ...islands.values()].some((path) => normalizePath(path) === normalizePath(file))) return;
+      if (!inPages && !dependencyFiles.has(normalizePath(file))) return;
       await rescan();
       const invalidated = new Set<(typeof modules)[number]>();
       for (const id of [ISLANDS_RENDERER_ID, ISLANDS_CLIENT_ENTRY_ID, 'virtual:void-pages-renderer']) {

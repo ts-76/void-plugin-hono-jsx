@@ -50,3 +50,14 @@ See [releasing](releasing.md) for artifact commands, first-package setup and sup
 ## Recovery
 
 A failed validation blocks release. After publication, remove the affected dist-tag or deprecate the bad version with a concrete message, publish a corrected version, and repeat clean-consumer checks. Preserve the reviewed artifact and source commit. Do not assume an npm version can be overwritten or unpublished.
+
+## Upcoming RC / normal release (2026-10-17)
+
+The historical checked alpha.0 items above are not acceptance of this candidate. The maintainer selected 0.1.0-rc.0/next, then 0.1.0 after public-consumer and real Workers validation. Follow the [approved release contract](release-contract.md), Issue #85 and integration PR #92. Current source work changes the baseline to Void 1.1.11 and plain Vite 8.3.4, with aligned Vite Plus 1.3.0 as the second required consumer. Node support is >=24.21.0 <25.0.0; historical 0.x stacks are not release-selectable.
+
+- [ ] Review exact final head, both supported consumer results and fresh source/root/consumer/publisher evidence.
+- [ ] Complete candidate-specific security reassessment; old alpha exceptions do not approve the RC automatically.
+- [ ] Review Release Please's exact RC version, synchronized manifests/notes and source/maps.
+- [ ] Stage only after the release tag/authorization; owner approves on npm; verify public bytes/signatures/provenance/registry consumer afterward.
+- [ ] Complete real Workers/D1 checks in tsapp with synthetic data and remove the dedicated resources. Production ISR remains outside the first guarantee.
+- [ ] Prepare normal 0.1.0 with default versioning/prerelease false, repeat gates and promote latest only after public verification.
