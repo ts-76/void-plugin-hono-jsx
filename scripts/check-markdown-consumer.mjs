@@ -116,6 +116,37 @@ export async function checkMarkdownConsumer({ repo, consumer: original, browser,
           await writeFile(file, source.replace('Interactive Markdown', 'Edited Markdown').replace('active page script', 'edited script'));
           await page.waitForFunction(() => document.getElementById('markdown-layout-title')?.textContent === 'Edited Markdown' && document.getElementById('markdown-script')?.textContent === 'edited script');
         } finally { await writeFile(file, source); }
+        await page.waitForFunction(() => document.getElementById('markdown-layout-title')?.textContent === 'Interactive Markdown' && document.getElementById('markdown-script')?.textContent === 'active page script');
+        // Leave the HMR-connected page before triggering structural changes.
+        await page.goto(origin + '/docs/plain');
+        assert.equal(await page.locator('script[src]').count(), 0);
+        const added = join(consumer, 'pages/docs/snapshot-added.md');
+        const authored = '<script>window.dynamicMarkdown = true; document.getElementById("dynamic-markdown").textContent = "script active";</script>\n# Added snapshot\n<div id="dynamic-markdown">SSR</div>\n';
+        const waitForRoute = async (present, script) => {
+          const deadline = Date.now() + 30000;
+          while (Date.now() < deadline) {
+            const response = await fetch(origin + '/docs/snapshot-added');
+            const html = await response.text();
+            if (present ? response.ok && html.includes('dynamic-markdown') && html.includes('data-md-script=') === script : response.status === 404) return;
+            await new Promise(resolve => setTimeout(resolve, 100));
+          }
+          throw new Error('Markdown route snapshot did not update');
+        };
+        try {
+          await writeFile(added, authored); await waitForRoute(true, true);
+          await page.goto(origin + '/docs/snapshot-added');
+          await page.waitForFunction(() => window.dynamicMarkdown === true && document.getElementById('dynamic-markdown')?.textContent === 'script active');
+          await writeFile(added, '# No script\n<div id="dynamic-markdown">SSR</div>\n');
+          // Script-only and zero-script pages omit the HMR client. Check a fresh document.
+          await waitForRoute(true, false); await page.reload();
+          assert.equal(await page.locator('#dynamic-markdown').textContent(), 'SSR');
+          assert.equal(await page.locator('script[src],link[rel="modulepreload"]').count(), 0);
+          await writeFile(added, authored); await waitForRoute(true, true); await page.reload();
+          await page.waitForFunction(() => window.dynamicMarkdown === true && document.getElementById('dynamic-markdown')?.textContent === 'script active');
+          await page.goto(origin + '/docs/plain');
+          await rm(added); await waitForRoute(false);
+          assert.equal(await page.locator('script[src],link[rel="modulepreload"]').count(), 0);
+        } finally { await rm(added, { force: true }); }
       }
       assert.deepEqual(errors, []);
       console.log(`Markdown ${mode}: SSR/loader/head, layouts/frontmatter, independent islands/context, native TSX roundtrip, page scripts/zero-script pages and scheduling passed.`);

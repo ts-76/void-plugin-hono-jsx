@@ -4,7 +4,8 @@ export const markdownDiagnostic = 'Hono Pages: Markdown requires voidHonoMarkdow
 export type HonoMarkdownApi = {
   adapter: 'hono';
   clientEntryId: string;
-  getClientScripts(): Map<string, string>;
+  refresh(): void;
+  getClientScripts(): ReadonlyMap<string, string>;
   getGraphSource(file: string): string;
 };
 export function markdownApi(plugins: readonly Plugin[]): HonoMarkdownApi | undefined {
