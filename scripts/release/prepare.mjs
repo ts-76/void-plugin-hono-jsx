@@ -5,7 +5,8 @@ import { cpSync, mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync } f
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
-import { json, sha256, inside, inspectTarball, registry } from './gate.mjs';
+import { json, sha256, inside, inspectTarball } from './gate.mjs';
+import { publishDryRun } from './dry-run.mjs';
 import { dependencyAudit } from './dependency-audit.mjs';
 
 const root = process.cwd();
@@ -45,7 +46,7 @@ try {
   const acceptedSha256 = sha256(readFileSync(tarball));
   env.RELEASE_CONSUMER_AUDIT = path.join(output, 'consumer-dependency-audit.json');
   npm(['run', 'check:consumer', '--', '--tarball', tarball]);
-  const dryRun = JSON.parse(npm(['publish', tarball, '--dry-run', '--ignore-scripts', '--json', '--registry', registry, '--access', 'public', '--tag', policy.distTag, '--provenance=false'], root, true));
+  const dryRun = publishDryRun({ npmCli, tarball, distTag: policy.distTag, cwd: root, env });
   writeFileSync(path.join(output, 'dry-run.json'), JSON.stringify(dryRun, null, 2) + '\n');
   assert.equal(sha256(readFileSync(tarball)), acceptedSha256, 'Candidate bytes changed');
   clean();

@@ -23,7 +23,7 @@ npm run release:plan
 
 Package build copies the release-please-managed root `CHANGELOG.md` into the ignored package changelog; artifact validation requires identical packed notes.
 
-Preparation runs current-tree, full-history and Gitleaks scans, locked dependency audits, types, tests, both example builds, source browser checks and an external packed consumer. It creates an isolated manifest differing only in `private: false`; repository metadata stays private. The exact archive is installed in the consumer and passed to `npm publish --dry-run --ignore-scripts --provenance=false`. The dry run performs no registry upload and does not prove authentication or provenance.
+Preparation runs current-tree, full-history and Gitleaks scans, locked dependency audits, types, tests, both example builds, source browser checks and an external packed consumer. It creates an isolated manifest differing only in `private: false`; repository metadata stays private. The exact archive is installed in the consumer and passed to `npm publish --dry-run --force --ignore-scripts --provenance=false`. The dry-run-only force flag skips npm's registry version-collision check, so ordinary source PRs can retain the last released version. It neither changes the archive/version nor appears in the real stage command; a local registry fixture verifies that this helper cannot upload or run lifecycle scripts. The dry run performs no registry upload and does not prove authentication or provenance.
 
 The ignored `artifacts/` directory contains:
 
