@@ -66,7 +66,7 @@ export async function checkMarkdownConsumer({ repo, consumer: original, browser,
     try {
       const html = await (await fetch(origin + '/docs/interactive?name=Alice')).text();
       assert.match(html, mode === 'static' ? /id="markdown-loader">Loader visitor<\/output>/ : /id="markdown-loader">Loader Alice<\/output>/);
-      assert.match(html, /id="markdown-layout-title">Interactive Markdown<\/header>/); assert.match(html, /data-hydrate="load"/); assert.match(html, /id="first-value">4/);
+      assert.match(html, /id="markdown-layout-title"[^>]*>Interactive Markdown<\/header>/); assert.match(html, /data-hydrate="load"/); assert.match(html, /id="first-value">4/);
       assert.match(html, /id="first-frontmatter">Interactive Markdown<\/output>/);
       assert.match(html, mode === 'static' ? /<title>Dynamic Loader visitor<\/title>/ : /<title>Dynamic Loader Alice<\/title>/);
       await page.goto(origin); await page.locator('#app[data-hono-pages="mounted"]').waitFor();
@@ -86,6 +86,7 @@ export async function checkMarkdownConsumer({ repo, consumer: original, browser,
       const scripts = []; const listener = request => { if (request.resourceType() === 'script') scripts.push(request.url()); }; page.on('request', listener);
       await page.goto(origin + '/docs/plain');
       assert.equal(await page.locator('#markdown-layout-title').textContent(), 'Plain </script> Markdown');
+      assert.equal(await page.locator('#markdown-layout-title').evaluate(node => getComputedStyle(node).borderTopWidth), '3px');
       assert.equal(await page.locator('script[src],link[rel="modulepreload"]').count(), 0); assert.deepEqual(scripts, []);
       assert.equal(await page.locator('#markdown-headings').textContent(), 'plain-markdown,repeated-heading,repeated-heading-1');
       assert.equal(await page.evaluate(() => window.markdownInjected), undefined);
@@ -214,6 +215,7 @@ export async function checkMarkdownConsumer({ repo, consumer: original, browser,
   const output = join(consumer, 'dist/client');
   for (const file of ['docs/plain.html', 'docs/interactive.html', 'docs/named.html', 'docs/script-only.html', 'docs/features.html', 'policies.html']) await access(join(output, file));
   const plain = await readFile(join(output, 'docs/plain.html'), 'utf8');
+  assert.match(plain, /border-top:3px solid rgb\(12,34,56\)/);
   assert.doesNotMatch(plain, /<script[^>]+src=|rel="modulepreload"/); assert.match(plain, /Plain &lt;\/script&gt; Markdown/);
   // Browser validation below is served by files only, without a worker.
   const server = createServer(async (request, response) => {

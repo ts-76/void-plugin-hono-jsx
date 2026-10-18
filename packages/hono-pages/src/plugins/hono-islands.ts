@@ -5,6 +5,7 @@ import { scanPages, resolveEffectiveLayoutChain, resolvePagesDir, type PageScanR
 import { findIslandImports, findStaticCssImports, rewriteCssImportForVirtualModule, editIslandSource, computePagesNeedingClientJS, ISLANDS_RENDERER_ID, ISLANDS_CLIENT_ENTRY_ID } from 'void/pages-islands-plugin';
 
 import { resolveComponent } from './resolve-component.ts';
+import { styleHostPath } from './runtime-paths.ts';
 
 import { markdownApi, markdownDiagnostic, type HonoMarkdownApi } from './markdown-api.ts';
 
@@ -224,6 +225,8 @@ export function renderIslandPage(page, assets) {
 import { initIslands } from 'void/pages-client';
 import { jsx } from 'hono/jsx/dom/jsx-runtime';
 import { render } from 'hono/jsx/dom';
+import { ensureHonoStyleHost } from ${JSON.stringify(styleHostPath)};
+ensureHonoStyleHost();
 for (const element of document.querySelectorAll('[data-hydrate^="media:"]')) {
   const query = element.getAttribute('data-hydrate').slice(6).trim();
   if (matchMedia(query).media === 'not all' && query !== 'not all') throw new Error('Hono islands: invalid or unsupported media query ' + query);

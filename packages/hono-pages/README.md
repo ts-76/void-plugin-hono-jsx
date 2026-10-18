@@ -126,6 +126,14 @@ Import `void-plugin-hono-jsx/theme-content.css` and wrap Markdown in `.void-md` 
 Markdown uses document navigation and preserves authored HTML. Use trusted content; no HTML sanitization is provided.
 See the [Markdown guide](https://github.com/ts-76/void-plugin-hono-jsx/blob/main/docs/markdown.md), including migration from 0.1.x.
 
+## Hono CSS
+
+The adapter collects default `hono/css` rules into one `style#hono-css` in head, before application stylesheets. Pages and islands reuse this host; static pages need no client JavaScript for their CSS. Do not render Hono's `<Style />` inside a page or layout.
+
+For a per-response CSP nonce, render `<HonoStyles nonce={nonce} />` from `void-plugin-hono-jsx/pages` in the SSR tree. It configures the head host and adds no element inside the client root. Use one nonce per document; SPA navigation retains the initial host and nonce. Pass the same nonce in the response's CSP header. CSP nonce setup for client-only shells is not provided.
+
+This integration covers the default CSS context. Custom `createCssContext()` hosts need their own lifecycle. Hono may register initial SSR rules again on first client render; subsequent visits reuse its registry. Exact SSR-to-client rule deduplication is not guaranteed.
+
 ## Source and debugging files
 
 The package includes TypeScript source under `src`, JavaScript source maps and declaration maps.

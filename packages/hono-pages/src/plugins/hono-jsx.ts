@@ -1,7 +1,7 @@
 import { realpathSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { normalizePath } from 'vite';
-import { pagesRuntimePath, clientRuntimePath, markdownRuntimePath, publicRuntimeModules } from './runtime-paths.ts';
+import { pagesRuntimePath, clientRuntimePath, markdownRuntimePath, ssrDocumentPath, publicRuntimeModules } from './runtime-paths.ts';
 import { generateComponentManifest, resolvePagesDir, resolveStaticPageDataBuildOptions, scanPages, type PageScanResult } from 'void/pages';
 import type { Plugin } from 'vite';
 import { parseCacheFor, type CacheForInput } from 'void/pages-prefetch';
@@ -117,7 +117,7 @@ export function voidHonoJsx(options: HonoJsxOptions = {}): Plugin[] {
     },
     resolveId(id) {
       if (id === rendererId || id === clientId) return `\0${id}`;
-      if (id === pagesRuntimePath || id === clientRuntimePath || id === markdownRuntimePath) return { id: realpathSync(id), external: false };
+      if (id === pagesRuntimePath || id === clientRuntimePath || id === markdownRuntimePath || id === ssrDocumentPath) return { id: realpathSync(id), external: false };
       const runtime = publicRuntimeModules[id];
       if (runtime) return { id: realpathSync(this.environment.config.consumer === 'client' ? runtime.client : runtime.server), external: false };
     },
@@ -151,8 +151,7 @@ ${markdown ? `import { MarkdownContext } from ${JSON.stringify(markdownRuntimePa
 const markdownScriptIds = new Set(${JSON.stringify(markdownScriptIds)});
 import { createSsrRouter, idleNavigationState } from 'void/pages-client';
 import { PageContext, RouterContext, NavigationContext } from ${JSON.stringify(pagesRuntimePath)};
-import { serializePageData } from 'void/pages-server';
-import { renderHeadToString, renderHtmlAttrs, renderBodyAttrs } from 'void/pages-head';
+import { renderHonoDocument } from ${JSON.stringify(ssrDocumentPath)};
 ${manifest}
 export async function renderPage(pageObj, assetTags) {
   if (${JSON.stringify(staticData.enabled)} && pageObj.deferredKeys) throw new Error('Hono Pages: deferred props cannot be statically prerendered; remove defer().');
@@ -168,15 +167,8 @@ export async function renderPage(pageObj, assetTags) {
     content = jsx(Layout, { children: content });
   }
   ${markdown ? 'content = jsx(MarkdownContext.Provider, { value: { frontmatter, headings, props: pageObj.props }, children: content });' : ''}
-  const markup = await jsx(RouterContext.Provider, { value: createSsrRouter(pageObj.url, pageObj.params), children: jsx(PageContext.Provider, { value: pageObj, children: jsx(NavigationContext.Provider, { value: idleNavigationState(), children: content }) }) }).toString();
-  const appHtml = await jsx('div', { id: 'app', 'data-md-script': markdownScriptIds.has(pageObj.component) ? pageObj.component : undefined, ${markdown ? "'data-hono-markdown': JSON.stringify({ frontmatter, headings })," : ''} dangerouslySetInnerHTML: { __html: markup } }).toString();
-  const head = pageObj.head;
-  const body = pageObj.deferredKeys ? assetTags.body.replaceAll('<script type="module"', '<script async type="module"') : assetTags.body;
-  return '<!doctype html><html' + (head ? renderHtmlAttrs(head) : '') + '><head>'
-    + (head ? renderHeadToString(head) : '') + assetTags.css + assetTags.preloads
-    + '</head><body' + (head ? renderBodyAttrs(head) : '') + '>'
-    + '<script id="__VOID_PAGE_DATA__" type="application/json">' + serializePageData(pageObj) + '</script>'
-    + appHtml + body + '</body></html>';
+  content = jsx(RouterContext.Provider, { value: createSsrRouter(pageObj.url, pageObj.params), children: jsx(PageContext.Provider, { value: pageObj, children: jsx(NavigationContext.Provider, { value: idleNavigationState(), children: content }) }) });
+  return renderHonoDocument(content, pageObj, assetTags, { markdownScript: markdownScriptIds.has(pageObj.component) ? pageObj.component : undefined, ${markdown ? 'markdown: JSON.stringify({ frontmatter, headings }),' : ''} });
 }
 `;
       }

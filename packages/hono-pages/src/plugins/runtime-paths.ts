@@ -6,6 +6,8 @@ const compiled = new URL(import.meta.url).pathname.endsWith('.js');
 export const pagesRuntimePath = fileURLToPath(new URL(compiled ? '../server/pages.js' : '../runtime/pages.tsx', import.meta.url));
 export const clientRuntimePath = fileURLToPath(new URL(compiled ? '../browser/client.js' : '../runtime/client.tsx', import.meta.url));
 export const markdownRuntimePath = fileURLToPath(new URL(compiled ? '../server/markdown.js' : '../runtime/markdown.ts', import.meta.url));
+export const ssrDocumentPath = fileURLToPath(new URL(compiled ? '../server/ssr-document.js' : '../runtime/ssr-document.ts', import.meta.url));
+export const styleHostPath = fileURLToPath(new URL(compiled ? '../browser/style-host.js' : '../runtime/style-host.ts', import.meta.url));
 export const publicRuntimeModules: Record<string, { server: string; client: string }> = compiled ? {
   'void-plugin-hono-jsx/markdown': { server: markdownRuntimePath, client: fileURLToPath(new URL('../browser/markdown.js', import.meta.url)) },
   'void-plugin-hono-jsx/pages': { server: pagesRuntimePath, client: fileURLToPath(new URL('../browser/pages.js', import.meta.url)) },

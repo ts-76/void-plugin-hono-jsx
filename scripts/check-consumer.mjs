@@ -26,6 +26,7 @@ import { checkIslandPolicies } from './check-island-policies.mjs';
 import { checkFormConsumer } from './check-form-consumer.mjs';
 import { checkLinkConsumer } from './check-link-consumer.mjs';
 import { checkIsrConsumer } from './check-isr-consumer.mjs';
+import { checkCssConsumer } from './check-css-consumer.mjs';
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
 const npmCli = process.env.npm_execpath;
@@ -91,6 +92,7 @@ async function smoke(mode, browser, staticOnly = false) {
         await page.locator('#static-only').waitFor();
         assert.equal(await page.locator('script[src], link[rel="modulepreload"]').count(), 0);
         assert.deepEqual(staticScripts, []);
+        assert.equal(await page.locator('#static-only').evaluate(node => getComputedStyle(node).color), 'rgb(12, 34, 56)');
         assert.deepEqual(errors, []);
         console.log('Static-only package consumer preview: server content and zero JavaScript requests passed.');
         return;
@@ -113,6 +115,7 @@ async function smoke(mode, browser, staticOnly = false) {
       assert.equal(await page.locator('#count').textContent(), '5');
       if (mode === 'development') await checkDevelopmentConsumer({ origin, page, consumer, assertRunning: () => { assert.equal(child.exitCode, null); assert.equal(child.signalCode, null); assert.doesNotMatch(logs, /server restarted|restarting server/i); } });
       await checkLinkConsumer({ origin, page, assert });
+      await checkCssConsumer({ origin, page, browser, assert, mode });
       await checkFormConsumer({ origin, page, assert });
       await checkMultipartConsumer({ origin, page, assert });
       await checkIslandPolicies({ origin, page, assert });
@@ -132,6 +135,8 @@ async function smoke(mode, browser, staticOnly = false) {
       await page.waitForURL('**/islands');
       assert.equal(await page.evaluate(() => window.consumerDocument), undefined);
       await page.locator('[data-hono-island="mounted"]').waitFor();
+      await page.evaluate(() => { window.islandCssHost = document.getElementById('hono-css'); });
+      assert.equal(await page.locator('#island-count').evaluate(node => getComputedStyle(node).color), 'rgb(12, 34, 56)');
       const marker = page.locator('[data-island]');
       const props = JSON.parse(await marker.getAttribute('data-props'));
       assert.equal(props.initialCount, 9);
@@ -139,6 +144,8 @@ async function smoke(mode, browser, staticOnly = false) {
       assert.equal(await page.evaluate(() => window.islandInjected), undefined);
       await page.locator('#island-increment').click();
       await page.waitForFunction(() => document.querySelector('#island-count')?.textContent === '10');
+      assert.equal(await page.locator('#island-count').evaluate(node => getComputedStyle(node).color), 'rgb(65, 43, 21)');
+      assert.equal(await page.evaluate(() => window.islandCssHost === document.getElementById('hono-css') && window.islandCssHost.parentElement === document.head), true);
       await page.reload();
       await page.locator('[data-hono-island="mounted"]').waitFor();
       assert.equal(await page.locator('#island-count').textContent(), '9');
