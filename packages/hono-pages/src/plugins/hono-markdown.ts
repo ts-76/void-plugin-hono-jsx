@@ -71,18 +71,20 @@ if (id && scripts[id]) await scripts[id]();`;
       async handler(source, id) {
         const cached = sources.get(realpathSync(id));
         const result = await compiler.render(cached?.source === source ? cached : compiler.parse(source));
-        const imports = result.imports.map((entry, index) => {
+        const imports = [...result.imports.map(entry => ({ ...entry, kind: 'island' as const })), ...result.staticImports.map(entry => ({ ...entry, kind: 'static' as const }))].map((entry, index) => {
           const target = resolveComponent(entry.specifier, dirname(id), ['.tsx', '.jsx']);
-          if (!target || !entry.specifier.startsWith('.')) throw new Error(`Hono Markdown: cannot resolve relative TSX/JSX island ${entry.specifier} in ${id}.`);
+          if (!target || !entry.specifier.startsWith('.')) throw new Error(`Hono Markdown: cannot resolve relative TSX/JSX component ${entry.specifier} in ${id}.`);
           return { ...entry, alias: `__island${index}`, islandId: normalizePath(relative(root, realpathSync(target))) };
         });
-        const chunks = renderChunks(result.html, new Set(imports.map(entry => entry.importName)));
-        const children = chunks.map(chunk => {
+        const chunks = renderChunks(result.html, new Set(imports.map(entry => entry.importName)), new Set(result.staticImports.map(entry => entry.importName)));
+        const emit = (chunk: (typeof chunks)[number]): string => {
           if ('html' in chunk) return `raw(${JSON.stringify(chunk.html)})`;
           const entry = imports.find(entry => entry.importName === chunk.name)!;
           const props = literal(chunk.props);
+          if (entry.kind === 'static') return `jsx(${entry.alias}, { ...${props}${chunk.children ? `, children: [${chunk.children.map(emit).join(',')}]` : ''} })`;
           return `jsx('div', { 'data-island': ${JSON.stringify(entry.islandId)}, 'data-hydrate': ${JSON.stringify(entry.hydrate)}, 'data-props': JSON.stringify(${props}), children: jsx(${entry.alias}, ${props}) })`;
-        });
+        };
+        const children = chunks.map(emit);
         return { code: `import { jsx, Fragment } from 'hono/jsx/jsx-runtime';
 import { raw } from 'hono/html';
 ${imports.map(entry => `import ${entry.alias} from ${JSON.stringify(entry.specifier)};`).join('\n')}

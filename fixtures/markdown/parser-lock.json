@@ -4,7 +4,8 @@
     "yaml": "2.9.1",
     "shiki": "4.5.0",
     "@shikijs/transformers": "4.5.0",
-    "markdown-it-container": "4.0.0"
+    "markdown-it-container": "4.0.0",
+    "honoxpress": "0.4.0"
   },
   "packages": {
     "node_modules/@types/linkify-it": {
@@ -733,6 +734,31 @@
       "integrity": "sha512-HaNccxUH0l7BNGYbFbjmGpf5aLHAMTinqRZQAEQbMr2cdD3z91Q6kIo1oUn1CQndkT03jat6ckrdRYuwwqLlQw==",
       "dev": true,
       "license": "MIT"
+    },
+    "node_modules/honoxpress": {
+      "version": "0.4.0",
+      "resolved": "https://registry.npmjs.org/honoxpress/-/honoxpress-0.4.0.tgz",
+      "integrity": "sha512-2nNttenS0io+lqjYuWQoXKsQSXpurr6oThIze8yuqTurIVXcjx294CDdsiuoW8LW39DpnjdmvDLMQq7Ukzjocw==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "shiki": "4.5.0"
+      },
+      "bin": {
+        "honoxpress": "bin/honoxpress.mjs"
+      },
+      "engines": {
+        "node": "^22.20.0 || ^24.12.0 || >=26.0.0"
+      },
+      "peerDependencies": {
+        "hono": "^4.13.12",
+        "vite-plus": "^1.0.0"
+      },
+      "peerDependenciesMeta": {
+        "vite-plus": {
+          "optional": true
+        }
+      }
     }
   }
 }
