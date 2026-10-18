@@ -18,8 +18,8 @@ export async function renderHonoDocument(content: JSXNode, page: PageObject, ass
     if (value !== undefined && (typeof value !== 'string' || !/^[A-Za-z0-9+/_=-]+$/.test(value))) throw new Error('Hono Styles: nonce must be a non-empty CSP base64 value.');
   };
   validate(nonce);
-  const configure = (input: string | undefined) => {
-    const value = input ?? assets.devCssNonce;
+  const configure = (value: string | undefined) => {
+    if (value === undefined) return;
     validate(value);
     if (configured && value !== nonce) throw new Error('Hono Styles: one document cannot use different style nonces.');
     nonce = value;

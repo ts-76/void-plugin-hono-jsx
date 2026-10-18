@@ -55,6 +55,8 @@ test('nonce configuration rejects conflicts and unsafe values before emitting HT
   for (const nonce of ['', 123, 'bad"nonce', 'bad nonce', '</style>']) await assert.rejects(renderHonoDocument(jsx(HonoStyles, { nonce }), page, assets), /CSP base64 value/);
   await assert.rejects(renderHonoDocument(jsx('p', {}), page, { ...assets, devCssNonce: 'bad"nonce' }), /CSP base64 value/);
   await assert.rejects(renderHonoDocument(jsx(Fragment, { children: [jsx(HonoStyles, { nonce: 'one' }), jsx(HonoStyles, { nonce: 'two' })] }), page, assets), /different style nonces/);
+  const inherited = await renderHonoDocument(jsx(Fragment, { children: [jsx(HonoStyles, { nonce: 'shared' }), jsx(HonoStyles, {}), jsx(HonoStyles, { nonce: 'shared' })] }), page, assets);
+  assert.match(inherited, /id="hono-css" nonce="shared"/);
   const html = await renderHonoDocument(jsx('p', {}), page, { ...assets, devCssNonce: 'dev-nonce' });
   assert.match(html, /id="hono-css" nonce="dev-nonce"/);
 });
