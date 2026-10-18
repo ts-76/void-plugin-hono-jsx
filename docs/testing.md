@@ -59,7 +59,7 @@ Generated logs, screenshots, runtime caches and tarballs are not committed. The 
 
 For publication, repeat validation on the final release commit and verify the actual npm artifact in a fresh consumer. Follow the [release checklist](release-checklist.md), including artifact checksums and post-publication verification. A local pack or dry run alone does not verify npm authentication, upload or registry behavior.
 
-The package workflow runs common source/history/secret/type/unit/browser checks, build, pack and dry run once in the baseline job. The other supported stack download that job's accepted tarball and run `release:verify-consumer`. It verifies the originating workflow/run/attempt, source and hashes before executing the consumer, requires a new per-stack audit, then rechecks the bytes and evidence. Both supported stacks remain required.
+The package workflow runs common source/history/secret/type/unit/browser checks, build, pack and dry run once in the baseline job. The other supported stack downloads that job's accepted tarball and run `release:verify-consumer`. It verifies the originating workflow/run/attempt, source and hashes before executing the consumer, requires a new per-stack audit, then rechecks the bytes and evidence. Both supported stacks remain required.
 
 CI candidate artifact names include the stack: `npm-candidate-<sha>-<stack>-attempt-<attempt>`. Stage preparation still runs the complete `release:prepare` in its own run and keeps accepted artifact naming unchanged; it never consumes a package-workflow candidate. `evidence.json.consumerStack` records the selected fixture, launcher, Void version, direct Vite version and expected host Vite. All required stack results must be reviewed before staging.
 
@@ -74,3 +74,5 @@ Transition option is enabled by this experiment.
 ## Actual Cloudflare RC.1 verification
 
 The [2026-10-18 Workers/D1 record](cloudflare-rc1-verification.md) covers the public RC.1 package, actual HTTPS/browser checks, two migrations, redeployment with retained data, and verified deletion after maintainer inspection. It does not extend the production ISR or managed-platform guarantee.
+
+For upstream upgrades, follow the [baseline refresh and re-evaluation procedure](known-limitations.md#updating-the-supported-baseline). Local rejection/follow-up tests use isolated connections because of an unresolved transport limitation; actual HTTPS used normal pooling. Test workarounds do not establish an adapter fix or a production guarantee.

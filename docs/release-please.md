@@ -9,7 +9,7 @@ release-please-action v5.0.0 を commit SHA で固定しています。main へ�
 - `packages/hono-pages/package.json`: `extra-files` の JSON updater が version のみを更新。private / peer ranges / publishConfig は維持。
 - `CHANGELOG.md`: 唯一の正本。package build が同じ内容を package にコピーし、tarball gate が byte単位で照合。package側のコピーは生成物としてGitから除外。
 
-`versioning: prerelease`、`prerelease: true`、`prerelease-type: rc` を設定し、RC番号を更新します。GitHub Releaseもprereleaseとして作成し、tagは `v<version>` です。breaking changeやstable移行では、候補version・互換性・dist-tagの方針を別途確認します。固定の `release-as` は設定しません。
+初回正式版 `0.1.0` に向けて、`versioning: default`、`prerelease: false` に変更し、`prerelease-type` を削除しました。tagは `v<version>`、GitHub Releaseは通常版として作成します。準備PRのマージコミットに `Release-As: 0.1.0` を一度だけ付け、版を指定します。固定の `release-as` は設定せず、manifestやchangelogはbotの集約PRで更新します。
 
 ## main保護とCI
 
@@ -22,7 +22,7 @@ CI失敗時はrelease PRを修正・更新して両チェックを再実行し�
 ## リリースの順序
 
 1. Conventional Commitの変更をmainへマージし、release-pleaseが更新したrelease PRのversion・notes・互換性を確認する。
-2. 必須CIが通過したrelease PRをmaintainerがマージする。release-pleaseがそのmerge commitの `v<version>` tagとGitHub prereleaseを作成する。GitHub Releaseはnpm公開完了の証拠ではない。
+2. 必須CIが通過したrelease PRをmaintainerがマージする。release-pleaseがそのmerge commitの `v<version>` tagとGitHub Releaseを作成する。通常版設定ではprerelease属性はfalseになる。GitHub Releaseはnpm公開完了の証拠ではない。
 3. tagとsourceを確認し、承認済みの候補に限って `NPM_STAGING_ENABLED=true` にし、そのtagの `npm-stage.yml` を手動実行する。
 4. 同じrun/attemptのprepare artifactを確認してnpm-stage environmentを承認する。pnpm / OIDC / provenance / fresh auditの既存gateを通す。
 5. 成功後にrepository gateをfalseへ戻す。npmサイトでownerが最終approveし、公開bytes・next tag・provenance・consumerを検証する。
@@ -31,8 +31,8 @@ release-pleaseからnpm-stageを自動dispatchせず、npmの最終approveも行
 
 [Release Please Action](https://github.com/googleapis/release-please-action)、[manifest設定](https://github.com/googleapis/release-please/blob/main/docs/manifest-releaser.md)
 
-## Approved RC transition (2026-10-17)
+## 正式版への移行（2026-10-18）
 
-Issue #85 selects 0.1.0-rc.0 / next followed by 0.1.0. Config now uses prerelease-type rc. Keep existing version manifests until the bot's consolidated release PR. The integration squash body uses the one-time `Release-As: 0.1.0-rc.0` footer; there is no permanent config release-as override. Review the generated exact version, notes and required CI before merge.
+RC.1の公開物検証と実Workers/D1検証・撤去は完了しました。現行の設定で作成済みのPR #110はRC.2ですが、準備変更のmain反映後にbotが更新する `0.1.0` の差分をレビューします。生成version、同期manifest、changelog、最新headのCIを確認するまでリリースPRをマージしません。過去のRC作成時は `prerelease-type: rc` と一度だけの `Release-As: 0.1.0-rc.0` を使用しました。
 
-For the normal release, set versioning default, prerelease false, remove prerelease-type and request 0.1.0 once. Stage the normal version on next, verify public bytes/consumer, then move latest and align next. Do not point latest at an RC. Preserve all environment/OIDC/provenance/owner approval gates. See [release-contract.md](release-contract.md).
+通常版も最初はnextへstageし、owner Approve後に公開bytes・署名/provenance・consumerを検証してからlatestとnextを0.1.0へ揃えます。RCをlatestへ移しません。environment review、OIDC/provenance、owner承認は維持します。文書・設定の準備では `NPM_STAGING_ENABLED=false` のままです。[公開契約](release-contract.md)と[チェックリスト](release-checklist.md)を参照してください。

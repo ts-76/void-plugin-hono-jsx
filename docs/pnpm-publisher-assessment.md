@@ -6,7 +6,7 @@
 
 現在の参照ソースは [pnpm 12.14.0](https://github.com/pnpm/pnpm/tree/fe4a0c232384289de82be3d502896ca7e070050c)、commit `fe4a0c232384289de82be3d502896ca7e070050c` です。以下の12.11.2の記録は初回の到達経路評価です。更新時はstage/provenance経路の差分と新しいLinux Cargo解決を再確認し、現在承認した7件以外が現れた場合や、既存指摘の内容・版・更新時刻が変わった場合は停止します。
 
-対象は `void-plugin-hono-jsx@0.1.0-alpha.0 / next` の公開 job のみです。開発・ビルド・候補作成・lockfile は npm を使います。公開フラグは無効のままです。repository visibility、Trusted Publisher、owner の最終承認は別途の設定・判断が必要です。
+対象は、このリポジトリの固定tgzを送信するLinux x64 stage jobだけです。RC.1のOIDC/provenance付きstageとowner Approve後の公開物検証は完了しており、[リリース記録](releasing.md#rc1-publication-and-workers-evidence)にまとめています。開発・ビルド・候補作成・lockfileはnpmを使います。正式版候補も毎回fresh auditを行い、準備中は `NPM_STAGING_ENABLED=false` を維持します。下記の初回alphaや旧CLIの記録を、別のコマンド・版・targetの承認として使いません。
 
 ## 2026-10-17: ZIP展開に関する3件の限定受け入れ
 
