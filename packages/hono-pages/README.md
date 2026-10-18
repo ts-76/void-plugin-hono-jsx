@@ -1,6 +1,6 @@
 # Hono JSX adapter for Void Pages
 
-This package integrates Hono JSX with Void Pages. This source prepares the first normal release, 0.1.0. RC.1 is published and verified; 0.1.0 is not public yet. Published alpha.4 has a different compatibility contract. Prereleases use `next`; normal releases move to `latest` after public verification. As checked on 2026-10-18, `next` selects RC.1 and `latest` still selects the historical alpha.1; use RC.1 explicitly or `@next` until normal-release verification and tag promotion. The package is [MIT licensed](LICENSE) and is not an official Void adapter.
+This package integrates Hono JSX with Void Pages. The normal 0.1.x series is published under the [MIT license](LICENSE). Install the default package below; `latest` selects the publicly verified normal release. `next` may select a prerelease during later release cycles. Normal releases are promoted after public artifact/consumer verification. Historical alpha releases have a different compatibility contract. This is not an official Void adapter.
 
 ## Supported versions
 
@@ -13,18 +13,18 @@ This package integrates Hono JSX with Void Pages. This source prepares the first
 | Vite Plus | Host Vite must satisfy the Vite range | 1.3.0 |
 | TypeScript | Project tooling | 7.0.2 |
 
-The published RC.1 and normal-release preparation target Void 1.1 and Node 24 only. Published alpha.4 retains its earlier Void 0.x contract; it does not provide this support change or multipart transport. Old Void/launcher manifests remain historical comparison records, not release-selectable configurations. The two supported Hono-only consumers use Void 1.1.11 with plain Vite 8.3.4 or aligned Vite Plus 1.3.0 (host Vite 8.3.4). Ranges admit stable updates, but only locked fixtures are observed test results. New upstream releases require refreshed fixtures, full checks and audit review; prereleases and other Void minors are excluded.
+The normal 0.1.x series targets Void 1.1 and Node 24 only. Published alpha.4 retains its earlier Void 0.x contract; it does not provide this support change or multipart transport. Old Void/launcher manifests remain historical comparison records, not release-selectable configurations. The two supported Hono-only consumers use Void 1.1.11 with plain Vite 8.3.4 or aligned Vite Plus 1.3.0 (host Vite 8.3.4). Ranges admit stable updates, but only locked fixtures are observed test results. New upstream releases require refreshed fixtures, full checks and audit review; prereleases and other Void minors are excluded.
 
-Alpha.4 introduced the expanded Link/Form APIs, island forms and graphs, deferred contracts, page options and optional Markdown. RC.1 includes the Void 1.1 contract, multipart transport, navigation fallback and deferredResult/use/Suspense support. Use the published RC.1 while 0.1.0 is being prepared; do not combine these instructions with alpha.4.
+The normal 0.1.x series includes the expanded Link/Form APIs, multipart transport, island forms and graphs, deferred contracts with deferredResult/use/Suspense, navigation fallback, page options and optional Markdown. These instructions describe that normal series; historical alpha releases do not provide the same Void 1.1 contract.
 
 ## Install
 
-Use Node 24.21.0 or newer within Node 24:
+Use Node 24.21.0 or newer within Node 24. The unqualified package selects the normal release on `latest`. To reproduce the first normal release, install `void-plugin-hono-jsx@0.1.0`; use `@next` only when deliberately testing the currently approved candidate.
 
-The commands below install the publicly available RC.1. Published alpha.4 does not accept Void 1.1. Local tarballs remain available for source verification. Use Node >=24.21.0 <25.0.0.
+The commands below use the supported Void 1.1 baseline. Local tarballs remain available for source verification.
 
 ```sh
-npm install void-plugin-hono-jsx@0.1.0-rc.1 hono@4.13.13
+npm install void-plugin-hono-jsx hono@4.13.13
 npm install --save-dev void@1.1.11 vite@8.3.4 typescript@7.0.2
 ```
 
@@ -37,7 +37,7 @@ npm install --save-dev void@1.1.11 vite@8.3.4 typescript@7.0.2
 
 ## Configure
 
-`voidHonoJsx()` and `HonoJsxOptions` replace the earlier `voidHonoPages()` and `HonoPagesOptions` names. This is a breaking alpha API change; the old names are not exported. Alpha.3 uses the earlier names; RC.1 exports the new names shown below.
+`voidHonoJsx()` and `HonoJsxOptions` replace the earlier `voidHonoPages()` and `HonoPagesOptions` names. This is a breaking alpha API change; the old names are not exported. Alpha.3 uses the earlier names; the normal 0.1.x series exports the new names shown below.
 
 ```ts
 // vite.config.ts
@@ -56,7 +56,7 @@ Use `jsx: "react-jsx"` and `jsxImportSource: "hono/jsx"` in TypeScript. The plug
 
 The config hook reads `this.meta.viteVersion` from the Vite instance executing the hook. Resolving `vite/package.json` from the adapter or project is not evidence of the running host. The adapter also checks the actual Vite helper module it imports. Errors include the host version, helper version, and absolute adapter/project package.json paths; different pnpm peer copies therefore remain visible.
 
-Bundled launchers such as `vp dev` can execute another Vite even when a direct npm `vite` is installed. The supported Vite Plus 1.3.0 configuration aliases `vite` to `npm:@voidzero-dev/vite-plus-core@1.3.0` and uses `overrides: { vite: "$vite" }` to keep helper and host peers aligned. The real config-hook host is Vite 8.3.4. Plain Vite 8.3.4 is independently exercised. Installing npm Vite alone does not change a bundled host; diagnostics identify launcher and helper peer paths separately. Historical 0.x scaffold settings are outside RC support. The alias aligns the launcher; it is not a vulnerability override.
+Bundled launchers such as `vp dev` can execute another Vite even when a direct npm `vite` is installed. The supported Vite Plus 1.3.0 configuration aliases `vite` to `npm:@voidzero-dev/vite-plus-core@1.3.0` and uses `overrides: { vite: "$vite" }` to keep helper and host peers aligned. The real config-hook host is Vite 8.3.4. Plain Vite 8.3.4 is independently exercised. Installing npm Vite alone does not change a bundled host; diagnostics identify launcher and helper peer paths separately. Historical 0.x scaffold settings are outside the normal 0.1.x support policy. The alias aligns the launcher; it is not a vulnerability override.
 
 If the project version is already correct, inspect the paths in the diagnostic and refresh stale adapter peer resolutions/lockfiles. Do not infer the host identity from the project dependency alone. Missing hook version information fails closed. [Vite plugin context metadata](https://vite.dev/guide/api-plugin.html#plugin-context-meta)
 
@@ -171,7 +171,7 @@ The `load`, `visible`, `idle` and `media:(query)` policies use Void's shared sch
 
 ## Optional Markdown
 
-For this source and its Void 1.1 baseline, use the published RC.1 or a local tarball. Published alpha.4 has the Markdown exports but retains its earlier Void 0.x contract; alpha.3 predates this API. Add parser peers explicitly only when using Markdown:
+Optional Markdown is included in the normal 0.1.x series on the Void 1.1 baseline. Add parser peers explicitly only when using Markdown:
 
 ```sh
 npm install markdown-exit@1.3.0 yaml@2.9.1
@@ -206,7 +206,7 @@ The advisory concerns esbuild's own development server. The adapter uses Vite/Ox
 
 The package adds no overrides and does not force changes to Void's internal dependencies. Consumers install the framework peers and their dependencies even though this archive contains no dependency implementation. Follow compatible upstream fixes; a peer upgrade requires renewed validation. New unreviewed advisories continue to block release preparation policy.
 
-The historical scaffold Vite Plus 0.1.24 brings unapproved tinypool Critical findings. It is outside the RC support range; use the tested Vite Plus 1.3.0/core alias or plain Vite 8.3.4. Old functional CI success does not accept those findings. See the repository `docs/scaffold-compatibility.md` for historical evidence.
+The historical scaffold Vite Plus 0.1.24 brings unapproved tinypool Critical findings. It is outside the normal 0.1.x support policy; use the tested Vite Plus 1.3.0/core alias or plain Vite 8.3.4. Old functional CI success does not accept those findings. See the repository `docs/scaffold-compatibility.md` for historical evidence.
 
 ## Verification
 
@@ -232,9 +232,9 @@ The fixture binds local `ISR_CACHE` storage for Void production preview. Real de
 
 On the tested macOS Void/Miniflare development runtime, a POST to an undefined named action can reset the next request on a reused connection. Declared-action browser behavior is verified; this transport edge case remains unresolved upstream. Managed runtime behavior for the edge case is unverified. On the RC.1 D1 fixture, an oversized-body rejection followed by another pooled request also failed locally; consuming the response body did not prevent it. Local negative checks isolate connections as a test workaround, not a repair. On 2026-10-18, direct Cloudflare HTTPS with RC.1 passed rejection/undefined-action requests followed by healthy GETs through the normal pool, without retries or Connection: close. That does not prove every environment or a forced single TCP socket. The [dated Workers record](https://github.com/ts-76/void-plugin-hono-jsx/blob/main/docs/cloudflare-rc1-verification.md) and [limitations ledger](https://github.com/ts-76/void-plugin-hono-jsx/blob/main/docs/known-limitations.md) separate observed behavior from remaining upstream diagnosis.
 
-## RC and normal-release policy
+## Normal-release policy
 
-RC.1 public bytes/signatures/provenance and registry consumers have been verified. Its direct Workers/D1 migration, redeployment and cleanup exercise is complete. The next target is 0.1.0 with a normal GitHub Release; that version still requires its own final candidate CI/audits, stage, owner approval and public verification before latest/next promotion. Production ISR remains outside the initial guarantee. Patches in 0.1.x preserve documented APIs; breaking changes move to 0.2.0 or later. Read the [release contract](https://github.com/ts-76/void-plugin-hono-jsx/blob/main/docs/release-contract.md) and [security policy](https://github.com/ts-76/void-plugin-hono-jsx/blob/main/SECURITY.md). Report vulnerabilities [privately](https://github.com/ts-76/void-plugin-hono-jsx/security/advisories/new).
+The first normal release, 0.1.0, passed public bytes/signatures/provenance verification and both registry-installed consumers; latest and next were aligned to it on 2026-10-18. The [dated publication record](https://github.com/ts-76/void-plugin-hono-jsx/blob/main/docs/releasing.md#010-publication-and-tag-verification) identifies the exact archive and checks. Each subsequent candidate needs fresh CI/audits, stage, owner approval and public verification before normal-release tag promotion. The actual Workers/D1 migration, redeployment and cleanup exercise used RC.1; production ISR remains outside the initial guarantee. Patches in 0.1.x preserve documented APIs; breaking changes move to 0.2.0 or later. Read the [release contract](https://github.com/ts-76/void-plugin-hono-jsx/blob/main/docs/release-contract.md) and [security policy](https://github.com/ts-76/void-plugin-hono-jsx/blob/main/SECURITY.md). Report vulnerabilities [privately](https://github.com/ts-76/void-plugin-hono-jsx/security/advisories/new).
 
 
 ### Common navigation fallback (included in RC.1)

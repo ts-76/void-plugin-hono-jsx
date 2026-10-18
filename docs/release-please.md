@@ -9,7 +9,7 @@ release-please-action v5.0.0 を commit SHA で固定しています。main へ�
 - `packages/hono-pages/package.json`: `extra-files` の JSON updater が version のみを更新。private / peer ranges / publishConfig は維持。
 - `CHANGELOG.md`: 唯一の正本。package build が同じ内容を package にコピーし、tarball gate が byte単位で照合。package側のコピーは生成物としてGitから除外。
 
-初回正式版 `0.1.0` に向けて、`versioning: default`、`prerelease: false` に変更し、`prerelease-type` を削除しました。tagは `v<version>`、GitHub Releaseは通常版として作成します。準備PRのマージコミットに `Release-As: 0.1.0` を一度だけ付け、版を指定します。固定の `release-as` は設定せず、manifestやchangelogはbotの集約PRで更新します。
+正式版は `versioning: default`、`prerelease: false` を使い、`prerelease-type` と固定の `release-as` は設定しません。tagは `v<version>`、GitHub Releaseは通常版として作成します。初回の `Release-As: 0.1.0` はPR #110で反映済みです。今後の修正・文書変更は通常のパッチ版として集約し、manifestやchangelogはbotが更新します。
 
 ## main保護とCI
 
@@ -25,14 +25,15 @@ CI失敗時はrelease PRを修正・更新して両チェックを再実行し�
 2. 必須CIが通過したrelease PRをmaintainerがマージする。release-pleaseがそのmerge commitの `v<version>` tagとGitHub Releaseを作成する。通常版設定ではprerelease属性はfalseになる。GitHub Releaseはnpm公開完了の証拠ではない。
 3. tagとsourceを確認し、承認済みの候補に限って `NPM_STAGING_ENABLED=true` にし、そのtagの `npm-stage.yml` を手動実行する。
 4. 同じrun/attemptのprepare artifactを確認してnpm-stage environmentを承認する。pnpm / OIDC / provenance / fresh auditの既存gateを通す。
-5. 成功後にrepository gateをfalseへ戻す。npmサイトでownerが最終approveし、公開bytes・next tag・provenance・consumerを検証する。
+5. 成功後にrepository gateをfalseへ戻す。npmサイトでownerが最終approveし、公開bytes・next tag・署名/provenance・consumerを検証する。
+6. 公開物の検証後、承認された通常版にlatestとnextを揃える。dist-tag変更にはownerのwrite認証と追加2FAが必要になる。RCはnextだけを更新する。
 
 release-pleaseからnpm-stageを自動dispatchせず、npmの最終approveも行いません。依存監査・publisher監査・source/history検査・environment reviewを維持します。送信bundleの承認前検証は引き続き別の取得・保持経路が必要です。[既存の公開手順](releasing.md)、[初回の実検証](stage-validation-result.md)
 
 [Release Please Action](https://github.com/googleapis/release-please-action)、[manifest設定](https://github.com/googleapis/release-please/blob/main/docs/manifest-releaser.md)
 
-## 正式版への移行（2026-10-18）
+## 初回正式版の完了と次のパッチ版（2026-10-18）
 
-RC.1の公開物検証と実Workers/D1検証・撤去は完了しました。現行の設定で作成済みのPR #110はRC.2ですが、準備変更のmain反映後にbotが更新する `0.1.0` の差分をレビューします。生成version、同期manifest、changelog、最新headのCIを確認するまでリリースPRをマージしません。過去のRC作成時は `prerelease-type: rc` と一度だけの `Release-As: 0.1.0-rc.0` を使用しました。
+PR #110は `0.1.0` としてマージ済みです。通常のGitHub Release、OIDC/provenance付きstage、npm ownerのApprove、公開物・両registry consumerの検証、latest/next=0.1.0への整合まで完了しました。[公開記録](releasing.md#010-publication-and-tag-verification)を参照してください。実Workers/D1検証・撤去はRC.1で実施した記録です。
 
-通常版も最初はnextへstageし、owner Approve後に公開bytes・署名/provenance・consumerを検証してからlatestとnextを0.1.0へ揃えます。RCをlatestへ移しません。environment review、OIDC/provenance、owner承認は維持します。文書・設定の準備では `NPM_STAGING_ENABLED=false` のままです。[公開契約](release-contract.md)と[チェックリスト](release-checklist.md)を参照してください。
+Issue #59のREADME・公開案内の訂正は、公開済み0.1.0を上書きせず、次のパッチ版に含めます。文書PRをCI確認後にマージし、botが作る次のリリースPRでversion・notes・同梱READMEとCIを確認します。この準備ではリリースPRのマージやstageを行いません。通常版も最初はnextへstageし、公開物検証後にlatestとnextを同じ版へ揃える手順を維持します。`NPM_STAGING_ENABLED=false` のまま、[公開契約](release-contract.md)と[チェックリスト](release-checklist.md)に沿って進めます。
