@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.0](https://github.com/ts-76/void-plugin-hono-jsx/compare/v0.1.0-rc.1...v0.1.0) (2026-10-18)
+
+
+### Documentation
+
+* prepare grouped 0.1.0 normal release ([3d1c3b8](https://github.com/ts-76/void-plugin-hono-jsx/commit/3d1c3b8a323103bcd78ed2716f4d4ecaa5dcf6dd))
+* record RC.1 Workers verification and cleanup ([#109](https://github.com/ts-76/void-plugin-hono-jsx/issues/109)) ([54c0441](https://github.com/ts-76/void-plugin-hono-jsx/commit/54c0441a1d70fee55cad36a41f30f3308048e1f2))
+
 ## [0.1.0-rc.1](https://github.com/ts-76/void-plugin-hono-jsx/compare/v0.1.0-rc.0...v0.1.0-rc.1) (2026-10-17)
 
 
