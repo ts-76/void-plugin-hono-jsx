@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.2.0](https://github.com/ts-76/void-plugin-hono-jsx/compare/v0.1.0...v0.2.0) (2026-10-18)
+
+
+### ⚠ BREAKING CHANGES
+
+* Markdown projects must add markdown-it-container, shiki and @shikijs/transformers peers. Fenced code now includes copy controls and a page-local module by default, matching the official framework plugins. See docs/markdown.md for migration.
+
+### Features
+
+* align Hono Markdown code and themes with official plugins ([#114](https://github.com/ts-76/void-plugin-hono-jsx/issues/114)) ([757ec0c](https://github.com/ts-76/void-plugin-hono-jsx/commit/757ec0cf66192ad6e464585ed9428a2b7309218c))
+
+
+### Bug Fixes
+
+* align published release docs and dry-run validation ([#112](https://github.com/ts-76/void-plugin-hono-jsx/issues/112)) ([96d242c](https://github.com/ts-76/void-plugin-hono-jsx/commit/96d242c771c76c3eddbd73c040327a18acb36930))
+
 ## [0.1.0](https://github.com/ts-76/void-plugin-hono-jsx/compare/v0.1.0-rc.1...v0.1.0) (2026-10-18)
 
 
