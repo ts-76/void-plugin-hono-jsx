@@ -2,7 +2,7 @@ import { readFileSync, realpathSync } from 'node:fs';
 import { join, relative, resolve, dirname, basename } from 'node:path';
 import { normalizePath, parseSync, type Plugin } from 'vite';
 import { scanPages, resolveEffectiveLayoutChain, resolvePagesDir, type PageScanResult } from 'void/pages';
-import { findIslandImports, editIslandSource, computePagesNeedingClientJS, ISLANDS_RENDERER_ID, ISLANDS_CLIENT_ENTRY_ID } from 'void/pages-islands-plugin';
+import { findIslandImports, findStaticCssImports, rewriteCssImportForVirtualModule, editIslandSource, computePagesNeedingClientJS, ISLANDS_RENDERER_ID, ISLANDS_CLIENT_ENTRY_ID } from 'void/pages-islands-plugin';
 
 import { resolveComponent } from './resolve-component.ts';
 
@@ -15,6 +15,7 @@ export function honoIslands(): Plugin {
   const islands = new Map<string, string>();
   const pageFiles = new Set<string>();
   let dependencyFiles = new Set<string>();
+  let cssImports: string[] = [];
   const graph = new Map<string, Set<string>>();
   const directlyInteractive = new Set<string>();
   const interactivePages = new Set<string>();
@@ -123,6 +124,10 @@ export function honoIslands(): Plugin {
     for (const page of scan.pages.filter((page) => !page.island)) {
       for (const file of [page.componentPath, ...resolveEffectiveLayoutChain(page, scan.layouts, scan.namedLayouts).map((layout) => layout.filePath)]) validateInteractive(join(pagesDir, file));
     }
+    // Match the official adapters: retain static-layout CSS in the client build
+    // even when the document itself needs no client-side JavaScript. Reuse the
+    // analysis snapshot rather than rereading modules during entry generation.
+    cssImports = [...new Set([...pageFiles].flatMap(file => findStaticCssImports(analyses.get(file)!.code, file).map(item => rewriteCssImportForVirtualModule(item.statement, item.specifier, file))))];
     dependencyFiles = watched;
     const needsJS = new Set(directlyInteractive);
     let changed = true;
@@ -210,9 +215,12 @@ export function renderIslandPage(page, assets) {
 }`;
       }
       if (id === `\0${ISLANDS_CLIENT_ENTRY_ID}`) {
-        if (!islands.size || !interactivePages.size) return 'export {};';
+        // Void owns dev first-paint CSS. Production needs the static imports
+        // so its shared manifest asset collector can emit stylesheet links.
+        const styles = this.environment?.mode === 'dev' ? '' : cssImports.join('\n');
+        if (!islands.size || !interactivePages.size) return styles || 'export {};';
         const loaders = [...islands].map(([name, path]) => `${JSON.stringify(name)}: () => import(${JSON.stringify(path)})`).join(',\n');
-        return `${markdown ? "import { MarkdownContext } from 'void-plugin-hono-jsx/markdown';" : ''}
+        return `${styles}\n${markdown ? "import { MarkdownContext } from 'void-plugin-hono-jsx/markdown';" : ''}
 import { initIslands } from 'void/pages-client';
 import { jsx } from 'hono/jsx/dom/jsx-runtime';
 import { render } from 'hono/jsx/dom';

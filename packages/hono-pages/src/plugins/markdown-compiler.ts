@@ -1,4 +1,5 @@
 import MarkdownExit from 'markdown-exit';
+import { configureMarkdownFeatures, type HonoMarkdownOptions } from './markdown-features.ts';
 import { parseSync } from 'vite';
 import { parseDocument } from 'yaml';
 import { findIslandImports, editIslandSource } from 'void/pages-islands-plugin';
@@ -18,38 +19,53 @@ export function extractMarkdown(source: string) {
   return { body, script, imports, graphSource, clientCode };
 }
 
-export function compileMarkdown(source: string) {
-  const extracted = extractMarkdown(source);
-  const match = extracted.body.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/);
-  let frontmatter: Record<string, unknown> = {};
-  if (match) {
-    const yaml = parseDocument(match[1], { uniqueKeys: true });
-    if (yaml.errors.length) throw new Error('Hono Markdown: invalid frontmatter: ' + yaml.errors.map(error => error.message).join('; '));
-    const value: unknown = yaml.toJS({ maxAliasCount: 50 });
-    if (value !== null && (typeof value !== 'object' || Array.isArray(value))) throw new Error('Hono Markdown: frontmatter must be a mapping.');
-    frontmatter = (value ?? {}) as Record<string, unknown>;
-    try { JSON.stringify(frontmatter); } catch { throw new Error('Hono Markdown: frontmatter must be JSON serializable.'); }
-  }
-  const content = match ? extracted.body.slice(match[0].length) : extracted.body;
+export function createMarkdownCompiler(options: HonoMarkdownOptions = {}) {
   const compiler = new MarkdownExit({ html: true, linkify: true });
-  const tokens = compiler.parse(content, {});
-  const headings: Heading[] = [];
-  const slugs = new Map<string, number>();
-  const authoredHtml = tokens.flatMap(token => token.type === 'html_block' || token.type === 'html_inline' ? [token.content] : (token.children ?? []).filter(child => child.type === 'html_inline').map(child => child.content)).join('\n');
-  const usedIds = new Set([...authoredHtml.matchAll(/\bid\s*=\s*(?:"([^"]*)"|'([^']*)')/g)].map(match => match[1] ?? match[2]));
-  for (let index = 0; index < tokens.length; index++) {
-    if (tokens[index].type !== 'heading_open') continue;
-    const inline = tokens[index + 1];
-    const text = inline.children?.map(token => token.type === 'text' || token.type === 'code_inline' ? token.content : token.type === 'image' ? token.content : '').join('') ?? inline.content;
-    const base = text.toLowerCase().replace(/[^\p{L}\p{N} _-]/gu, '').trim().replace(/\s+/g, '-') || 'heading';
-    let count = slugs.get(base) ?? 0;
-    let slug = count ? `${base}-${count}` : base;
-    while (usedIds.has(slug)) { count++; slug = `${base}-${count}`; }
-    slugs.set(base, count + 1); usedIds.add(slug);
-    tokens[index].attrSet('id', slug);
-    headings.push({ depth: Number(tokens[index].tag.slice(1)), slug, text });
+  configureMarkdownFeatures(compiler, options);
+  function parse(source: string) {
+    const extracted = extractMarkdown(source);
+    const match = extracted.body.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/);
+    let frontmatter: Record<string, unknown> = {};
+    if (match) {
+      const yaml = parseDocument(match[1], { uniqueKeys: true });
+      if (yaml.errors.length) throw new Error('Hono Markdown: invalid frontmatter: ' + yaml.errors.map(error => error.message).join('; '));
+      const value: unknown = yaml.toJS({ maxAliasCount: 50 });
+      if (value !== null && (typeof value !== 'object' || Array.isArray(value))) throw new Error('Hono Markdown: frontmatter must be a mapping.');
+      frontmatter = (value ?? {}) as Record<string, unknown>;
+      try { JSON.stringify(frontmatter); } catch { throw new Error('Hono Markdown: frontmatter must be JSON serializable.'); }
+    }
+    const content = match ? extracted.body.slice(match[0].length) : extracted.body;
+    const env: Record<string, unknown> = {};
+    const tokens = compiler.parse(content, env);
+    const headings: Heading[] = [];
+    const slugs = new Map<string, number>();
+    const authoredHtml = tokens.flatMap(token => token.type === 'html_block' || token.type === 'html_inline' ? [token.content] : (token.children ?? []).filter(child => child.type === 'html_inline').map(child => child.content)).join('\n');
+    const usedIds = new Set([...authoredHtml.matchAll(/\bid\s*=\s*(?:"([^"]*)"|'([^']*)')/g)].map(match => match[1] ?? match[2]));
+    for (let index = 0; index < tokens.length; index++) {
+      if (tokens[index].type !== 'heading_open') continue;
+      const inline = tokens[index + 1];
+      const text = inline.children?.map(token => token.type === 'text' || token.type === 'code_inline' ? token.content : token.type === 'image' ? token.content : '').join('') ?? inline.content;
+      const base = text.toLowerCase().replace(/[^\p{L}\p{N} _-]/gu, '').trim().replace(/\s+/g, '-') || 'heading';
+      let count = slugs.get(base) ?? 0;
+      let slug = count ? `${base}-${count}` : base;
+      while (usedIds.has(slug)) { count++; slug = `${base}-${count}`; }
+      slugs.set(base, count + 1); usedIds.add(slug);
+      tokens[index].attrSet('id', slug);
+      headings.push({ depth: Number(tokens[index].tag.slice(1)), slug, text });
+    }
+    return { ...extracted, source, frontmatter, headings, tokens, env, hasCode: tokens.some(token => token.type === 'fence') };
   }
-  return { ...extracted, frontmatter, headings, html: compiler.renderer.render(tokens, compiler.options, {}) };
+
+  async function render(parsed: ReturnType<typeof parse>) {
+    const { tokens, env, ...result } = parsed;
+    return { ...result, html: await compiler.renderer.renderAsync(tokens, compiler.options, env) };
+  }
+  return { parse, render };
+}
+
+export async function compileMarkdown(source: string, options: HonoMarkdownOptions = {}) {
+  const compiler = createMarkdownCompiler(options);
+  return compiler.render(compiler.parse(source));
 }
 
 // Component tag splitting follows @void/md 0.27.0's emit-shared convention.

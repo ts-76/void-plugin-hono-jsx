@@ -35,9 +35,23 @@ layout: "!markdown"
 
 </div>
 
+## コンテナと折りたたみ
+
+::: tip 公式と同じ記法
+**tip / info / warning / danger / details** の記法とテーマを使えます。
+:::
+
+::: warning 注意事項
+MarkdownのHTMLは、管理下の信頼できる原稿を想定しています。
+:::
+
+::: details 設定例を見る
+Vite設定の `voidHonoMarkdown()` で、公式と同じ `shiki.themes` を指定できます。
+:::
+
 ## コードブロック
 
-Markdownには、以下のように部品を配置しています。
+コードはビルド時に構文強調します。右上のコピーを押すとコードだけをコピーできます。Markdownには、以下のように部品を配置しています。
 
 ```html
 <Counter name="markdown-first" label="カウンター A" initial="4" />

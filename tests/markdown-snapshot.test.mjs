@@ -79,3 +79,31 @@ test('failed extraction keeps a complete old snapshot and recovers without leaki
     assert.match(second.md.api.getClientScripts().get('index'), /window.second/);
   } finally { second?.cleanup(); first.cleanup(); }
 });
+
+test('fenced code adds only a page-local copy module and removing it restores a zero-script snapshot', () => {
+  const f=fixture();
+  try {
+    const file=join(f.root,'pages/index.md'); fs.writeFileSync(file,'# Static'); f.configure();
+    assert.equal(f.md.api.getClientScripts().size,0);
+    fs.writeFileSync(file,'# Code\n\n```js\nconst value = 1\n```'); f.md.api.refresh();
+    assert.match(f.md.api.getClientScripts().get('index'), /virtual:void-hono-markdown-copy/);
+    fs.writeFileSync(file,'# Static with `inline code`'); f.md.api.refresh();
+    assert.equal(f.md.api.getClientScripts().size,0);
+  } finally { f.cleanup(); }
+});
+
+test('static layout CSS reaches production assets without adding a JS runtime or dev CSS injection', async () => {
+  const f=fixture();
+  try {
+    fs.writeFileSync(join(f.root,'pages/index.island.tsx'),'export default function Page() { return <p>Static</p>; }');
+    fs.writeFileSync(join(f.root,'pages/layout.island.tsx'), 'import "./layout.css"; export default function Layout({children}) { return <main>{children}</main>; }');
+    fs.writeFileSync(join(f.root,'pages/layout.css'),'.scoped { color: red; }');
+    f.configure();const islands=honoIslands();islands.configResolved({plugins:[f.md]});await islands.buildStart();
+    const id=islands.resolveId('virtual:void-islands-client');
+    const built=islands.load.call({environment:{mode:'build'}},id);
+    assert.match(built,/import .*layout\.css/);assert.doesNotMatch(built,/initIslands|hono\/jsx/);
+    assert.equal(islands.load.call({environment:{mode:'dev'}},id),'export {};');
+    const renderer=islands.load(islands.resolveId('virtual:void-islands-renderer'));
+    assert.match(renderer,/preloads: '', body: ''/);assert.doesNotMatch(renderer,/css: ''/);
+  } finally { f.cleanup(); }
+});

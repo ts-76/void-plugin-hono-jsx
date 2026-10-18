@@ -30,7 +30,7 @@ export async function checkMarkdownConsumer({ repo, consumer: original, browser,
   npm(['ci', '--no-audit', '--no-fund']);
   npm(['install', '--no-save', '--package-lock=false', '--no-audit', '--no-fund', tarball]);
   const optionalReport = dependencyAudit({ npmCli, cwd: consumer, env, output: join(consumer, 'markdown-audit.json') });
-  for (const name of ['markdown-exit', 'yaml', 'entities', 'linkify-it', 'mdurl', 'punycode.js', 'uc.micro']) assert.equal(optionalReport.vulnerabilities[name], undefined, `New parser advisory: ${name}`);
+  for (const name of ['markdown-exit', 'yaml', 'shiki', '@shikijs/transformers', 'markdown-it-container', 'entities', 'linkify-it', 'mdurl', 'punycode.js', 'uc.micro']) assert.equal(optionalReport.vulnerabilities[name], undefined, `New parser advisory: ${name}`);
   if (originalEnv.RELEASE_CONSUMER_AUDIT) await cp(join(consumer, 'markdown-audit.json'), originalEnv.RELEASE_CONSUMER_AUDIT.replace(/\.json$/, '-markdown.json'));
   execFileSync(process.execPath, ['node_modules/void/dist/cli/cli.mjs', 'prepare'], { cwd: consumer, env, stdio: 'inherit' });
   execFileSync(process.execPath, ['node_modules/typescript/bin/tsc', '--noEmit'], { cwd: consumer, env, stdio: 'inherit' });
@@ -152,12 +152,67 @@ export async function checkMarkdownConsumer({ repo, consumer: original, browser,
       console.log(`Markdown ${mode}: SSR/loader/head, layouts/frontmatter, independent islands/context, native TSX roundtrip, page scripts/zero-script pages and scheduling passed.`);
     } finally { await page.close(); }
   }
-  await withServer('development', checkPages);
-  build(); await withServer('preview', checkPages);
+  async function checkFeatures(origin, mode) {
+    const context = await browser.newContext({ permissions: ['clipboard-read', 'clipboard-write'] });
+    const page = await context.newPage(); const errors = []; const scripts = [];
+    page.on('pageerror', error => errors.push(error.message));
+    page.on('request', request => { if (request.resourceType() === 'script') scripts.push(request.url()); });
+    try {
+      await page.goto(origin + '/docs/features');
+      await page.locator('.language-ts > button.copy').waitFor();
+      assert.equal(await page.locator('.custom-block').count(), 5);
+      assert.equal(await page.locator('.tip .custom-block-title strong').textContent(), 'Helpful title');
+      const details = page.locator('details.custom-block');
+      assert.equal(await details.evaluate(element => element.open), false);
+      await details.locator('summary').click(); assert.equal(await details.evaluate(element => element.open), true);
+      assert.equal(await page.evaluate(() => window.markdownInjected), undefined);
+      assert.match(await page.locator('.language-unknown-language code').textContent(), /<script>window.markdownInjected = true<\/script>/);
+      assert.equal(await page.locator('.language-unknown-language [data-island]').count(), 0);
+      assert.equal(await page.locator('.line-number').first().textContent(), '5');
+      const button = page.locator('.language-ts > button.copy');
+      await button.focus(); await page.keyboard.press('Enter');
+      await page.waitForFunction(() => document.querySelector('.language-ts > button.copy')?.classList.contains('copied'));
+      assert.equal(await page.evaluate(() => navigator.clipboard.readText()), 'const after = 2');
+      await page.evaluate(() => { document.documentElement.dataset.theme = 'light'; const outside = document.createElement('p'); outside.id='outside-theme'; outside.textContent='Outside';  document.body.append(outside); });
+      const scope = await page.evaluate(() => {
+        const element = document.getElementById('outside-theme');
+        const measure = () => { const style=getComputedStyle(element); return [style.color,style.backgroundColor,style.fontFamily,style.fontSize,style.lineHeight,style.marginTop,style.borderTopWidth]; };
+        const enabled=measure();const sheets=Array.from(document.styleSheets);const states=sheets.map(sheet=>sheet.disabled);
+        sheets.forEach(sheet=>{sheet.disabled=true;});const disabled=measure();sheets.forEach((sheet,index)=>{sheet.disabled=states[index];});
+        return {enabled,disabled};
+      });
+      assert.deepEqual(scope.enabled, scope.disabled, 'content-only CSS must not restyle outside content');
+      const token = page.locator('.language-ts .line span[style]').first();
+      const light = await token.evaluate(element => getComputedStyle(element).color);
+      await page.evaluate(() => { document.documentElement.dataset.theme = 'dark'; });
+      assert.notEqual(await token.evaluate(element => getComputedStyle(element).color), light);
+      assert.equal(await page.locator('#outside-theme').evaluate(element => getComputedStyle(element).color), scope.enabled[0]);
+      await page.emulateMedia({ colorScheme: 'dark' });
+      await page.evaluate(() => { document.documentElement.dataset.theme = 'light'; });
+      assert.equal(await token.evaluate(element => getComputedStyle(element).color), light, 'explicit light overrides system dark');
+      await page.evaluate(() => { delete document.documentElement.dataset.theme; });
+      assert.notEqual(await token.evaluate(element => getComputedStyle(element).color), light, 'auto follows system dark');
+      for (const width of [1280, 390]) { await page.setViewportSize({ width, height: 900 }); assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), `Markdown overflow at ${width}`); }
+      await page.evaluate(() => Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async () => { throw new Error('denied'); } } }));
+      await button.click();
+      await page.waitForFunction(() => document.querySelector('.language-ts > button.copy')?.classList.contains('copy-error'));
+      assert.equal(await button.getAttribute('aria-label'), 'Copy failed');
+      await page.evaluate(() => Object.defineProperty(navigator, 'clipboard', { configurable: true, value: undefined }));
+      const unavailable = page.locator('.language-unknown-language > button.copy'); await unavailable.click();
+      assert.equal(await unavailable.getAttribute('aria-label'), 'Copy failed');
+      assert.ok(scripts.length > 0);
+      assert.ok(scripts.every(url => !/void-islands-client|islands-client-/.test(url)), 'copy-only documents must not load the island scheduler');
+      assert.deepEqual(errors, []);
+      console.log(`Markdown ${mode}: official containers, Shiki/notation, clipboard success/failure, scoped light/dark theme and mobile width passed.`);
+    } finally { await context.close(); }
+  }
+
+  await withServer('development', async (origin, mode) => { await checkPages(origin, mode); await checkFeatures(origin, mode); });
+  build(); await withServer('preview', async (origin, mode) => { await checkPages(origin, mode); await checkFeatures(origin, mode); });
   await writeFile(join(consumer, 'void.config.ts'), "import { defineConfig } from 'void/config'; export default defineConfig({ output: 'static', cloudflare: { name: 'hono-markdown-static' }, head: { link: [{ rel: 'icon', href: 'data:,' }] } });");
   build();
   const output = join(consumer, 'dist/client');
-  for (const file of ['docs/plain.html', 'docs/interactive.html', 'docs/named.html', 'docs/script-only.html', 'policies.html']) await access(join(output, file));
+  for (const file of ['docs/plain.html', 'docs/interactive.html', 'docs/named.html', 'docs/script-only.html', 'docs/features.html', 'policies.html']) await access(join(output, file));
   const plain = await readFile(join(output, 'docs/plain.html'), 'utf8');
   assert.doesNotMatch(plain, /<script[^>]+src=|rel="modulepreload"/); assert.match(plain, /Plain &lt;\/script&gt; Markdown/);
   // Browser validation below is served by files only, without a worker.
@@ -169,9 +224,9 @@ export async function checkMarkdownConsumer({ repo, consumer: original, browser,
     catch { response.writeHead(404).end(); }
   });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
-  try { await checkPages(`http://127.0.0.1:${server.address().port}`, 'static'); }
+  try { const origin = `http://127.0.0.1:${server.address().port}`; await checkPages(origin, 'static'); await checkFeatures(origin, 'static'); }
   finally { await new Promise(resolve => server.close(resolve)); }
   const assets = await readdir(join(output, 'assets'));
-  for (const file of assets.filter(file => file.endsWith('.js'))) assert.doesNotMatch(await readFile(join(output, 'assets', file), 'utf8'), /Plain &lt;|No browser JavaScript|require\(["']yaml|markdown-exit/);
+  for (const file of assets.filter(file => file.endsWith('.js'))) assert.doesNotMatch(await readFile(join(output, 'assets', file), 'utf8'), /Plain &lt;|No browser JavaScript|require\(["']yaml|markdown-exit|createHighlighter|vscode-textmate|markdown-it-container/);
   console.log(`Optional Markdown consumer ${stack.name}, Void ${stack.void}, ${stack.launcher} host ${stack.hostVite}: packed artifact, pinned parsers, dev/build/preview/static and parser audit passed.`);
 }

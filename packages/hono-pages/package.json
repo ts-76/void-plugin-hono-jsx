@@ -36,6 +36,12 @@
     "./markdown": {
       "types": "./dist/server/markdown.d.ts",
       "default": "./dist/server/markdown.js"
+    },
+    "./theme.css": {
+      "default": "./dist/theme/index.css"
+    },
+    "./theme-content.css": {
+      "default": "./dist/theme/content.css"
     }
   },
   "peerDependencies": {
@@ -43,7 +49,10 @@
     "void": ">=1.1.11 <1.2.0",
     "vite": ">=8.0.16 <9.0.0",
     "markdown-exit": ">=1.3.0 <2.0.0",
-    "yaml": ">=2.9.1 <3.0.0"
+    "yaml": ">=2.9.1 <3.0.0",
+    "markdown-it-container": ">=4.0.0 <5.0.0",
+    "shiki": ">=4.5.0 <5.0.0",
+    "@shikijs/transformers": ">=4.5.0 <5.0.0"
   },
   "repository": {
     "type": "git",
@@ -71,6 +80,15 @@
       "optional": true
     },
     "yaml": {
+      "optional": true
+    },
+    "markdown-it-container": {
+      "optional": true
+    },
+    "shiki": {
+      "optional": true
+    },
+    "@shikijs/transformers": {
       "optional": true
     }
   }

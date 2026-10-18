@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { readFile, rm, writeFile } from 'node:fs/promises';
+import { cp, readFile, rm, writeFile } from 'node:fs/promises';
 import { rewritePagesImport } from './rewrite-package-import.mjs';
 
 await rm('packages/hono-pages/dist', { recursive: true, force: true });
@@ -18,3 +18,6 @@ for (const target of ['server/form', 'browser/form', 'browser/client']) {
   await writeFile(file, edited.code);
   await writeFile(file + '.map', JSON.stringify(edited.map) + '\n');
 }
+
+// Public theme entries mirror @void/md; keep original CSS in the debug source.
+await cp('packages/hono-pages/src/theme', 'packages/hono-pages/dist/theme', { recursive: true });

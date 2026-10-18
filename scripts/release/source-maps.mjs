@@ -5,7 +5,7 @@ import path from 'node:path';
 export function inspectSourceMaps(contents) {
   const files = [...contents.keys()];
   assert.ok(files.some(file => file.startsWith('src/')), 'Package source files missing');
-  for (const file of files.filter(file => file.startsWith('dist/') && !file.endsWith('.map'))) {
+  for (const file of files.filter(file => file.startsWith('dist/') && !file.endsWith('.map') && !file.endsWith('.css'))) {
     const mapFile = file + '.map';
     assert.ok(contents.has(mapFile), `Missing map: ${mapFile}`);
     const code = contents.get(file);

@@ -2,7 +2,8 @@ import { releaseFixture as fixture } from './release-fixture.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { writeFileSync, readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { mkdirSync, writeFileSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { createPlan, inspectArtifact, inspectTarball, metadataBlockers, sha256, stageArguments } from '../scripts/release/gate.mjs';
 
@@ -98,5 +99,28 @@ test('RC and normal-release tags cannot silently target the wrong installation c
       if (accepted) assert.deepEqual(blockers, []);
       assert.ok(metadataBlockers(pkg, { ...base, distTag: tag === 'next' ? 'latest' : 'next' }, { ref: `refs/tags/v${version}`, changelog: `## ${version}`, license: 'MIT' }).includes('publish-config'));
     }
+  } finally { f.cleanup(); }
+});
+
+test('theme CSS is accepted only at known paths and emitted bytes must match packaged source', () => {
+  const f=fixture();
+  try {
+    const names=['src/theme/code.css','dist/theme/code.css'];
+    for (const name of names) {
+      for (const base of [f.pkgRoot,path.join(f.root,'candidate/package')]) {
+        mkdirSync(path.dirname(path.join(base,name)),{recursive:true});writeFileSync(path.join(base,name),'.void-md pre { color: red; }');
+      }
+    }
+    f.evidence.files.push(...names);
+    const repack=()=>{
+      execFileSync('tar',['-czf',f.tarball,'-C',path.join(f.root,'candidate'),...f.evidence.files.map(name=>'package/'+name)]);
+      const bytes=readFileSync(f.tarball);f.evidence.sha256=sha256(bytes);f.evidence.integrity='sha512-'+createHash('sha512').update(bytes).digest('base64');
+      writeFileSync(path.join(f.artifactRoot,'evidence.json'),JSON.stringify(f.evidence));
+    };
+    repack();inspectArtifact(f.options);
+    writeFileSync(path.join(f.root,'candidate/package/dist/theme/code.css'),'.void-md pre { color: blue; }');
+    repack();assert.throws(()=>inspectArtifact(f.options),/Packed theme differs/);
+    f.evidence.files.push('dist/theme/unexpected.css');writeFileSync(path.join(f.root,'candidate/package/dist/theme/unexpected.css'),'body{}');
+    repack();assert.throws(()=>inspectArtifact(f.options),/Unexpected packed file/);
   } finally { f.cleanup(); }
 });

@@ -1,3 +1,4 @@
+import MarkdownExit from 'markdown-exit';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { mkdtemp, mkdir, writeFile, rm, symlink } from 'node:fs/promises';
@@ -9,21 +10,22 @@ import { voidHonoMarkdown } from '../packages/hono-pages/src/plugins/hono-markdo
 import { voidHonoJsx } from '../packages/hono-pages/src/plugins/hono-jsx.ts';
 import { MarkdownContext, useFrontmatter, useMarkdownProps } from '../packages/hono-pages/src/runtime/markdown.ts';
 
-test('Markdown compilation separates islands/client code and parses frontmatter, tables and unique heading anchors', () => {
-  const result = compileMarkdown('<script>\nimport Counter from "./Counter" with { island: "visible" };\nwindow.client = true;\n</script>\n---\ntitle: Example\n---\n# Repeated **heading**\n\n# Repeated heading\n\n| A | B |\n| - | - |\n| one | two |\n');
+test('Markdown compilation separates islands/client code and parses frontmatter, tables and unique heading anchors', async () => {
+  const result = await compileMarkdown('<script>\nimport Counter from "./Counter" with { island: "visible" };\nwindow.client = true;\n</script>\n---\ntitle: Example\n---\n# Repeated **heading**\n\n# Repeated heading\n\n| A | B |\n| - | - |\n| one | two |\n');
   assert.equal(result.frontmatter.title, 'Example');
   assert.deepEqual(result.headings.map(h => h.slug), ['repeated-heading', 'repeated-heading-1']);
   assert.match(result.html, /<table>/);
-  assert.equal(compileMarkdown('# Target\n\n<div id="target">Authored</div>').headings[0].slug, 'target-1');
+  assert.equal((await compileMarkdown('# Target\n\n<div id="target">Authored</div>')).headings[0].slug, 'target-1');
   assert.equal(result.imports.length, 1);
   assert.match(result.graphSource, /island: "visible"/);
   assert.doesNotMatch(result.clientCode, /Counter|island/);
   assert.match(result.clientCode, /window.client/);
 });
 
-test('frontmatter and fenced code are data while literal island props preserve names without prototype mutation', () => {
-  const result = compileMarkdown('---\ntitle: "</script><script>injected</script>"\n---\n```html\n<script>injected</script>\n```');
-  assert.match(result.html, /&lt;script&gt;/);
+test('frontmatter and fenced code are data while literal island props preserve names without prototype mutation', async () => {
+  const result = await compileMarkdown('---\ntitle: "</script><script>injected</script>"\n---\n```html\n<script>injected</script>\n```');
+  assert.doesNotMatch(result.html, /<script>/);
+  assert.match(new MarkdownExit().utils.unescapeAll(result.html.replace(/<[^>]+>/g, '')), /<script>injected<\/script>/);
   const chunks = renderChunks('<section><Counter initial="4" disabled label="One &amp; Two" __proto__="literal" /></section>', new Set(['Counter']));
   assert.equal(chunks[1].props.initial, '4');
   assert.equal(chunks[1].props.disabled, true);
@@ -35,7 +37,7 @@ test('frontmatter and fenced code are data while literal island props preserve n
 });
 
 for (const source of ['---\ntitle: One\ntitle: Two\n---', '---\n- sequence\n---', '---\nfoo: [bad\n---', '---\na: &cycle [*cycle]\n---']) {
-  test('invalid or non-serializable frontmatter fails compilation: ' + source, () => assert.throws(() => compileMarkdown(source), /frontmatter/));
+  test('invalid or non-serializable frontmatter fails compilation: ' + source, async () => assert.rejects(() => compileMarkdown(source), /frontmatter/));
 }
 
 test('frontmatter is scoped to the whole SSR layout render and does not persist across requests', async () => {
@@ -63,7 +65,7 @@ test('configured optional Markdown participates in server manifests and island g
     const client = await pages.load(pages.resolveId('virtual:void-pages-client'));
     assert.doesNotMatch(client, /index\.md/); assert.match(client, /other\.tsx/);
     assert.match(islands.load(islands.resolveId('virtual:void-islands-client')), /Counter\.tsx/);
-    const transformed = md.transform.handler(await (await import('node:fs/promises')).readFile(join(root, 'pages/index.md'), 'utf8'), join(root, 'pages/index.md'));
+    const transformed = await md.transform.handler(await (await import('node:fs/promises')).readFile(join(root, 'pages/index.md'), 'utf8'), join(root, 'pages/index.md'));
     assert.match(transformed.code, /data-island/); assert.match(transformed.code, /JSON.parse/); assert.doesNotMatch(transformed.code, /window.script/);
     assert.match(md.load(md.resolveId('virtual:void-hono-markdown-client')), /hono-markdown-script/);
     assert.equal(extractMarkdown('# Static').clientCode, '');
@@ -84,7 +86,7 @@ test('Markdown symlink imports use the same canonical island key as the client r
     await writeFile(join(root, 'pages/index.md'), source); process.chdir(root);
     const md = voidHonoMarkdown(); const plugins = [...voidHonoJsx(), md]; md.configResolved({ root, plugins });
     const islands = plugins.find(plugin => plugin.name === 'void-hono:islands'); islands.configResolved({ plugins }); await islands.buildStart();
-    const server = md.transform.handler(source, join(root, 'pages/index.md')).code;
+    const server = (await md.transform.handler(source, join(root, 'pages/index.md'))).code;
     const client = islands.load(islands.resolveId('virtual:void-islands-client'));
     assert.match(server, /'data-island': "shared\/Counter\.tsx"/);
     assert.match(client, /"shared\/Counter\.tsx":/);
