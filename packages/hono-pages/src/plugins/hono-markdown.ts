@@ -3,7 +3,10 @@ import { join, relative, dirname } from 'node:path';
 import { normalizePath, type Plugin } from 'vite';
 import { resolvePagesDir } from 'void/pages';
 import { resolveComponent } from './resolve-component.ts';
-import { compileMarkdown, extractMarkdown, renderChunks } from './markdown-compiler.ts';
+import { createMarkdownCompiler, renderChunks } from './markdown-compiler.ts';
+import type { HonoMarkdownOptions } from './markdown-features.ts';
+import { markdownCopyId, markdownCopyCode } from './markdown-copy.ts';
+export type { HonoMarkdownOptions } from './markdown-features.ts';
 import type { HonoMarkdownApi } from './markdown-api.ts';
 
 const clientId = 'virtual:void-hono-markdown-client';
@@ -11,22 +14,24 @@ const scriptQuery = '?hono-markdown-script';
 const literal = (value: unknown) => `JSON.parse(${JSON.stringify(JSON.stringify(value))})`;
 
 /** Optional authored Markdown compiler; independent of @void/md private files. */
-export function voidHonoMarkdown(): Plugin {
+export function voidHonoMarkdown(options: HonoMarkdownOptions = {}): Plugin {
+  const compiler = createMarkdownCompiler(options);
   let root = process.cwd();
   let pagesDir = resolvePagesDir(root);
   let scripts = new Map<string, string>();
   let files = new Map<string, string>();
-  let sources = new Map<string, ReturnType<typeof extractMarkdown>>();
+  let sources = new Map<string, ReturnType<typeof compiler.parse>>();
   function rescan() {
     const nextScripts = new Map<string, string>();
     const nextFiles = new Map<string, string>();
-    const nextSources = new Map<string, ReturnType<typeof extractMarkdown>>();
+    const nextSources = new Map<string, ReturnType<typeof compiler.parse>>();
     for (const entry of existsSync(pagesDir) ? readdirSync(pagesDir, { recursive: true, withFileTypes: true }) : []) {
       if (!entry.isFile() || !entry.name.endsWith('.md')) continue;
       const file = join(entry.parentPath, entry.name);
       const id = normalizePath(relative(pagesDir, file)).replace(/\.md$/, '').replace(/\.island$/, '').replace(/\/index$/, '').replace(/^index$/, '') || 'index';
       const canonical = realpathSync(file);
-      const extracted = nextSources.get(canonical) ?? extractMarkdown(readFileSync(canonical, 'utf8'));
+      const extracted = nextSources.get(canonical) ?? compiler.parse(readFileSync(canonical, 'utf8'));
+      if (!nextSources.has(canonical) && extracted.hasCode) extracted.clientCode = `import ${JSON.stringify(markdownCopyId)};\n` + extracted.clientCode;
       nextSources.set(canonical, extracted);
       if (extracted.clientCode) { nextScripts.set(id, extracted.clientCode); nextFiles.set(id, file); }
     }
@@ -51,8 +56,9 @@ export function voidHonoMarkdown(): Plugin {
       const entry = this.environment.moduleGraph.getModuleById(`\0${clientId}`);
       if (entry) this.environment.moduleGraph.invalidateModule(entry, new Set(), timestamp, true);
     },
-    resolveId(id) { if (id === clientId) return `\0${id}`; },
+    resolveId(id) { if (id === clientId || id === markdownCopyId) return `\0${id}`; },
     load(id) {
+      if (id === `\0${markdownCopyId}`) return markdownCopyCode;
       if (id.endsWith(scriptQuery)) return source(id.slice(0, -scriptQuery.length)).clientCode || 'export {};';
       if (id !== `\0${clientId}`) return;
       if (!files.size) return 'export {};';
@@ -62,8 +68,9 @@ if (id && scripts[id]) await scripts[id]();`;
     },
     transform: {
       filter: { id: /\.md$/ },
-      handler(source, id) {
-        const result = compileMarkdown(source);
+      async handler(source, id) {
+        const cached = sources.get(realpathSync(id));
+        const result = await compiler.render(cached?.source === source ? cached : compiler.parse(source));
         const imports = result.imports.map((entry, index) => {
           const target = resolveComponent(entry.specifier, dirname(id), ['.tsx', '.jsx']);
           if (!target || !entry.specifier.startsWith('.')) throw new Error(`Hono Markdown: cannot resolve relative TSX/JSX island ${entry.specifier} in ${id}.`);

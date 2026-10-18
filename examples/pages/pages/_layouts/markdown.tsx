@@ -1,3 +1,4 @@
+import '../../../../packages/hono-pages/src/theme/content.css';
 import type { Child } from 'hono/jsx';
 import { useFrontmatter, useMarkdownHeadings, useMarkdownProps } from '../../../../packages/hono-pages/src/runtime/markdown';
 import { AppShell } from '../../src/AppShell';
@@ -11,7 +12,7 @@ export default function MarkdownLayout({ children }: { children: Child }) {
     <main id="page-content" className="page-content">
       <div className="page-heading"><div><h1 id="markdown-title">{frontmatter.title}</h1><p>{frontmatter.description}</p></div></div>
       <div className="markdown-grid">
-        <article className="panel markdown-prose">{children}</article>
+        <article className="panel void-md">{children}</article>
         <aside className="panel markdown-meta">
           <div className="panel-heading"><h2>このページの情報</h2><p>Markdownのfrontmatterとサーバーデータ</p></div>
           <dl className="data-list"><div><dt>カテゴリー</dt><dd id="markdown-category">{frontmatter.category}</dd></div><div><dt>読み込み結果</dt><dd id="markdown-loader">{props.message}</dd></div></dl>

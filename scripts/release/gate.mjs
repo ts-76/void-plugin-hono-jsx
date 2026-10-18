@@ -66,6 +66,7 @@ export function inspectArtifact({ root = process.cwd(), artifactRoot = path.join
   for (const file of files.filter(file => file.startsWith('src/'))) {
     assert.equal(contents.get(file), readFileSync(inside(pkgRoot, file), 'utf8'), `Packaged source changed: ${file}`);
   }
+  for (const file of files.filter(file => file.startsWith('src/theme/'))) assert.equal(contents.get(file.replace('src/', 'dist/')), contents.get(file), `Packed theme differs from source: ${file}`);
   assert.equal(contents.get('THIRD_PARTY_NOTICES.md'), readFileSync(path.join(pkgRoot, 'THIRD_PARTY_NOTICES.md'), 'utf8'));
   for (const entry of Object.values(packed.exports)) {
     for (const target of Object.values(entry)) assert.ok(evidence.files.includes(target.replace(/^\.\//, '')), 'Missing export target');
@@ -148,7 +149,7 @@ function inspectArchive(bytes, expectedFiles) {
     assert.ok(name.startsWith('package/'), 'Unexpected archive root');
     const file = name.slice(8);
     assert.ok(!file.split('/').some(part => !part || part === '.' || part === '..'), 'Unsafe archive path');
-    assert.ok(['package.json', 'README.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md', 'CHANGELOG.md'].includes(file) || /^dist\/[\w/.-]+\.(js|d\.ts)(\.map)?$/.test(file) || /^src\/(plugins|runtime)\/[\w.-]+\.tsx?$/.test(file), 'Unexpected packed file');
+    assert.ok(['package.json', 'README.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md', 'CHANGELOG.md'].includes(file) || /^dist\/[\w/.-]+\.(js|d\.ts)(\.map)?$/.test(file) || /^src\/(plugins|runtime)\/[\w.-]+\.tsx?$/.test(file) || /^(src|dist)\/theme\/(index|content|reset|prose|code|containers)\.css$/.test(file), 'Unexpected packed file');
     return file;
   });
   assert.equal(new Set(files).size, files.length, 'Duplicate archive entry');

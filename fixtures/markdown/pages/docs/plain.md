@@ -12,8 +12,6 @@ description: No browser JavaScript
 | - | - |
 | one | two |
 
-```html
-<script>window.markdownInjected = true</script>
-```
+
 
 [Interactive](/docs/interactive)

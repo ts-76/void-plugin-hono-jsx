@@ -2,7 +2,7 @@ import { checkMultipartConsumer } from './check-multipart-consumer.mjs';
 import { checkMarkdownConsumer } from './check-markdown-consumer.mjs';
 import assert from 'node:assert/strict';
 import { spawn, execFileSync } from 'node:child_process';
-import { cp, mkdtemp, mkdir, readFile, readdir, rm } from 'node:fs/promises';
+import { access, cp, mkdtemp, mkdir, readFile, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { createHash } from 'node:crypto';
@@ -194,6 +194,8 @@ try {
   npm(['ci', '--no-audit', '--no-fund'], consumer);
   npm(['install', '--no-save', '--package-lock=false', '--no-audit', '--no-fund', tarball], consumer);
   assert.equal((await readdir(join(consumer, 'node_modules'))).includes('markdown-exit'), false, 'Ordinary consumers must not install the optional Markdown parser');
+  for (const name of ['shiki', 'markdown-it-container']) assert.equal((await readdir(join(consumer, 'node_modules'))).includes(name), false, `Ordinary consumers must not install ${name}`);
+  await assert.rejects(access(join(consumer, 'node_modules/@shikijs/transformers')), { code: 'ENOENT' });
   if (env.RELEASE_CONSUMER_AUDIT) dependencyAudit({ npmCli, cwd: consumer, env, output: env.RELEASE_CONSUMER_AUDIT });
   const installedContents = new Map();
   for (const file of entries) {
