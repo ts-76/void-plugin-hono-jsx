@@ -6,6 +6,7 @@ import { PageContext, RouterContext, NavigationContext, setActionRouter } from '
 import { NavigationFallback, type NavigationFallbackOptions } from './navigation-fallback.tsx';
 import { createHonoRouter } from './navigation.ts';
 import { createDocumentHead } from './document-head.ts';
+import { ensureHonoStyleHost } from './style-host.ts';
 import { createDeferred, resolveDeferred, rejectDeferred, isLoading, bufferInitialDeferred } from './deferred.ts';
 
 type NavigationOptions = Pick<VoidRouterConfig, 'viewTransitions' | 'prefetchHoverDelay' | 'prefetchDefaultCacheFor'> & { navigationFallback?: NavigationFallbackOptions };
@@ -18,6 +19,7 @@ function pageComponent(component: unknown) {
 }
 
 export async function startHonoPages(manifest: Manifest, options: NavigationOptions) {
+  ensureHonoStyleHost();
   if (options.navigationFallback && typeof options.navigationFallback.component !== 'function') throw new Error('Hono Pages: navigationFallback must default-export a component function.');
   const root = document.getElementById('app');
   if (!root) throw new Error('Hono Pages: app root is missing.');
