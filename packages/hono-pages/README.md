@@ -124,7 +124,7 @@ It supports frontmatter, layouts, loaders, islands, Shiki highlighting, copy but
 Import `void-plugin-hono-jsx/theme-content.css` and wrap Markdown in `.void-md` for scoped styles.
 
 Markdown uses document navigation and preserves authored HTML. Use trusted content; no HTML sanitization is provided.
-See the [Markdown guide](https://github.com/ts-76/void-plugin-hono-jsx/blob/main/docs/markdown.md), including migration from 0.1.x.
+See the [Markdown guide](https://github.com/ts-76/void-plugin-hono-jsx/blob/main/docs/markdown.md) for static components, explicit islands and migration from 0.1.x, or the [honoxpress example](https://github.com/ts-76/void-plugin-hono-jsx/blob/main/docs/honoxpress.md).
 
 ## Hono CSS
 

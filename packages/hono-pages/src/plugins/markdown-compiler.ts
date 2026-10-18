@@ -3,8 +3,8 @@ import { configureMarkdownFeatures, type HonoMarkdownOptions } from './markdown-
 import { parseSync } from 'vite';
 import { parseDocument } from 'yaml';
 import { findIslandImports, editIslandSource } from 'void/pages-islands-plugin';
-
-const unescapeAttribute = new MarkdownExit().utils.unescapeAll;
+import { configureComponentContainers } from './markdown-components.ts';
+export { renderComponentChunks as renderChunks } from './markdown-components.ts';
 
 export type Heading = { depth: number; slug: string; text: string };
 export function extractMarkdown(source: string) {
@@ -12,16 +12,25 @@ export function extractMarkdown(source: string) {
   const script = match?.[1] ?? '';
   const body = match ? source.slice(match[0].length) : source;
   const imports = findIslandImports(script, 'markdown-script.ts');
-  const attributed = parseSync('markdown-script.ts', script).program.body.filter(node => node.type === 'ImportDeclaration' && node.attributes?.some(({ key }) => ('name' in key && key.name === 'island') || ('value' in key && key.value === 'island')));
+  const parsed = parseSync('markdown-script.ts', script);
+  if (parsed.errors.length) throw new Error('Hono Markdown: invalid script: ' + parsed.errors.map(error => error.message).join('; '));
+  const declarations = parsed.program.body.filter(node => node.type === 'ImportDeclaration');
+  const key = (attribute: (typeof declarations)[number]['attributes'][number]) => 'name' in attribute.key ? attribute.key.name : attribute.key.value;
+  const attributed = declarations.filter(node => node.attributes?.some(attribute => key(attribute) === 'island'));
   if (attributed.length !== imports.length) throw new Error('Hono Markdown: use one default component import with exactly one island attribute.');
-  const graphSource = imports.map(entry => script.slice(entry.start, entry.end)).join('\n');
-  const clientCode = editIslandSource(script, imports.map(entry => ({ start: entry.start, end: entry.end, text: '' }))).code.trim();
-  return { body, script, imports, graphSource, clientCode };
+  const staticImports = declarations.filter(node => node.attributes?.some(attribute => key(attribute) === 'component')).map(node => {
+    if (node.attributes.length !== 1 || node.attributes[0].value.value !== 'static' || node.specifiers.length !== 1 || node.specifiers[0].type !== 'ImportDefaultSpecifier' || node.importKind === 'type' || !/^[A-Z]\w*$/.test(node.specifiers[0].local.name)) throw new Error('Hono Markdown: use one default component import with { component: "static" }.');
+    return { start: node.start, end: node.end, specifier: node.source.value, importName: node.specifiers[0].local.name };
+  });
+  const graphSource = [...imports.map(entry => script.slice(entry.start, entry.end)), ...staticImports.map(entry => `import ${entry.importName} from ${JSON.stringify(entry.specifier)};`)].join('\n');
+  const clientCode = editIslandSource(script, [...imports, ...staticImports].map(entry => ({ start: entry.start, end: entry.end, text: '' }))).code.trim();
+  return { body, script, imports, staticImports, graphSource, clientCode };
 }
 
 export function createMarkdownCompiler(options: HonoMarkdownOptions = {}) {
   const compiler = new MarkdownExit({ html: true, linkify: true });
   configureMarkdownFeatures(compiler, options);
+  configureComponentContainers(compiler);
   function parse(source: string) {
     const extracted = extractMarkdown(source);
     const match = extracted.body.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/);
@@ -35,7 +44,7 @@ export function createMarkdownCompiler(options: HonoMarkdownOptions = {}) {
       try { JSON.stringify(frontmatter); } catch { throw new Error('Hono Markdown: frontmatter must be JSON serializable.'); }
     }
     const content = match ? extracted.body.slice(match[0].length) : extracted.body;
-    const env: Record<string, unknown> = {};
+    const env: Record<string, unknown> = { components: new Set(extracted.staticImports.map(entry => entry.importName)) };
     const tokens = compiler.parse(content, env);
     const headings: Heading[] = [];
     const slugs = new Map<string, number>();
@@ -66,28 +75,4 @@ export function createMarkdownCompiler(options: HonoMarkdownOptions = {}) {
 export async function compileMarkdown(source: string, options: HonoMarkdownOptions = {}) {
   const compiler = createMarkdownCompiler(options);
   return compiler.render(compiler.parse(source));
-}
-
-// Component tag splitting follows @void/md 0.27.0's emit-shared convention.
-// Hono raw fragments preserve enclosing HTML across the component boundaries.
-export function renderChunks(html: string, names: Set<string>) {
-  const tags = /<([A-Z]\w*)\s*((?:[^>/"']|"[^"]*"|'[^']*')*)\/\s*>|<([A-Z]\w*)\s*((?:[^>/"']|"[^"]*"|'[^']*')*)>([\s\S]*?)<\/\3\s*>/g;
-  const chunks: Array<{ html: string } | { name: string; props: Record<string, string | boolean> }> = [];
-  let cursor = 0;
-  for (const match of html.matchAll(tags)) {
-    const name = match[1] ?? match[3];
-    if (!names.has(name)) continue;
-    if (match[5]?.trim()) throw new Error('Hono Markdown: island tag children are unsupported; pass literal attributes to a self-closing tag.');
-    if (match.index > cursor) chunks.push({ html: html.slice(cursor, match.index) });
-    const props: Record<string, string | boolean> = Object.create(null);
-    const attrs = match[2] ?? match[4] ?? '';
-    const attrRe = /(\w[\w-]*)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s]+)))?/g;
-    for (const attr of attrs.matchAll(attrRe)) {
-      const value = attr[2] ?? attr[3] ?? attr[4];
-      props[attr[1]] = value === undefined ? true : unescapeAttribute(value);
-    }
-    chunks.push({ name, props }); cursor = match.index + match[0].length;
-  }
-  if (cursor < html.length) chunks.push({ html: html.slice(cursor) });
-  return chunks;
 }

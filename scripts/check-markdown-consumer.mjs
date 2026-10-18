@@ -7,6 +7,7 @@ import { createServer } from 'node:http';
 import { consumerStack, launcherArgs } from './consumer-launcher.mjs';
 import { checkIslandPolicies } from './check-island-policies.mjs';
 import { dependencyAudit } from './release/dependency-audit.mjs';
+import { checkHonoxpressConsumer } from './check-honoxpress-consumer.mjs';
 
 export async function checkMarkdownConsumer({ repo, consumer: original, browser, env: originalEnv, tarball, npmCli }) {
   const consumer = join(dirname(original), 'markdown-consumer');
@@ -230,5 +231,9 @@ export async function checkMarkdownConsumer({ repo, consumer: original, browser,
   finally { await new Promise(resolve => server.close(resolve)); }
   const assets = await readdir(join(output, 'assets'));
   for (const file of assets.filter(file => file.endsWith('.js'))) assert.doesNotMatch(await readFile(join(output, 'assets', file), 'utf8'), /Plain &lt;|No browser JavaScript|require\(["']yaml|markdown-exit|createHighlighter|vscode-textmate|markdown-it-container/);
+  await checkHonoxpressConsumer({ repo, consumer, browser, withServer, build, prepare() {
+    execFileSync(process.execPath, ['node_modules/void/dist/cli/cli.mjs', 'prepare'], { cwd: consumer, env, stdio: 'inherit' });
+    execFileSync(process.execPath, ['node_modules/typescript/bin/tsc', '--noEmit'], { cwd: consumer, env, stdio: 'inherit' });
+  } });
   console.log(`Optional Markdown consumer ${stack.name}, Void ${stack.void}, ${stack.launcher} host ${stack.hostVite}: packed artifact, pinned parsers, dev/build/preview/static and parser audit passed.`);
 }

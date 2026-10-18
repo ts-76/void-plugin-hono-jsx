@@ -44,11 +44,51 @@ layout: docs
 The optional script block comes before frontmatter.
 Island imports use relative TSX/JSX paths and the load/visible/idle/media policies.
 Other script code runs in the browser for this page only.
-Island props are literal strings or boolean attributes; JSX expressions and tag children are unsupported.
+Island props are literal strings or boolean attributes. Put arrays, objects and JSX logic in a TSX wrapper; island tag children are unsupported.
 
 Standard Markdown, tables, heading anchors and authored HTML are supported.
 **Use trusted content:** raw HTML is preserved without sanitization.
-Footnotes, emoji, arbitrary attributes, GitHub alerts, inline TOC, link/image normalization and a pages-catalog module are outside this syntax subset.
+Footnotes, emoji, arbitrary attributes, GitHub alerts, inline TOC and link/image normalization are outside this syntax subset.
+
+## Static components
+
+Use an explicit default import to render a local TSX/JSX component on the server:
+
+````md
+<script>
+import Callout from "../components/Callout.tsx" with { component: "static" };
+import Properties from "../components/Properties.tsx" with { component: "static" };
+</script>
+# Guide
+
+:::component Callout title="Before you start"
+Write **Markdown** inside the component.
+:::
+
+<Properties />
+````
+
+`:::component Name` passes parsed Markdown as `children`. For nesting, give the outer container more colons than its children:
+
+```md
+::::component Cards
+:::component Card title="Guide"
+## A heading inside a card
+
+Card content.
+:::
+::::
+```
+
+Headings, reference links and code fences use the same page parser, including inside containers. Component titles and headings created inside TSX are not added to Markdown's TOC automatically.
+
+Static imports are removed from the page's browser script. Static components and their CSS render during SSR/SSG; their display alone adds no client runtime. Descendant components may opt into islands using the existing attributed imports. Keep interactive hooks in those islands.
+
+Attributes are literal strings or booleans. JSX expressions, spread syntax, duplicate attributes, event handlers and renderer-owned props such as `children`, `ref` and `dangerouslySetInnerHTML` fail compilation. Use a TSX wrapper for structured props. This also applies to island tags. Imported component paths must be relative TSX/JSX files; package components can be re-exported through a local wrapper.
+
+For an existing paired HTML component tag, its body is already rendered HTML. Use the container syntax when its children need Markdown parsing. Raw `<script>`, `<style>`, `<pre>`, `<textarea>` and HTML comments are not component invocation syntax.
+
+See [honoxpress integration](honoxpress.md) for a component mapping, metadata/catalog connection and static versus interactive delivery.
 
 ## Highlighted code and copying
 

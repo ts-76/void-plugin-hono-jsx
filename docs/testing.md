@@ -30,6 +30,7 @@ Run checks sequentially when they share example build output.
 
 Consumer checks use the tarball, not repository imports.
 Ordinary Pages are checked before optional Markdown peers are installed.
+The Markdown consumer also installs pinned honoxpress 0.4.0 and copies its published UI templates. A separate fixture checks nested static components, TSX wrappers, explicit islands, metadata/catalog/TOC, document navigation, theme and CSS at 1280/390/320px in English/Japanese. Static pages are checked with JavaScript disabled and with network recording; runtime/SSG outputs are inspected for compiler leakage.
 Local cache/control fixtures use synthetic state and are not deployment examples.
 
 ## Run an example manually

@@ -1,0 +1,6 @@
+@import './components/honoxpress/docs.css';
+@import 'void-plugin-hono-jsx/theme-content.css';
+.hx-callout { border-radius: 19px; }
+.header-label { display: none; }
+.prose .hx-type-table code { overflow-wrap: anywhere; }
+@media (max-width: 480px) { .brand { font-size: 1rem; } }
