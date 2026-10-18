@@ -7,7 +7,7 @@
   },
   "dependencies": {
     "hono": "4.13.13",
-    "void-plugin-hono-jsx": "0.1.0-rc.0"
+    "void-plugin-hono-jsx": "0.1.0-rc.1"
   },
   "devDependencies": {
     "@types/node": "24.19.1",

@@ -13,3 +13,5 @@ PLAYWRIGHT_CHANNEL=chrome node scripts/check-cloudflare-consumer.mjs https://<de
 ```
 
 The checker confirms the fixture identity before writing synthetic records. Use revision `second` after redeployment and separately compare `/api/status` with the synthetic values recorded by the first run. It does not provision or delete resources. HTTPS checks use ordinary connection pooling; local HTTP rejection checks use independent connections because the local Miniflare/Vite early-rejection transport issue is still unresolved. See [the RC assessment](../../docs/rc-security-assessment.md).
+
+The [RC.1 verification record](../../docs/cloudflare-rc1-verification.md) documents the completed actual Workers/D1 exercise and cleanup. This fixture pins that public RC; the second migration was an isolated experiment, not a change to its baseline schema.

@@ -70,3 +70,7 @@ update with Hono `startTransition` and `useTransition` in an isolated copy of a
 retained baseline consumer. It records state/commit behavior in dev and preview;
 it is not an artifact acceptance gate or a performance benchmark. No production
 Transition option is enabled by this experiment.
+
+## Actual Cloudflare RC.1 verification
+
+The [2026-10-18 Workers/D1 record](cloudflare-rc1-verification.md) covers the public RC.1 package, actual HTTPS/browser checks, two migrations, redeployment with retained data, and verified deletion after maintainer inspection. It does not extend the production ISR or managed-platform guarantee.
