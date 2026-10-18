@@ -1,37 +1,47 @@
 # Known limitations and update policy
 
-Updated 2026-10-18 for Issues #62 and #85. The [release contract](release-contract.md) defines the supported behavior. This ledger records observed versions, conditions and re-evaluation triggers; it does not extend that contract or certify future upstream versions.
+The [support policy](release-contract.md) defines the supported baseline.
+These limitations apply to the documented configuration; dated checks are linked below.
 
 ## Runtime and platform boundaries
 
-| Condition / observed baseline | Impact and current handling | Follow-up / re-evaluation |
+| Area | Limitation | Follow-up |
 | --- | --- | --- |
-| macOS local Void/Miniflare: undefined named-action POST; RC.1 / Void 1.1.11 D1 fixture also reproduced a failure after a >4 KiB rejected POST on a reused connection | The following request can reset or return 500 instead of its expected response. Consuming the response body did not prevent the fixture failure. Local negative checks use independent connections; ordinary declared-action browser checks do not use that workaround. Do not describe it as an adapter fix | #62 tracks the evidence; the root cause is unresolved across Void/Miniflare/Vite. Re-run the rejection/follow-up fixture when those components change. If adapter responsibility is established, open a focused bug with the reproduction |
-| Direct Cloudflare HTTPS, public RC.1, 2026-10-18 | Both deployments passed three cycles of 413 -> 403 -> GET 200; the second also passed undefined action 404 -> GET 200. Normal fetch pooling, no retry or Connection: close. Not forced to one TCP socket | [Actual Worker record](cloudflare-rc1-verification.md), #57 completed. A production failure, platform change or changed rejection handling requires renewed investigation; no all-platform absence guarantee |
-| Hono 4.13.13 browser mount | Pages/islands redraw SSR contents; SSR DOM identity, pre-mount input/focus preservation and hydration are not guaranteed | #102: revisit when Hono exposes supported DOM adoption; do not infer it from the hydrateRoot name |
-| Development TSX/page/loader edits | Document reload resets local state; state-preserving HMR is not supported | #101: evaluate upstream capability and maintenance cost before an independent runtime |
-| Explicit multipart forms on Void 1.1.11 | Same-origin mutation followed by one successful GET; destination must support GET, loaders/deferred may rerun. Cancellation cannot undo server writes | #100: remove the GET only through a suitable Void public API; keep JSON resolved-deferred retention separate |
-| Full-Pages deferred | Failed prefetch can yield null; streaming is needed for error state. Grouped projections need explicit prop types. Deferred islands/static output are unsupported; deferredResult does not introduce server replacement HTML | #103 and [deferred contract](../packages/hono-pages/README.md#deferred-loader-props); reassess Void transport/API changes |
-| Optional Markdown | Trusted repository-authored HTML only, no untrusted-HTML sanitization. Document navigation; parser peers are optional. Advanced syntax/themes remain outside the documented subset | #99 and [Markdown guide](markdown.md); new content sources or parser behavior require review |
-| Production ISR / managed Void platform | Local ISR regression tests do not prove production privacy, propagation, purge or concurrent regeneration. Direct Worker/D1 verification used ISR disabled | #58 must verify production ISR before adding that guarantee; managed-platform validation remains separate |
-| Void 1.1.11 Cloudflare deployment authentication | Upstream moved existing OAuth storage to the OS keyring. A plaintext-only verification wrapper stopped before resource creation; reading existing keyring credentials succeeded and ordinary CLI authentication remained valid | Check upstream auth/storage behavior before future deployments; keep credentials/resource IDs out of artifacts. This is an upstream operational observation, not adapter credential management |
+| Browser mounting | Pages and islands redraw SSR content. DOM identity and pre-mount input/focus preservation are not guaranteed. | [#102](https://github.com/ts-76/void-plugin-hono-jsx/issues/102) |
+| Development | Page/loader edits reload the document and reset local state. | [#101](https://github.com/ts-76/void-plugin-hono-jsx/issues/101) |
+| Multipart forms | Success triggers one GET. The destination needs GET support; loaders/deferred can rerun. Cancellation cannot undo writes. | [#100](https://github.com/ts-76/void-plugin-hono-jsx/issues/100) |
+| Deferred data | Failed prefetch can resolve to `null`. Grouped projections need explicit types. Deferred islands and static deferred output are unsupported. | [Pages guide](pages.md#deferred-loader-props) |
+| SSR streaming | Void delivers deferred results; the adapter does not send Hono replacement HTML. | [#103](https://github.com/ts-76/void-plugin-hono-jsx/issues/103) |
+| Markdown | Trusted authored HTML only; no sanitization. Uses document navigation and the documented syntax subset. | [Markdown guide](markdown.md) |
+| Production ISR | Cache privacy, propagation, purge and concurrent regeneration remain unverified. | [#58](https://github.com/ts-76/void-plugin-hono-jsx/issues/58) |
+| Managed Void platform | Not validated. Direct Workers/D1 checks used RC.1 with ISR disabled. | [Workers record](cloudflare-rc1-verification.md) |
+
+### Local rejected-POST connection issue
+
+On macOS with Void 1.1.11/Miniflare, an undefined named action or oversized rejected POST can break a subsequent request on a reused connection.
+The root cause is unresolved. Local negative tests use independent connections; that workaround is not a fix.
+
+The RC.1 direct Cloudflare HTTPS checks passed rejected/undefined-action POSTs followed by healthy GETs using normal pooling.
+This observation does not cover every environment or a forced single socket.
+See the [dated results](cloudflare-rc1-verification.md). Re-test when Void, Miniflare, Vite or rejection handling changes.
 
 ## Dependency and publisher boundaries
 
-| Boundary | Dated result and accepted conditions | Stop / re-evaluation trigger |
-| --- | --- | --- |
-| Void 1.1.11 consumers, Hono 4.13.13, Vite 8.3.4 / aligned Vite Plus 1.3.0 | RC.1 stage reported five Moderate propagated package entries from one esbuild advisory, GHSA-67mh-4wv8-2f99; fresh Worker fixture reported six entries from that same advisory. High/Critical zero in those reports. Reviewed transform/loader path does not invoke affected esbuild serve; consumers still install it. Avoid that serve feature; no override | New advisory or changed baseline/path requires assessment, fresh audit and consumer validation. See [RC reassessment](rc-security-assessment.md) and [historical dependency investigation](dependency-security.md) |
-| Historical Vite Plus 0.1.24 scaffold | Two tinypool advisories propagated as Critical findings; never accepted for the current release. Old functional tests are historical evidence | Outside supported installation/release selection; use the locked plain Vite or aligned current fixture. Do not add its findings to the allowlist |
-| pnpm 12.14.0 Linux x64 publisher only | 517 selected crates, seven exact scoped findings; fixed accepted gzip/tar stage command with isolated credentials, OIDC and provenance. Not shipped in the adapter; not approval for install, runtime download, server, another target or arbitrary pnpm commands | Inventory/tool/source/target/command or advisory ID/version/modified/content changes require renewed review; incomplete/service-failed audits stop. No override or blanket bypass. [Exact publisher ledger](pnpm-publisher-assessment.md) |
+- **Consumer dependencies:** the reviewed Void/Drizzle tree retains [GHSA-67mh-4wv8-2f99](https://github.com/advisories/GHSA-67mh-4wv8-2f99). The inspected path uses esbuild transforms, not the affected serve API. Consumers still install the dependency; avoid its serve feature. See the [reassessment](rc-security-assessment.md).
+- **Publisher only:** pnpm 12.14.0 Linux x64 has seven scoped accepted findings for the fixed-tgz stage command. This does not approve arbitrary pnpm commands or other targets. See the [publisher assessment](pnpm-publisher-assessment.md).
+- **Historical scaffold:** Vite Plus 0.1.24 has unaccepted Critical findings and is unsupported. See [scaffold history](scaffold-compatibility.md).
 
-These are nonzero audit results. Entry totals, distinct advisories, acceptance and reachability evidence are different measures. The later [0.1.0 publication record](releasing.md#010-publication-and-tag-verification) records its own fresh audits. Past results do not complete the fresh audits for a new candidate. Preserve the policy and exact publisher finding hashes; if a compatible upstream fix becomes available, update pins and validate it rather than forcing transitive versions.
+Audits remain nonzero. Report package-entry counts separately from distinct advisories.
+New or changed unreviewed findings, incomplete inventories and failed audit services block publication.
+Preserve exact advisory/content hashes and execution conditions; do not add transitive security overrides.
+Each candidate needs fresh audits, regardless of earlier release results.
 
 ## Updating the supported baseline
 
-1. Record the upstream release/source and inspection date. Inspect Void's packaged scaffold defaults, public adapter conventions and dependency graph; do not call an old fixture current-latest. Check the [accepted ranges](release-contract.md#version-and-support); a new Void minor, Node major or Hono/Vite major needs an explicit support decision.
-2. Refresh the root and both Hono-only locked fixtures. Keep the Vite Plus launcher/core alias aligned; remove scaffold React dependencies only when unused. Historical Void 0.x manifests remain comparison inputs, not release-selectable stacks. Do not add security overrides.
-3. Inspect the running hook's `this.meta.viteVersion`, the imported helper version and resolved adapter/project package paths. A root package version alone does not identify the executing Vite. Follow [launcher diagnostics](../packages/hono-pages/README.md#running-vite-and-launcher-diagnostics).
-4. Run exact-head common source/history/secret/type/unit checks and both complete packed consumers on the same baseline-accepted archive. Cover dev/build/preview/browser, reload races, navigation/forms, static, islands, deferred, optional Markdown and local ISR; verify ordinary consumers do not require Markdown parsers. See [testing](testing.md) for commands and evidence identity.
-5. Review fresh independent root/consumer/Markdown audits and Linux publisher inventory/advisories. Match the advisory/version/path to its prior assessment. New or changed unreviewed findings stop release preparation; do not silently enlarge acceptance. Record counts, distinct IDs, evidence hashes and untested paths.
-6. If deployment, migrations, auth or rejection handling changed, repeat an authorized dedicated real-Worker exercise, including data retention and cleanup. Keep local and actual deployment claims separate; never deploy placeholder ISR bindings/control APIs as production examples.
-7. Update the compatibility table, user-facing limits, release notes and dated evidence together. Review every required check at the exact release head; verify main CI separately. Stage uses fresh same-run/attempt bytes; owner approval and independent public artifact/consumer verification remain later gates. Keep NPM_STAGING_ENABLED=false during preparation.
+1. Inspect the upstream release, scaffold defaults, public APIs and dependency graph. New Void minors, Node majors and Hono/Vite majors need an explicit support decision.
+2. Refresh root and both active consumer locks. Keep Vite Plus/core aligned. Historical fixtures remain comparison inputs.
+3. Check the running Vite hook, helper version and resolved paths using [launcher diagnostics](../packages/hono-pages/README.md#running-vite-and-launcher-diagnostics).
+4. Run source/type/unit/browser checks and both complete packed consumers on identical bytes. Check ordinary Pages before installing optional Markdown peers.
+5. Review fresh consumer and Linux publisher audits against their exact approved scope.
+6. Repeat a dedicated Workers exercise if deployment, migrations, authentication or rejection handling changed. Verify cleanup; never deploy fixture control APIs or placeholder bindings.
+7. Update support tables, limitations and release notes. Review final-head and main CI separately, then follow the [release checklist](release-checklist.md).

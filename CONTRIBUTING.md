@@ -1,45 +1,48 @@
 # Contributing
 
-This adapter is experimental; alpha releases are published on npm with the `next` tag. The project uses the [MIT license](LICENSE). Follow the release checklist before publishing a release.
+Bug reports, fixes and documentation improvements are welcome. The project is licensed under [MIT](LICENSE).
 
-## Setup and checks
+## Setup
 
 Use Node.js >=24.21.0 <25.0.0 and the repository lockfile:
 
 ```sh
 npm ci
-npm run typecheck
-npm test
-npm run build:pages
-npm run build:custom-ssr
-npx playwright install chromium
-npm run check:consumer
-npm run check:source
-npm run audit:release
+npm run dev
 ```
 
-For installed Google Chrome, run `PLAYWRIGHT_CHANNEL=chrome npm run check:consumer`. The consumer check builds and packs the adapter, installs it in an isolated locked fixture, starts local servers, runs browser checks and stops its own servers. It does not deploy cloud resources. `KEEP_CONSUMER_FIXTURE=1` retains that fixture for debugging; remove it when finished.
-
-The check runners disable Wrangler metrics and external `Request.cf` discovery. For manual example runs, set the environment variables documented in [testing guidance](docs/testing.md), then run `npm run dev` or `npm run preview` after building. The Pages example is the default; the minimal counter is under `examples/custom-ssr`.
+See [testing](docs/testing.md) for examples, check commands and browser setup.
+Run checks sequentially when they share example build output.
 
 ## Changes
 
-Keep Void responsible for its routing, request protocol, caching and build lifecycle. Change the adapter only at the renderer/runtime boundary. A framework-version change needs the locked clean-consumer checks and a documented compatibility decision. Do not widen peer ranges based on types alone.
+Keep routing, request protocols, caching and build lifecycle in Void.
+Framework upgrades need locked consumer checks and a documented support decision.
+Add behavioral coverage for substantive changes and test the packed artifact.
 
-Add behavioral coverage for substantive changes. Check the packed artifact rather than relying only on imports from repository source. Describe the observed behavior, verification command and remaining limitations in the PR. Draft PRs are useful for incomplete framework work; do not claim completion while required checks remain pending.
+Use Conventional Commit PR titles, such as `feat:`, `fix:`, `docs:` or `ci:`.
+Mark breaking changes with `!` and include migration instructions.
+Release Please manages versions and changelog; do not bump individual manifests manually.
+Changes are grouped for release. A merged PR does not publish to npm.
+
+In the PR, describe the resulting behavior, checks actually run and any remaining limitations.
+Keep generated logs, screenshots, caches and tarballs out of Git.
 
 ## Bug reports
 
-Include exact Node/Void/Hono/Vite versions, configuration, a minimal reproduction, expected and actual behavior, and whether the failure occurs in development, preview or generated static output. Remove tokens, private URLs, personal paths and real application data from logs. Use synthetic values for serialization regressions.
+Include:
 
-Do not post credentials or private data in a public issue. For sensitive findings, use a private maintainer contact once one is documented. No private reporting channel is configured yet.
+- Node, Void, Hono, Vite and adapter versions.
+- A minimal reproduction and relevant configuration.
+- Expected and actual behavior.
+- Whether the failure occurs in dev, preview or static output.
 
-## Release changes
+Remove credentials, private URLs, personal paths and application data from reports.
+Report vulnerabilities [privately](https://github.com/ts-76/void-plugin-hono-jsx/security/advisories/new), following [SECURITY.md](SECURITY.md).
 
-Use Conventional Commit titles for squash merges: `feat:`, `fix:`, `perf:`, `docs:` and `ci:` appear in release notes; `!` marks a breaking change. Release Please maintains the release PR and version metadata. Do not manually bump one manifest or duplicate the changelog. See [the release automation guide](docs/release-please.md).
+## Maintainer references
 
-Package publication, repository visibility and npm ownership are maintainer decisions. Contributors can prepare artifacts and evidence; they must not infer publication approval from a merged code change. Follow the [release checklist](docs/release-checklist.md).
-
-`npm run check:source` starts and stops its own development and preview servers on allocated local ports and uses Playwright. No Python, agent-browser installation or pre-existing browser session is required. Run checks sequentially when they share example build output. Keep generated logs and screenshots outside Git; include concise sanitized results and the CI run URL in the PR.
-
-Report vulnerabilities through the private reporting link in [SECURITY.md](SECURITY.md). The [approved release contract](docs/release-contract.md) defines upcoming RC support; historical alpha evidence is not normal-release acceptance.
+- [Architecture](docs/architecture.md)
+- [Supported behavior](docs/release-contract.md)
+- [Release automation](docs/release-please.md)
+- [Release checklist](docs/release-checklist.md)
