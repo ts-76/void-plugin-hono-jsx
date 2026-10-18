@@ -1,27 +1,28 @@
-# Normal-release roadmap
+# Roadmap
 
-Updated 2026-10-18. The first normal release, **0.1.0**, is public and verified; 1.0 waits for operational/API maintenance experience. The [release contract](release-contract.md) defines support; the [limitations ledger](known-limitations.md) records evidence and update triggers. The [alpha.4 source review](source-review-alpha4.md) remains the dated 2026-10-17 investigation.
+## Released
 
-## Completed gates
+- **0.1.0:** first normal release, including Pages, forms, islands, static output and deferred navigation.
+- **0.2.0:** Markdown highlighting, code copying, containers and themes; requires additional optional peers. See [migration](markdown.md#upgrading-an-existing-markdown-project) and [release notes](https://github.com/ts-76/void-plugin-hono-jsx/releases/tag/v0.2.0).
 
-- Source integration: FormData, Void 1.1, Markdown snapshots, graph reuse and shared candidate/archive validation (#92); plugin naming (#94). Head/root measurements (#84) did not justify another change.
-- Public contract, supported ranges and private vulnerability reporting (#85).
-- RC.0 and RC.1 release PRs, OIDC/provenance stages, npm owner approval and public artifact verification. RC.1 includes navigation fallback and deferredResult/use/Suspense (#105); #98 ended NOT_PLANNED after evaluation, without an independent Transition API.
-- RC.1 public bytes/signatures/provenance and registry-installed consumers. See [releasing](releasing.md#rc1-publication-and-workers-evidence).
-- Original consumer cleanup and RC.1 / Void 1.1 update (#61); its remote-less GitHub CI was not executed.
-- Dedicated direct Workers/D1 verification: two migrations, retained data, redeployment, maintainer inspection, deletion and absence checks (#57, record merged in #109). See [dated evidence](cloudflare-rc1-verification.md).
-- Normal 0.1.0 release (#110): exact-head and main CI, normal GitHub Release, same-run OIDC/provenance stage, npm owner approval, public bytes/signatures/provenance and both complete registry consumers passed. Latest/next select 0.1.0; bootstrap is preserved. See the [publication record](releasing.md#010-publication-and-tag-verification).
+Public artifact/consumer checks and tag promotion are complete for 0.2.0.
+Direct Workers/D1 deployment, migrations and cleanup were [verified separately with RC.1](cloudflare-rc1-verification.md).
 
-## Documentation follow-up and subsequent releases
+## Next priorities
 
-1. Correct the preparation-time RC.1/unpublished wording in source README, packed README and publication guidance (#59). Carry the packed README correction in the next patch release; do not overwrite public 0.1.0 bytes.
-2. Review and merge the grouped documentation PR after exact-head required CI; verify main CI separately. Let Release Please generate the next patch PR with synchronized metadata/changelog. Review that PR and its packed README/CI before a separately authorized merge and stage.
-3. Repeat the [per-candidate checklist](release-checklist.md), including fresh independent consumer/publisher audits. Keep NPM_STAGING_ENABLED=false during preparation. Preserve same-run/attempt archive acceptance, protected review, OIDC/provenance, owner approval and public verification before promoting a normal version.
+| Priority | Work |
+| --- | --- |
+| 1 | [#58](https://github.com/ts-76/void-plugin-hono-jsx/issues/58): verify production ISR privacy, cache boundaries, purge and regeneration. |
+| 2 | [#100](https://github.com/ts-76/void-plugin-hono-jsx/issues/100): measure multipart's extra GET and evaluate Void public API support for removing it. |
+| 3 | [#102](https://github.com/ts-76/void-plugin-hono-jsx/issues/102): investigate SSR DOM reuse and upstream support. |
+| 4 | [#101](https://github.com/ts-76/void-plugin-hono-jsx/issues/101): evaluate state-preserving HMR. |
+| Deferred | [#103](https://github.com/ts-76/void-plugin-hono-jsx/issues/103): establish a need for additional SSR streaming before implementation. |
 
-Changes remain grouped; no individual source PR publication. A successful test, dry run, CI, stage receipt or GitHub Release alone is not public-release verification. Record each gate with exact source/version/run.
+These are follow-up investigations, not promised features.
+Existing behavior remains defined by the [support policy](release-contract.md) and [known limitations](known-limitations.md).
 
-## Outside the first guarantee
+## Release approach
 
-Production ISR (#58), Markdown extras (#99), multipart GET reduction (#100), state-preserving HMR (#101), SSR DOM reuse (#102) and extra SSR streaming (#103) are follow-up work, not blockers added to the initial contract. The managed Void platform is unverified. Known local transport limitations remain disclosed; the actual HTTPS observation is not a universal fix.
-
-Fixes target the latest normal series. Patches in 0.1.x preserve documented APIs; breaking changes move to 0.2.0 or later. See [SECURITY.md](../SECURITY.md). The relevant upstream is [voidzero-dev/void](https://github.com/voidzero-dev/void); Void-Framework/Void is an unrelated Kotlin project.
+Group changes into release PRs; documentation-only changes can wait for the next functional release.
+Repeat the [release checklist](release-checklist.md) for each candidate.
+Consider 1.0 after gaining operational experience and confidence in long-term API support.

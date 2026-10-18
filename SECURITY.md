@@ -1,17 +1,25 @@
 # Security policy
 
-Report suspected vulnerabilities privately through [GitHub's vulnerability reporting form](https://github.com/ts-76/void-plugin-hono-jsx/security/advisories/new). Private vulnerability reporting is enabled. Do not include credentials or exploit details in a public issue.
-
-The maintainer reviews reports on a best-effort basis; no response-time SLA is promised. Include the affected package/framework versions, a minimal synthetic reproduction, impact and the relevant execution path.
+Report vulnerabilities through [GitHub private vulnerability reporting](https://github.com/ts-76/void-plugin-hono-jsx/security/advisories/new).
+Include affected versions, a minimal synthetic reproduction and the impact.
+Keep credentials and exploit details out of public issues.
+Reports are reviewed on a best-effort basis; no response-time SLA is offered.
 
 ## Supported versions
 
-Security and bug fixes target the latest normal release series. The first planned series is 0.1.x; it has not been published yet. RCs receive fixes through the next candidate. Historical alpha releases and older normal series have no indefinite backport commitment. Upgrade to the latest supported release when one is available.
+Security and bug fixes target the latest normal release series, currently **0.2.x**.
+Older normal series and historical alpha/RC versions have no guaranteed backports.
+Upgrade to the latest supported release.
 
-Within 0.1.x, patches preserve the documented public API. Breaking changes move to 0.2.0 or later and include migration notes. A normal 0.x release is not a claim of the SemVer 1.0 compatibility contract.
+Patches preserve documented APIs within the supported minor series.
+Breaking changes use a new minor while the package is below 1.0 and include migration notes.
 
 ## Scope
 
-Use the versioned [release contract](docs/release-contract.md). Repository-authored Markdown may contain raw HTML and must be trusted. Untrusted upload validation, authorization, CSRF protection and safe storage belong to the consuming application; multipart support does not implement those policies.
+See the [support policy](docs/release-contract.md) and [known limitations](docs/known-limitations.md).
+Markdown accepts trusted authored HTML without sanitization.
+Applications remain responsible for authentication, authorization, CSRF protection, upload validation and storage.
 
-Runtime peers and publisher tooling are assessed separately. See [dependency findings](docs/dependency-security.md) and [the pnpm publisher assessment](docs/pnpm-publisher-assessment.md). Accepted findings are conditional, remain nonzero and do not cover newly reported advisories or other execution paths. Do not add transitive overrides to hide an audit report.
+Consumer dependencies and publisher tooling have separate assessments.
+Known findings remain conditional and nonzero; they do not cover new advisories or other execution paths.
+See the [dependency reassessment](docs/rc-security-assessment.md) and [publisher assessment](docs/pnpm-publisher-assessment.md).

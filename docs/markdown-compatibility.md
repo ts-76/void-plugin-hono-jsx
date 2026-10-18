@@ -28,4 +28,4 @@ Raw repository-authored HTML remains trusted input. These features add no saniti
 
 ## Upstream extension opportunity
 
-A supported compiler/parser configuration export plus a framework emitter registration hook would let Hono share official extensions without private imports. Until that exists, keep the adopted public parser APIs and explicit comparison table. This record does not submit an upstream proposal or authorize npm publication; source changes remain grouped with release PR #113.
+These features shipped in 0.2.0. A public compiler/parser configuration API and framework emitter hook would allow closer sharing with the official plugins. Until then, use public parser APIs and keep the differences in this table explicit.
