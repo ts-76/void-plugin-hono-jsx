@@ -1,8 +1,8 @@
-# Local ISR validation
+# ISR
 
-Local ISR uses the [supported framework baseline](release-contract.md). Production ISR remains unverified; follow [Issue #58](https://github.com/ts-76/void-plugin-hono-jsx/issues/58).
+Local consumer checks and a [direct Workers exercise with 0.2.0](isr-cloudflare-verification.md) are recorded separately. Query-variant path purge failed the production check; follow [Issue #58](https://github.com/ts-76/void-plugin-hono-jsx/issues/58).
 
-The adapter reuses Void's generated worker and `@void/isr/runtime`. It adds no cache. The packed-consumer check builds `fixtures/isr` and runs Void production preview with local KV and Cache API storage. No Cloudflare account or provisioning is needed for this test.
+The adapter reuses Void's generated worker and `@void/isr/runtime` without adding a cache. The packed-consumer check builds `fixtures/isr` and runs Void production preview with local KV and Cache API storage. No Cloudflare account or provisioning is needed for this test.
 
 ## Configuration
 
@@ -38,6 +38,10 @@ Run `npm run check:consumer` to repeat these checks. The test starts and stops i
 
 ## Cache boundary and limitations
 
-Void separates document HTML and Pages JSON caches. The test establishes the local direct-worker KV/Cache API document path. It does not establish cross-data-center invalidation, production KV propagation, concurrent regeneration behavior, authenticated cache bypass, on-demand purge or deployment lifecycle guarantees. Those managed/production behaviors need separate verification.
+Void separates document HTML and Pages JSON caches. A cold JSON request renders live; an HTML render populates both variants. The production exercise checked TTL, privacy, failures, concurrency and deployment lifecycle. It also found a query-variant path purge failure; see the [dated observations](isr-cloudflare-verification.md).
 
-Cache only public loader data. Follow Void's documented request bypass and response privacy rules for personalized pages. No managed edge deployment was performed. Static output uses build-generated files and static page-data navigation; ISR needs a running worker and cache storage.
+Cache public loader data only. Requests with Cookie, Authorization or Cf-Access-Jwt-Assertion bypass ISR. Responses marked private/no-store/no-cache, Set-Cookie or unsupported Vary opt out. These synthetic checks do not validate an application's authentication provider.
+
+Do not treat a public-to-private change or purge as immediate revocation. Stale public content can remain during regeneration. Cache API deletion is local to the invoked data center, KV propagation is eventual, and concurrent regeneration is not deduplicated. Immediate/global invalidation remains outside the guarantee.
+
+Static output uses build-generated files and static page-data navigation; ISR needs a running worker and cache storage. The managed Void platform remains unverified.

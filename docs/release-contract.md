@@ -31,7 +31,7 @@ Markdown accepts trusted authored HTML without sanitization.
 ## Production boundary
 
 Direct Cloudflare Workers/D1 deployment, migrations and redeployment were [verified with RC.1](cloudflare-rc1-verification.md).
-Production ISR and the managed Void platform are unverified. Local fixtures do not extend that guarantee.
+Direct Workers ISR has a [0.2.0 verification record](isr-cloudflare-verification.md), including an unresolved query-variant purge failure. Immediate/global invalidation and single-flight regeneration are not guaranteed. The managed Void platform remains unverified.
 
 ## Release and security gates
 

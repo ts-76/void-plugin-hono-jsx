@@ -137,7 +137,7 @@ Use the documented package exports for application imports.
 - Development edits reload the document and reset local state.
 - Failed deferred prefetch can resolve to `null`.
 - A local Void/Miniflare connection-reuse issue remains unresolved after some rejected POSTs.
-- Production ISR and the managed Void platform are unverified.
+- Direct Workers ISR has a [dated verification](https://github.com/ts-76/void-plugin-hono-jsx/blob/main/docs/isr-cloudflare-verification.md) with an unresolved query-purge limitation. The managed Void platform remains unverified.
 
 See [known limitations](https://github.com/ts-76/void-plugin-hono-jsx/blob/main/docs/known-limitations.md) for conditions and follow-up work.
 

@@ -69,7 +69,8 @@ See [releasing](releasing.md) for artifact retention and public verification.
 
 ## Other verification
 
-- [Workers/D1 exercise](cloudflare-rc1-verification.md): real RC.1 deployment, migrations, redeployment and cleanup. Production ISR and managed Void remain unverified.
+- [Workers/D1 exercise](cloudflare-rc1-verification.md): real RC.1 deployment, migrations, redeployment and cleanup. ISR was checked separately; managed Void remains unverified.
+- [ISR Workers exercise](isr-cloudflare-verification.md): public 0.2.0 with dedicated D1/KV; includes a failing query-purge check and explicit propagation limits. This is a manual operational test, not a CI deployment.
 - [Hono Transition experiment](hono-transition-evaluation.md): diagnostic comparison, not a release gate or performance benchmark.
 - [Baseline update procedure](known-limitations.md#updating-the-supported-baseline): framework upgrades and fresh audits.
 

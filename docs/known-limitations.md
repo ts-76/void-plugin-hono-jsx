@@ -13,7 +13,7 @@ These limitations apply to the documented configuration; dated checks are linked
 | Deferred data | Failed prefetch can resolve to `null`. Grouped projections need explicit types. Deferred islands and static deferred output are unsupported. | [Pages guide](pages.md#deferred-loader-props) |
 | SSR streaming | Void delivers deferred results; the adapter does not send Hono replacement HTML. | [#103](https://github.com/ts-76/void-plugin-hono-jsx/issues/103) |
 | Markdown | Trusted authored HTML only; no sanitization. Uses document navigation and the documented syntax subset. | [Markdown guide](markdown.md) |
-| Production ISR | Cache privacy, propagation, purge and concurrent regeneration remain unverified. | [#58](https://github.com/ts-76/void-plugin-hono-jsx/issues/58) |
+| Production ISR | Direct Workers privacy/TTL checks passed; query-variant path purge failed. Immediate/global invalidation and single-flight regeneration are not guaranteed. | [#58](https://github.com/ts-76/void-plugin-hono-jsx/issues/58), [results](isr-cloudflare-verification.md) |
 | Managed Void platform | Not validated. Direct Workers/D1 checks used RC.1 with ISR disabled. | [Workers record](cloudflare-rc1-verification.md) |
 
 ### Local rejected-POST connection issue

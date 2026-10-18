@@ -60,7 +60,7 @@ Ranges allow stable updates; the table lists the versions actually tested.
 - Static output and optional [Markdown](docs/markdown.md) with code highlighting, copying, containers and themes.
 
 Browser mounting redraws server-rendered content. Development edits reload the page and reset local state.
-Production ISR and the managed Void platform are unverified. See [known limitations](docs/known-limitations.md).
+Direct Workers ISR has a dated verification with an unresolved query-purge limitation. The managed Void platform remains unverified. See [known limitations](docs/known-limitations.md).
 
 ## Documentation
 
