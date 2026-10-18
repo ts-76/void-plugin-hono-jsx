@@ -87,6 +87,8 @@ export async function checkHonoxpressConsumer({ repo, consumer, browser, withSer
         assert.match(await page.title(), /Loaded/);
       }
       if (mode === 'development') {
+        // Structural edits must not race the previous interactive document's HMR reload.
+        await page.goto(origin + '/hx/en/static');
         const file = join(consumer, 'pages/hx/en/static.md'); const source = await readFile(file, 'utf8');
         const wrapper = join(consumer, 'components/hx/Properties.tsx'); const wrapperSource = await readFile(wrapper, 'utf8');
         const added = join(consumer, 'pages/hx/en/added.md');

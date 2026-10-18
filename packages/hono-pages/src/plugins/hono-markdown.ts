@@ -81,7 +81,7 @@ if (id && scripts[id]) await scripts[id]();`;
           if ('html' in chunk) return `raw(${JSON.stringify(chunk.html)})`;
           const entry = imports.find(entry => entry.importName === chunk.name)!;
           const props = literal(chunk.props);
-          if (entry.kind === 'static') return `jsx(${entry.alias}, { ...${props}, children: [${(chunk.children ?? []).map(emit).join(',')}] })`;
+          if (entry.kind === 'static') return `jsx(${entry.alias}, { ...${props}${chunk.children ? `, children: [${chunk.children.map(emit).join(',')}]` : ''} })`;
           return `jsx('div', { 'data-island': ${JSON.stringify(entry.islandId)}, 'data-hydrate': ${JSON.stringify(entry.hydrate)}, 'data-props': JSON.stringify(${props}), children: jsx(${entry.alias}, ${props}) })`;
         };
         const children = chunks.map(emit);

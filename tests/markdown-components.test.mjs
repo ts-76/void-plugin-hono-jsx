@@ -37,6 +37,13 @@ test('nested tags of the same name retain every child and fail on mismatched tag
   assert.throws(() => renderChunks('<Note>lost', new Set(['Note']), new Set(['Note'])), /unclosed/);
 });
 
+test('existing literal island keys remain data while static self-closing components omit children', () => {
+  const island = renderChunks('<Counter onboarding="intro" __proto__="data" />', new Set(['Counter']))[0];
+  assert.equal(island.props.onboarding, 'intro'); assert.equal(island.props.__proto__, 'data');
+  assert.equal(Object.getPrototypeOf(island.props), null);
+  assert.equal(renderChunks('<Note />', new Set(['Note']), new Set(['Note']))[0].children, undefined);
+});
+
 test('authored raw-text HTML, comments and escaped fences never invoke components', async () => {
   const html = '<!-- <Note /> --><script>"<Note />"</script><SCRIPT>"<Note />"</SCRIPT><style>x{content:"<Note />"}</style><pre><Note /></pre><textarea><Note /></textarea>';
   assert.deepEqual(renderChunks(html, new Set(['Note']), new Set(['Note'])), [{ html }]);

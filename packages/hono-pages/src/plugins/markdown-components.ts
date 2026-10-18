@@ -5,9 +5,9 @@ import type { PluginWithParams } from 'markdown-exit';
 const unescapeAttribute = new MarkdownExit().utils.unescapeAll;
 
 /** Data only: never evaluate JSX expressions or allow renderer-owned props. */
-export function componentAttributes(source: string) {
+export function componentAttributes(source: string, restricted = true) {
   const props: Record<string, string | boolean> = Object.create(null);
-  const attribute = /\s+([A-Za-z][\w-]*)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+)))?/y;
+  const attribute = /\s+(\w[\w-]*)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+)))?/y;
   let cursor = 0;
   while (source.slice(cursor).trim()) {
     attribute.lastIndex = cursor;
@@ -15,7 +15,7 @@ export function componentAttributes(source: string) {
     if (!match) throw new Error('Hono Markdown: use literal component attributes; JSX expressions are unsupported.');
     const key = match[1];
     const value = match[2] ?? match[3] ?? match[4];
-    if (/^(?:children|key|ref|dangerouslySetInnerHTML|__proto__|prototype|constructor)$/i.test(key) || /^on/i.test(key) || Object.hasOwn(props, key) || match[4]?.startsWith('{')) throw new Error(`Hono Markdown: invalid or reserved component attribute ${key}.`);
+    if (Object.hasOwn(props, key) || match[4]?.startsWith('{') || restricted && (!/^[A-Za-z]/.test(key) || /^(?:children|key|ref|dangerouslySetInnerHTML|__proto__|prototype|constructor)$/i.test(key) || /^on/i.test(key))) throw new Error(`Hono Markdown: invalid or reserved component attribute ${key}.`);
     props[key] = value === undefined ? true : unescapeAttribute(value);
     cursor = attribute.lastIndex;
   }
@@ -67,7 +67,7 @@ export function renderComponentChunks(html: string, names: Set<string>, staticNa
       chunks = stack.at(-1)?.children ?? root;
     } else {
       const selfClosing = /\/\s*$/.test(match[4]);
-      const child: MarkdownChunk & { name: string } = { name, props: componentAttributes(selfClosing ? match[4].replace(/\/\s*$/, '') : match[4]) };
+      const child: MarkdownChunk & { name: string } = { name, props: componentAttributes(selfClosing ? match[4].replace(/\/\s*$/, '') : match[4], staticNames.has(name)) };
       chunks.push(child);
       if (!selfClosing) {
         child.children = [];

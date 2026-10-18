@@ -84,7 +84,7 @@ Headings, reference links and code fences use the same page parser, including in
 
 Static imports are removed from the page's browser script. Static components and their CSS render during SSR/SSG; their display alone adds no client runtime. Descendant components may opt into islands using the existing attributed imports. Keep interactive hooks in those islands.
 
-Attributes are literal strings or booleans. JSX expressions, spread syntax, duplicate attributes, event handlers and renderer-owned props such as `children`, `ref` and `dangerouslySetInnerHTML` fail compilation. Use a TSX wrapper for structured props. This also applies to island tags. Imported component paths must be relative TSX/JSX files; package components can be re-exported through a local wrapper.
+Attributes are literal strings or booleans. JSX expressions, spread syntax and duplicate attributes fail compilation. Static component attributes also reject `on*` names and renderer-owned props such as `children`, `ref` and `dangerouslySetInnerHTML`; use a TSX wrapper to map them. Existing island literal keys retain their data semantics. Use a TSX wrapper for structured props. Imported component paths must be relative TSX/JSX files; package components can be re-exported through a local wrapper.
 
 For an existing paired HTML component tag, its body is already rendered HTML. Use the container syntax when its children need Markdown parsing. Raw `<script>`, `<style>`, `<pre>`, `<textarea>` and HTML comments are not component invocation syntax.
 

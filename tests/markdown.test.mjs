@@ -26,10 +26,11 @@ test('frontmatter and fenced code are data while literal island props preserve n
   const result = await compileMarkdown('---\ntitle: "</script><script>injected</script>"\n---\n```html\n<script>injected</script>\n```');
   assert.doesNotMatch(result.html, /<script>/);
   assert.match(new MarkdownExit().utils.unescapeAll(result.html.replace(/<[^>]+>/g, '')), /<script>injected<\/script>/);
-  const chunks = renderChunks('<section><Counter initial="4" disabled label="One &amp; Two" /></section>', new Set(['Counter']));
+  const chunks = renderChunks('<section><Counter initial="4" disabled label="One &amp; Two" __proto__="literal" /></section>', new Set(['Counter']));
   assert.equal(chunks[1].props.initial, '4');
   assert.equal(chunks[1].props.disabled, true);
   assert.equal(chunks[1].props.label, 'One & Two');
+  assert.equal(chunks[1].props.__proto__, 'literal');
   assert.equal(Object.getPrototypeOf(chunks[1].props), null);
   assert.equal(chunks[0].html + chunks[2].html, '<section></section>');
   assert.throws(() => renderChunks('<Counter>lost content</Counter>', new Set(['Counter'])), /children are unsupported/);
