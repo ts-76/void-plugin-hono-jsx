@@ -19,7 +19,7 @@ node scripts/check-isr-cloudflare.mjs ORIGIN KEY_FILE REPORT_FILE first matrix
 
 The default `matrix` checks TTL, failure recovery, HTML/JSON, synthetic auth, privacy, queries, purge, concurrency and browser behavior. Diagnostic phases `purge`, `purge-all` and `concurrency` can isolate a failed section. They also perform fixture/control and browser checks. A repeated phase uses mutable state; retain each report and inspect pre-existing cache state. A failure is not evidence that every later phase ran.
 
-Purge failures are recorded, remaining independent scenarios run, and the process still exits nonzero. The 25-second purge observation window is below the 60-second query TTL; it is a test bound, not a service guarantee. The checker does not retry the purge or silently wait for natural TTL expiry.
+Purge failures are recorded, remaining independent scenarios run, and the process still exits nonzero. Both query variants are observed concurrently within one 25-second window from purge completion, below the 60-second query TTL. Reports retain request/purge timestamps and each variant's last state even on failure. This is a test bound, not a service guarantee. The checker does not retry the purge or silently wait for natural TTL expiry.
 
 Loopback skips negative POST controls because of the known Miniflare reused-connection issue (#62); the report lists this skip. HTTPS verifies them with normal pooling. The runner does not implement a transport workaround.
 

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile, writeFile } from 'node:fs/promises';
 import { chromium } from 'playwright';
+import { observePurge } from './isr-purge-observation.mjs';
 
 // Explicit opt-in: this runner mutates only the dedicated, key-protected fixture.
 const [originArg, keyFile, reportFile, revision = 'first', phase = 'matrix'] = process.argv.slice(2);
@@ -16,6 +17,7 @@ const fixture = 'void-hono-isr-cloudflare-check';
 const key = (await readFile(keyFile, 'utf8')).trim();
 assert.ok(key.length >= 32 && key.length <= 100);
 const report = { fixture, transport: local ? 'normal loopback fetch pool' : 'normal HTTPS fetch pool', origin: origin.origin, revision, phase, started: new Date().toISOString(), observations: [], checks: [], failures: [], limitations: ['One client location; observed CF-Ray locations only', 'No global immediate purge or KV consistency guarantee', 'Synthetic auth headers, not a full authentication provider'] };
+report.purges = [];
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 let requests = 0;
 async function request(path, init = {}) {
@@ -23,15 +25,18 @@ async function request(path, init = {}) {
   return fetch(new URL(path, origin), { ...init, redirect: 'error', signal: AbortSignal.timeout(15000) });
 }
 async function control(body) {
+  const startedAt = Date.now();
   const response = await request('/api/control', { method: body ? 'POST' : 'GET', headers: { Authorization: `Bearer ${key}`, ...(body ? { 'Content-Type': 'application/json' } : {}) }, ...(body ? { body: JSON.stringify(body) } : {}) });
   assert.equal(response.status, 200, `Fixture control failed: ${response.status}`);
   const data = await response.json();
   assert.equal(data.fixture, fixture);
   assert.equal(data.revision, revision);
+  if (body?.purge) report.purges.push({ paths: body.purge, startedAt, completedAt: Date.now() });
   if (!body) assert.ok(data.renders.length < 1000, 'Use a fresh fixture; render log limit reached');
   return data;
 }
 async function page(path, json = false, headers = {}) {
+  const startedAt = Date.now();
   const response = await request(path, { headers: { ...headers, ...(json ? { 'X-VoidPages': 'true' } : {}) } });
   const text = await response.text();
   assert.equal(response.status, 200, `${path}: ${response.status}`);
@@ -47,6 +52,7 @@ async function page(path, json = false, headers = {}) {
   assert.equal(props.fixture, fixture);
   assert.equal(props.revision, revision);
   const observation = { path, json, cache: response.headers.get('x-isr-cache'), version: props.version, renderId: props.renderId, viewer: props.viewer, revision: props.revision, kind: props.kind, unlisted: props.unlisted, colo: response.headers.get('cf-ray')?.split('-').at(-1) ?? 'local', privacy: response.headers.get('cache-control'), vary: response.headers.get('vary'), setCookie: response.headers.has('set-cookie') };
+  Object.assign(observation, { startedAt, completedAt: Date.now() });
   report.observations.push(observation);
   return { ...observation, props, text };
 }
@@ -67,13 +73,20 @@ async function reset(path, patch = {}) {
 async function fresh(path) {
   return until(async () => { const value = await page(path); return value.cache === 'HIT' && value; }, `${path} HIT`);
 }
-async function afterPurge(path, expected) {
-  const started = Date.now();
-  const first = await page(path);
-  let updated = first;
-  if (first.version !== expected) updated = await until(async () => { const value = await page(path); return value.version === expected && value; }, `${path} purge convergence within 25s (below 60s TTL)`, Math.max(1, 25000 - (Date.now() - started)));
-  report.checks.push({ name: 'purge observation', path, initialVersion: first.version, initialCache: first.cache, expected, elapsedMs: Date.now() - started, updatedCache: updated.cache });
-  return updated;
+async function afterPurge(paths, expected) {
+  const completedAt = report.purges.at(-1).completedAt;
+  const results = await Promise.allSettled(paths.map(async path => {
+    try {
+      const result = await observePurge({ path, expected, completedAt, read: page });
+      report.checks.push(result.observation);
+      return result.value;
+    } catch (error) {
+      report.checks.push(error.purgeObservation);
+      throw error;
+    }
+  }));
+  const failures = results.filter(result => result.status === 'rejected');
+  assert.equal(failures.length, 0, failures.map(result => result.reason.message).join('; '));
 }
 async function queryChecks() {
     await reset('/query');
@@ -87,8 +100,8 @@ async function queryChecks() {
     assert.notEqual(unlisted.renderId, unlistedAgain.renderId);
     const normalized = await page('/query?kind=a&unlisted=x'); assert.equal(normalized.renderId, a.renderId); assert.equal(normalized.unlisted, '');
     await control({ path: '/query', version: 2 }); await control({ purge: ['/query'] });
+    await afterPurge(['/query?kind=a', '/query?kind=b'], 2);
     for (const kind of ['a', 'b']) {
-      await afterPurge(`/query?kind=${kind}`, 2);
       await fresh(`/query?kind=${kind}`); assert.equal((await page(`/query?kind=${kind}`, true)).version, 2);
     }
     await checkpoint('query allowlist isolation, unlisted query boundary and path purge of variants');
@@ -96,7 +109,8 @@ async function queryChecks() {
 async function purgeAllChecks() {
     for (const path of ['/all-a', '/all-b']) { await reset(path); await page(path); await fresh(path); await control({ path, version: 2 }); }
     await control({ purge: 'all' });
-    for (const path of ['/all-a', '/all-b']) { await afterPurge(path, 2); await fresh(path); assert.equal((await page(path, true)).version, 2); }
+    await afterPurge(['/all-a', '/all-b'], 2);
+    for (const path of ['/all-a', '/all-b']) { await fresh(path); assert.equal((await page(path, true)).version, 2); }
     await checkpoint('purge all through public void/isr API');
 }
 async function observe(name, check) {
