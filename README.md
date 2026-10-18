@@ -2,7 +2,7 @@
 
 A Hono JSX adapter for Void Pages. It renders pages with `hono/jsx` on the server and mounts them with `hono/jsx/dom` in the browser. Void owns route discovery, loaders, actions, navigation, head metadata and prerender collection.
 
-This source prepares the first normal release, 0.1.0, under the [MIT license](LICENSE). The published verification version is 0.1.0-rc.1; 0.1.0 is not public yet. As checked on 2026-10-18, `next` points to RC.1 and `latest` still points to the historical alpha.1. Use the explicit RC.1 command below or `@next` until normal-release verification and tag promotion are complete. Prereleases use `next`; normal releases move to `latest` only after public artifact/consumer verification. See the [approved release contract](docs/release-contract.md). Historical alpha publication evidence is in [the release guide](docs/releasing.md) and [validation record](docs/stage-validation-result.md). Source manifests stay `private: true`; preparation creates an isolated publishable candidate. This is not an official Void adapter.
+The normal 0.1.x series is published under the [MIT license](LICENSE). Install the default package below; `latest` selects the publicly verified normal release. `next` selects the most recently approved candidate and may point to a prerelease during later release cycles. Normal releases are promoted only after public artifact/consumer verification. See the [release contract](docs/release-contract.md) and [dated publication record](docs/releasing.md#010-publication-and-tag-verification). Source manifests stay `private: true`; preparation creates an isolated publishable candidate. This is not an official Void adapter.
 
 ## Compatibility
 
@@ -15,16 +15,16 @@ This source prepares the first normal release, 0.1.0, under the [MIT license](LI
 | Vite Plus | Host Vite must satisfy the Vite range | 1.3.0 |
 | TypeScript | Project tooling | 7.0.2 |
 
-The published RC.1 and normal-release preparation target Void 1.1 and Node 24 only. Published alpha.4 retains its earlier Void 0.x contract; it does not provide this support change or multipart transport. Old Void/launcher manifests remain historical comparison records, not release-selectable configurations. The two supported Hono-only consumers use Void 1.1.11 with plain Vite 8.3.4 or aligned Vite Plus 1.3.0 (host Vite 8.3.4). Ranges admit stable updates, but only locked fixtures are observed test results. New upstream releases require refreshed fixtures, full checks and audit review; prereleases and other Void minors are excluded.
+The normal 0.1.x series targets Void 1.1 and Node 24 only. Published alpha.4 retains its earlier Void 0.x contract; it does not provide this support change or multipart transport. Old Void/launcher manifests remain historical comparison records, not release-selectable configurations. The two supported Hono-only consumers use Void 1.1.11 with plain Vite 8.3.4 or aligned Vite Plus 1.3.0 (host Vite 8.3.4). Ranges admit stable updates, but only locked fixtures are observed test results. New upstream releases require refreshed fixtures, full checks and audit review; prereleases and other Void minors are excluded.
 
-Alpha.4 introduced the expanded Link/Form APIs, island forms and graphs, deferred contracts, page options and optional Markdown. RC.1 includes the Void 1.1 contract, multipart transport, navigation fallback and deferredResult/use/Suspense support. Use the published RC.1 while 0.1.0 is being prepared; do not combine these instructions with alpha.4.
+The normal 0.1.x series includes the expanded Link/Form APIs, multipart transport, island forms and graphs, deferred contracts with deferredResult/use/Suspense, navigation fallback, page options and optional Markdown. These instructions describe that normal series; historical alpha releases do not provide the same Void 1.1 contract.
 
-## Install the published RC
+## Install the normal release
 
-Use Node 24.21.0 or newer within Node 24 in your project:
+Use Node 24.21.0 or newer within Node 24 in your project. The unqualified package selects `latest`; use `void-plugin-hono-jsx@0.1.0` to reproduce the first normal release. Use `@next` only when deliberately testing the currently approved candidate:
 
 ```sh
-npm install void-plugin-hono-jsx@0.1.0-rc.1 hono@4.13.13
+npm install void-plugin-hono-jsx hono@4.13.13
 npm install --save-dev void@1.1.11 vite@8.3.4 typescript@7.0.2
 ```
 
@@ -43,11 +43,11 @@ npm install ./void-plugin-hono-jsx-<version>.tgz hono@4.13.13
 npm install --save-dev void@1.1.11 vite@8.3.4 typescript@7.0.2
 ```
 
-RC.1 is publicly available. The local tarball commands are for source verification; they do not publish a version. See the [approved release contract](docs/release-contract.md) for support, multipart, security and production gates.
+The local tarball commands are for source verification; they do not publish a version. See the [approved release contract](docs/release-contract.md) for support, multipart, security and production gates.
 
 Configure the Vite plugins in `vite.config.ts`:
 
-`voidHonoJsx()` and `HonoJsxOptions` replace the earlier `voidHonoPages()` and `HonoPagesOptions` names. This is a breaking alpha API change; the old names are not exported. Alpha.3 uses the earlier names; RC.1 exports the new names shown below.
+`voidHonoJsx()` and `HonoJsxOptions` replace the earlier `voidHonoPages()` and `HonoPagesOptions` names. This is a breaking alpha API change; the old names are not exported. Alpha.3 uses the earlier names; the normal 0.1.x series exports the new names shown below.
 
 ```ts
 import { defineConfig } from 'vite';
@@ -104,9 +104,9 @@ npm run check:source
 
 The consumer check installs the packed artifact in a temporary project and exercises development, production preview, islands, deferred data, static output and local ISR in a browser. The source check starts its own servers and covers HTTP contracts, server-only bundle isolation and Pages browser behavior. Install Playwright Chromium first with `npx playwright install chromium`, or set `PLAYWRIGHT_CHANNEL=chrome` to use installed Google Chrome. The [package workflow](.github/workflows/package.yml) runs on pushes and pull requests with Node 24.21.0. It checks types, adapter tests, release content, both example builds and the packed browser consumer. Check the actual GitHub Actions result for the commit being reviewed; enabling the workflow alone does not establish a passing result.
 
-[Stable release roadmap](docs/stable-roadmap.md) records the approved support boundaries and remaining release gates. [Alpha.4 source review](docs/source-review-alpha4.md) records measured duplication and the recommended implementation order. The roadmap reflects RC.1 verification on 2026-10-18; the source review remains the dated 2026-10-17 investigation.
+[Stable release roadmap](docs/stable-roadmap.md) records the approved support boundaries and remaining release gates. [Alpha.4 source review](docs/source-review-alpha4.md) records measured duplication and the recommended implementation order. The roadmap records the completed 0.1.0 publication and follow-up work; the source review remains the dated 2026-10-17 investigation.
 
-[Contribution guidance](CONTRIBUTING.md) explains local checks and bug reports. [Architecture](docs/architecture.md) describes the framework boundary and development renderer. [Release preparation](docs/releasing.md) explains exact-artifact verification, security gates and staged publishing. [Release checklist](docs/release-checklist.md) records remaining release decisions. [Third-party notices](THIRD_PARTY_NOTICES.md) document upstream adapter references and dependency licenses.
+[Contribution guidance](CONTRIBUTING.md) explains local checks and bug reports. [Architecture](docs/architecture.md) describes the framework boundary and development renderer. [Release preparation](docs/releasing.md) explains exact-artifact verification, security gates and staged publishing. [Release checklist](docs/release-checklist.md) lists the checks to repeat for each candidate. [Third-party notices](THIRD_PARTY_NOTICES.md) document upstream adapter references and dependency licenses.
 
 `voidHonoJsx()` retains its existing defaults (transitions disabled, 75ms hover delay, 30s cache). Opt in with `viewTransitions`, set `prefetch.hoverDelay` in milliseconds and `prefetch.cacheFor` using Void durations or a stale/expiry tuple. `<Link viewTransition={false}>` overrides the global transition setting; programmatic `router.visit(url, { viewTransition: true })` uses the same router. Native View Transitions fall back to normal navigation when the browser API is absent. The transition callback waits for Hono DOM commit and document-head synchronization. Hono integrates with Void's public navigation engine/facade and handles native animation skips separately from rendering failures ([View Transitions promise semantics](https://www.w3.org/TR/css-view-transitions-1/#viewtransition)).
 
