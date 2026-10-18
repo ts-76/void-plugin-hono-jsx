@@ -1,20 +1,27 @@
 # Roadmap to the first normal release
 
-Updated 2026-10-17 after the maintainer approved Issue #85. The normative scope is the [release contract](release-contract.md); the original [alpha.4 source review](source-review-alpha4.md) remains a dated investigation record.
+Updated 2026-10-18. Issue #85 selects **0.1.0** as the first normal release; 1.0 waits for operational/API maintenance experience. The [release contract](release-contract.md) defines support; the [limitations ledger](known-limitations.md) records evidence and update triggers. The [alpha.4 source review](source-review-alpha4.md) remains the dated 2026-10-17 investigation.
 
-## Completed source work
+## Completed gates
 
-FormData transport (#88), Void 1.1 fixtures (#86), Markdown snapshots (#87), shared graph analysis (#89), one common CI candidate (#90) and batched safe archive inspection (#91) are integrated in release/stable-preparation. Head/root investigation (#84) did not justify another implementation change. Measurements and limits are in [performance.md](performance.md).
+- Source integration: FormData, Void 1.1, Markdown snapshots, graph reuse and shared candidate/archive validation (#92); plugin naming (#94). Head/root measurements (#84) did not justify another change.
+- Public contract, supported ranges and private vulnerability reporting (#85).
+- RC.0 and RC.1 release PRs, OIDC/provenance stages, npm owner approval and public artifact verification. RC.1 includes navigation fallback and deferredResult/use/Suspense (#105); #98 ended NOT_PLANNED after evaluation, without an independent Transition API.
+- RC.1 public bytes/signatures/provenance and registry-installed consumers. See [releasing](releasing.md#rc1-publication-and-workers-evidence).
+- Original consumer cleanup and RC.1 / Void 1.1 update (#61); its remote-less GitHub CI was not executed.
+- Dedicated direct Workers/D1 verification: two migrations, retained data, redeployment, maintainer inspection, deletion and absence checks (#57, record merged in #109). See [dated evidence](cloudflare-rc1-verification.md).
 
-## Remaining gates
+## Remaining 0.1.0 gates
 
-1. Align root/peer/runtime/Node support and required consumers with Void 1.1; retain historical fixtures as comparison records. Document multipart and rendering limits, private reporting and support windows.
-2. Refresh exact root, consumer and publisher audits for the RC. Reassess existing findings without overrides. New or changed unreviewed findings block upload. Keep the repository stage gate false during preparation.
-3. Review the final integration head in #92, merge once to main and let Release Please prepare 0.1.0-rc.0. Version changes are grouped in the release PR, not hand-edited across source manifests.
-4. Verify the RC release PR/tag, protected-environment stage and owner approval. Verify public bytes/provenance/signatures and a registry-installed clean consumer.
-5. Complete #57 using the dedicated tsapp Worker/D1 and synthetic data, then delete the verification resources. Complete #61 before presenting the original consumer as an installation example.
-6. Prepare the normal 0.1.0 release PR. Repeat exact-head CI/audits, stage and owner approval. Verify the public artifact before moving latest and aligning next.
+1. Finish the grouped #62/#85 documentation and normal-release configuration. Release Please uses default versioning/prerelease false, no prerelease-type or permanent release-as. Request 0.1.0 once in the preparation merge footer; let the bot update versions/changelog. The already-open RC.2 release PR must be regenerated as 0.1.0 before review/merge.
+2. Review the generated **0.1.0** release PR: synchronized root/lock/package/manifest versions, complete user notes/source/maps/exports and all final-head consumer/publisher checks. Refresh independent audits; new/changed unreviewed findings stop release work. RC evidence cannot substitute for this candidate.
+3. Merge that release PR only after review, then verify main CI, source/tag and the normal GitHub Release. Authorize stage separately; keep NPM_STAGING_ENABLED=false during preparation. Stage the same-run/attempt accepted archive on next with protected review/OIDC/provenance, then close the stage gate again.
+4. npm owner approves; independently verify public bytes, registry signature, provenance/source/run and clean registry consumers. Only afterward move latest and align next to 0.1.0 (#59). Keep bootstrap versions published; bootstrap tag cleanup is a distinct explicit operation.
 
-Production ISR (#58) remains outside the initial guarantee. Fixes target the latest normal release series; 0.1.x patches preserve public APIs and breaking changes move to 0.2.0 or later. Choose 1.0 only after operational use and API maintenance experience. Private reporting is enabled; see [SECURITY.md](../SECURITY.md).
+Changes remain grouped; no individual source PR publication. A successful test, dry run, CI, stage receipt or GitHub Release alone is not public-release verification. Record each gate with exact source/version/run.
 
-No local test, CI run, dry run, stage receipt or historical alpha publication alone completes the following gate. Record each result at its exact source/version/run. The npm upstream is [voidzero-dev/void](https://github.com/voidzero-dev/void); the similarly named Void-Framework/Void Kotlin project is unrelated.
+## Outside the first guarantee
+
+Production ISR (#58), Markdown extras (#99), multipart GET reduction (#100), state-preserving HMR (#101), SSR DOM reuse (#102) and extra SSR streaming (#103) are follow-up work, not blockers added to the initial contract. The managed Void platform is unverified. Known local transport limitations remain disclosed; the actual HTTPS observation is not a universal fix.
+
+Fixes target the latest normal series. Patches in 0.1.x preserve documented APIs; breaking changes move to 0.2.0 or later. See [SECURITY.md](../SECURITY.md). The relevant upstream is [voidzero-dev/void](https://github.com/voidzero-dev/void); Void-Framework/Void is an unrelated Kotlin project.

@@ -25,6 +25,14 @@ On this evidence and the approved conditional policy, renew dependencySecurityAp
 
 ## Runtime limitations are separate
 
-SSR DOM reuse, state-preserving HMR and production ISR remain outside the [release contract](release-contract.md). Real Workers validation is still a normal-release gate.
+At this 2026-10-17 reassessment, real Workers validation was still a normal-release gate. SSR DOM reuse, state-preserving HMR and production ISR remain outside the [release contract](release-contract.md). The 2026-10-18 result below records the completed direct Workers check without expanding those guarantees.
 
 The dedicated D1 fixture also reproduced a local Miniflare/Vite transport failure when reusing a socket after an early oversized-body rejection. This resembles the historical undefined-action connection-reset limitation, but is a distinct observed trigger. Consuming the rejected response body did not prevent the local failure; using independent connections let the local dev and preview checks pass. Local negative HTTP assertions use those independent connections and must not be presented as a fix. Real HTTPS Worker checks retain normal connection pooling and must verify the rejection/follow-up path. Keep this in Issue #62 until the platform-specific behavior is assessed; the root cause and production impact remain unverified.
+
+## 2026-10-18 follow-up: RC.1 and normal preparation
+
+RC.1 stage/public verification retained the same one esbuild advisory (five propagated Moderate entries, High/Critical zero) and seven scoped Linux publisher findings. Its dedicated Worker fixture reported six propagated Moderate entries from the same advisory, not a new advisory. The [public and actual Worker records](releasing.md#rc1-publication-and-workers-evidence) distinguish artifact checks, runtime observations and cleanup.
+
+The actual HTTPS fixture passed rejection/follow-up requests through a normal pool on both deployments without retries or Connection: close. This does not fix the local failure, identify its root cause or guarantee a single TCP socket/all platforms. The [limitations ledger](known-limitations.md) preserves that unresolved boundary, the upstream keyring-storage observation and triggers for renewed assessment.
+
+The grouped 0.1.0 preparation changes documentation and Release Please selection, not peers, publisher pins, advisory IDs or accepted commands. It does not enlarge security acceptance or enable stage. Each final 0.1.0 candidate must produce fresh root/consumer/Markdown/publisher reports; new or changed unreviewed findings stop preparation/upload. Neither past RC acceptance nor a signature check means audit zero.

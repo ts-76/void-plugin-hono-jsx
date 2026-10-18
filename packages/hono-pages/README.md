@@ -1,6 +1,6 @@
-# Experimental Hono Pages adapter for Void
+# Hono JSX adapter for Void Pages
 
-This package integrates Hono JSX with Void Pages. This source documents the upcoming 0.1.0 RC/normal release; published alpha.4 has a different compatibility contract. Prereleases use `next`; normal releases move to `latest` after public verification. Before registry approval, use a local tarball. The package is [MIT licensed](LICENSE) and is not an official Void adapter.
+This package integrates Hono JSX with Void Pages. This source prepares the first normal release, 0.1.0. RC.1 is published and verified; 0.1.0 is not public yet. Published alpha.4 has a different compatibility contract. Prereleases use `next`; normal releases move to `latest` after public verification. As checked on 2026-10-18, `next` selects RC.1 and `latest` still selects the historical alpha.1; use RC.1 explicitly or `@next` until normal-release verification and tag promotion. The package is [MIT licensed](LICENSE) and is not an official Void adapter.
 
 ## Supported versions
 
@@ -13,18 +13,18 @@ This package integrates Hono JSX with Void Pages. This source documents the upco
 | Vite Plus | Host Vite must satisfy the Vite range | 1.3.0 |
 | TypeScript | Project tooling | 7.0.2 |
 
-The upcoming RC targets Void 1.1 and Node 24 only. Published alpha.4 retains its earlier Void 0.x contract; it does not provide this support change or multipart transport. Old Void/launcher manifests remain historical comparison records, not release-selectable configurations. The two supported Hono-only consumers use Void 1.1.11 with plain Vite 8.3.4 or aligned Vite Plus 1.3.0 (host Vite 8.3.4). Ranges admit stable updates, but only locked fixtures are observed test results. New upstream releases require refreshed fixtures, full checks and audit review; prereleases and other Void minors are excluded.
+The published RC.1 and normal-release preparation target Void 1.1 and Node 24 only. Published alpha.4 retains its earlier Void 0.x contract; it does not provide this support change or multipart transport. Old Void/launcher manifests remain historical comparison records, not release-selectable configurations. The two supported Hono-only consumers use Void 1.1.11 with plain Vite 8.3.4 or aligned Vite Plus 1.3.0 (host Vite 8.3.4). Ranges admit stable updates, but only locked fixtures are observed test results. New upstream releases require refreshed fixtures, full checks and audit review; prereleases and other Void minors are excluded.
 
-Alpha.4 introduced the expanded Link/Form APIs, island forms and graphs, deferred contracts, page options and optional Markdown. This source adds the Void 1.1 contract and multipart transport for the RC; use the local tarball until the RC is approved. Do not combine the RC setup instructions with alpha.4.
+Alpha.4 introduced the expanded Link/Form APIs, island forms and graphs, deferred contracts, page options and optional Markdown. RC.1 includes the Void 1.1 contract, multipart transport, navigation fallback and deferredResult/use/Suspense support. Use the published RC.1 while 0.1.0 is being prepared; do not combine these instructions with alpha.4.
 
 ## Install
 
 Use Node 24.21.0 or newer within Node 24:
 
-The commands below target the RC line. Check registry availability after owner approval. Published alpha.4 does not accept Void 1.1; use a local tarball until the RC has been approved. Use Node >=24.21.0 <25.0.0.
+The commands below install the publicly available RC.1. Published alpha.4 does not accept Void 1.1. Local tarballs remain available for source verification. Use Node >=24.21.0 <25.0.0.
 
 ```sh
-npm install void-plugin-hono-jsx@0.1.0-rc.0 hono@4.13.13
+npm install void-plugin-hono-jsx@0.1.0-rc.1 hono@4.13.13
 npm install --save-dev void@1.1.11 vite@8.3.4 typescript@7.0.2
 ```
 
@@ -37,7 +37,7 @@ npm install --save-dev void@1.1.11 vite@8.3.4 typescript@7.0.2
 
 ## Configure
 
-`voidHonoJsx()` and `HonoJsxOptions` replace the earlier `voidHonoPages()` and `HonoPagesOptions` names. This is a breaking alpha API change; the old names are not exported. Alpha.3 uses the earlier names. Use a local tarball or a release containing this rename for the configuration below.
+`voidHonoJsx()` and `HonoJsxOptions` replace the earlier `voidHonoPages()` and `HonoPagesOptions` names. This is a breaking alpha API change; the old names are not exported. Alpha.3 uses the earlier names; RC.1 exports the new names shown below.
 
 ```ts
 // vite.config.ts
@@ -110,7 +110,7 @@ The adapter snapshots FormData at submission and leaves `Content-Type` unset so 
 
 Full Pages multipart uses a dedicated same-origin mutation request followed by **one explicit GET** through Void's public router on success. Void's public engine cannot consume a raw multipart body or an externally fetched page shell. The GET commits through normal Hono rendering, history, layout/head, navigation state and cancellation checks while preserving component state. It also reruns loaders and may re-evaluate deferred data; the resolved-deferred retention contract for JSON mutations does not apply to multipart. The destination must support a GET. Island multipart retains its existing success behavior: reload or redirect the document.
 
-This API is part of the release preparation branch and is not in published alpha.4. It does not add a multipart-capable public transport hook to Void or change the one-shot `action()` helper's body contract.
+This API is included in RC.1 and is not in published alpha.4. It does not add a multipart-capable public transport hook to Void or change the one-shot `action()` helper's body contract.
 
 ## Static output and prerendering
 
@@ -171,7 +171,7 @@ The `load`, `visible`, `idle` and `media:(query)` policies use Void's shared sch
 
 ## Optional Markdown
 
-For this source and its Void 1.1 baseline, use the RC after approval or the local tarball steps above. Published alpha.4 has the Markdown exports but retains its earlier Void 0.x contract; alpha.3 predates this API. Add parser peers explicitly only when using Markdown:
+For this source and its Void 1.1 baseline, use the published RC.1 or a local tarball. Published alpha.4 has the Markdown exports but retains its earlier Void 0.x contract; alpha.3 predates this API. Add parser peers explicitly only when using Markdown:
 
 ```sh
 npm install markdown-exit@1.3.0 yaml@2.9.1
@@ -192,7 +192,7 @@ Create `.md` files in the Pages directory. Standard Markdown, tables, authored H
 
 Markdown routes use document navigation, and static-only pages emit no executable script. Interactive/script pages reload on development edits; zero-script pages need a normal refresh. Raw HTML is preserved for repository-authored content, without sanitization for untrusted input. Markdown layout files, JSX-expression/tag-child island props, Shiki themes, footnotes, custom containers and a page-catalog virtual module are unsupported. Do not also configure `@void/md/plugin`. Ordinary Pages users do not need these parser peers. See the repository's [Markdown guide](https://github.com/ts-76/void-plugin-hono-jsx/blob/main/docs/markdown.md) for page examples, metadata scoping and the complete contract.
 
-## Experimental limitations
+## Compatibility and rendering limits
 
 The virtual renderer/client entries follow version-specific conventions observed in Void's official adapter rather than a documented third-party registration API. Browser mounting redraws the SSR page; DOM reuse is not guaranteed. Local ISR uses Void's native direct-worker KV/Cache API runtime; managed edge behavior remains unverified. Unsupported modes fail clearly. Package publication and repository visibility are separate maintainer decisions.
 
@@ -230,14 +230,14 @@ The fixture binds local `ISR_CACHE` storage for Void production preview. Real de
 
 ## Known local development limitation
 
-On the tested macOS Void/Miniflare development runtime, a POST to an undefined named action can reset the next request on a reused connection. Declared-action browser behavior is verified; this transport edge case remains unresolved upstream. Managed runtime behavior for the edge case is unverified. This historical local limitation must be rechecked on the selected RC baseline; it is not evidence about managed production behavior.
+On the tested macOS Void/Miniflare development runtime, a POST to an undefined named action can reset the next request on a reused connection. Declared-action browser behavior is verified; this transport edge case remains unresolved upstream. Managed runtime behavior for the edge case is unverified. On the RC.1 D1 fixture, an oversized-body rejection followed by another pooled request also failed locally; consuming the response body did not prevent it. Local negative checks isolate connections as a test workaround, not a repair. On 2026-10-18, direct Cloudflare HTTPS with RC.1 passed rejection/undefined-action requests followed by healthy GETs through the normal pool, without retries or Connection: close. That does not prove every environment or a forced single TCP socket. The [dated Workers record](https://github.com/ts-76/void-plugin-hono-jsx/blob/main/docs/cloudflare-rc1-verification.md) and [limitations ledger](https://github.com/ts-76/void-plugin-hono-jsx/blob/main/docs/known-limitations.md) separate observed behavior from remaining upstream diagnosis.
 
 ## RC and normal-release policy
 
-The planned first candidate is 0.1.0-rc.0 on next, followed by 0.1.0 after public-consumer and real Workers verification. It is not yet a published-release claim. Production ISR remains outside the initial guarantee. Patches in 0.1.x preserve documented APIs; breaking changes move to 0.2.0 or later. Read the [release contract](https://github.com/ts-76/void-plugin-hono-jsx/blob/main/docs/release-contract.md) and [security policy](https://github.com/ts-76/void-plugin-hono-jsx/blob/main/SECURITY.md). Report vulnerabilities [privately](https://github.com/ts-76/void-plugin-hono-jsx/security/advisories/new).
+RC.1 public bytes/signatures/provenance and registry consumers have been verified. Its direct Workers/D1 migration, redeployment and cleanup exercise is complete. The next target is 0.1.0 with a normal GitHub Release; that version still requires its own final candidate CI/audits, stage, owner approval and public verification before latest/next promotion. Production ISR remains outside the initial guarantee. Patches in 0.1.x preserve documented APIs; breaking changes move to 0.2.0 or later. Read the [release contract](https://github.com/ts-76/void-plugin-hono-jsx/blob/main/docs/release-contract.md) and [security policy](https://github.com/ts-76/void-plugin-hono-jsx/blob/main/SECURITY.md). Report vulnerabilities [privately](https://github.com/ts-76/void-plugin-hono-jsx/security/advisories/new).
 
 
-### Common navigation fallback (after RC.0)
+### Common navigation fallback (included in RC.1)
 
 Register a default-exported local TSX/JSX module by path. The plugin imports the
 component into its client entry; it does not serialize a function in Vite config.
@@ -265,10 +265,10 @@ JSON/multipart submission UI remains under
 `useNavigation()`/form pending state. SSR stays idle and emits no fallback.
 Without this option, existing behavior is unchanged. The normal page reset and
 preserveState/preserveScroll rules still apply when the destination commits.
-This addition is not included in the already published RC.0.
+This addition shipped in RC.1; RC.0 does not include it.
 
 
-### Hono use() / Suspense for deferred props (after RC.0)
+### Hono use() / Suspense for deferred props (included in RC.1)
 
 `deferredResult(state)` gives Hono a stable, render-only Promise. Void still runs
 the resolver, delivers HTML callbacks/NDJSON and manages prefetch/navigation.
@@ -313,4 +313,4 @@ the later result to the browser. The adapter does not send Hono replacement HTML
 or wait for deferred data in its server renderer. Only full Pages are supported;
 deferred islands/static remain unsupported. Upstream failed-prefetch null values
 remain null (the success value type includes null); this helper does not repair
-that upstream limitation. This API is not in published RC.0.
+that upstream limitation. This API shipped in RC.1; RC.0 does not include it.

@@ -1,10 +1,10 @@
 # Approved release contract
 
-Approved by the maintainer on 2026-10-17 in Issue #85. This contract applies to the upcoming RC/normal release, not to already published alpha artifacts. The current manifests stay at alpha.4 until Release Please creates the consolidated release PR.
+Approved by the maintainer on 2026-10-17 in Issue #85. Updated 2026-10-18 after public RC.1 and actual Workers/D1 verification. This contract applies to the RC/normal line, not to historical alpha artifacts. Source manifests remain at the last released version until Release Please updates them in the consolidated 0.1.0 release PR.
 
 ## Version and support
 
-Prepare 0.1.0-rc.0 on next, verify the published RC, then prepare 0.1.0. Patches in 0.1.x preserve the documented API; breaking changes move to 0.2.0 or later with migration notes. Decide on 1.0 after real use and API maintenance experience.
+RC.1 on next is published and verified; prepare 0.1.0 next. Until its public verification and promotion, use RC.1 explicitly or @next; latest still selects historical alpha.1 as checked on 2026-10-18. Patches in 0.1.x preserve the documented API; breaking changes move to 0.2.0 or later with migration notes. Decide on 1.0 after real use and API maintenance experience.
 
 | Component | Accepted stable range | Locked release checks |
 | --- | --- | --- |
@@ -28,16 +28,16 @@ Browser mounting redraws SSR content; DOM reuse and state-preserving HMR are not
 
 ## Production boundary
 
-Issue #57 is a normal-release gate: verify an actual dedicated Worker/D1, synthetic data, SSR/assets/API/navigation/actions/validation, migrations and redeployment. The maintainer selected the tsapp account and cleanup after verification; no additional paid plan is authorized. Prepare locally first, keep resource identifiers/credentials out of package files, and record cleanup.
+Issue #57 is completed: public RC.1 passed actual dedicated Worker/D1 SSR/assets/API/navigation/actions/validation, two migrations, redeployment and data retention. After maintainer inspection, the dedicated resources were deleted and absence verified. The [2026-10-18 record](cloudflare-rc1-verification.md) describes the exact synthetic-data boundary. This is not a new deployment authorization or a guarantee for all configurations. Keep resource identifiers/credentials out of package files.
 
 Production ISR is outside the initial guarantee. Local KV/Cache tests are regression checks, not proof of production privacy, propagation, purge or concurrent regeneration. Issue #58 remains open. The managed Void platform is also unverified. Do not deploy the local ISR fixture's placeholder binding or test-control API.
 
 ## Release and security gates
 
-Changes remain grouped in release/stable-preparation and integration PR #92. Use one consolidated RC; do not publish each source PR separately. Release Please uses the rc prerelease strategy. The main integration squash commit requests the exact initial RC with a one-time `Release-As: 0.1.0-rc.0` footer; do not leave a permanent release-as override in config.
+The source integrations (#92 and #105) and RC releases are complete. Continue grouping the normal-release preparation. Release Please now uses default versioning and prerelease false; prerelease-type is absent. The preparation merge requests `Release-As: 0.1.0` once; no permanent release-as override is stored in config. The bot alone synchronizes release versions/changelog.
 
-RC uses next and a GitHub prerelease. Keep protected environment review, exact same-run/attempt bytes, fresh source/consumer/publisher audits, OIDC/provenance and npm owner approval. A stage is not publicly installable before approval. After approval, verify bytes/signatures/provenance and a registry-installed consumer, then run the real Workers checks.
+RC uses next and a GitHub prerelease. Keep protected environment review, exact same-run/attempt bytes, fresh source/consumer/publisher audits, OIDC/provenance and npm owner approval. A stage is not publicly installable before approval. After approval, verify bytes/signatures/provenance and a registry-installed consumer. RC.1 completed these checks and the real Workers exercise; repeat the final candidate checks for 0.1.0.
 
-For 0.1.0, switch Release Please to default versioning with prerelease false, remove prerelease-type and request 0.1.0 once. Stage on next so the existing latest is retained until public artifact/consumer verification. Then promote latest and align next to the same normal version. Future RCs update only next. Metadata/policy tags must match; prereleases cannot use latest. Ordinary source manifests stay private; only the isolated candidate changes private to false.
+Review the generated 0.1.0 release PR and its exact-head checks before merging. Stage on next so the existing latest is retained until public artifact/consumer verification. Then promote latest and align next to the same normal version. Future RCs update only next. Metadata/policy tags must match; prereleases cannot use latest. Ordinary source manifests stay private; only the isolated candidate changes private to false.
 
-Alpha dependency exceptions are not automatically normal-release approval. Re-evaluate each exact advisory/version/path for the RC and record the result before re-enabling dependency-security approval. The preparation reassessment is recorded in [rc-security-assessment.md](rc-security-assessment.md); each final candidate still repeats fresh checks. Fresh new/changed findings stop upload. Publisher acceptance is limited to the pinned Linux x64 binary and exact tgz stage command; it does not approve general installs or other pnpm commands. See SECURITY.md for reporting and support policy.
+The [limitations ledger](known-limitations.md) separates runtime, consumer and publisher boundaries and defines upstream update/re-evaluation steps. Alpha dependency exceptions are not automatically normal-release approval. Re-evaluate each exact advisory/version/path for the RC and record the result before re-enabling dependency-security approval. The preparation reassessment is recorded in [rc-security-assessment.md](rc-security-assessment.md); each final candidate still repeats fresh checks. Fresh new/changed findings stop upload. Publisher acceptance is limited to the pinned Linux x64 binary and exact tgz stage command; it does not approve general installs or other pnpm commands. See SECURITY.md for reporting and support policy.

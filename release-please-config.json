@@ -7,9 +7,8 @@
       "release-type": "node",
       "include-component-in-tag": false,
       "include-v-in-tag": true,
-      "versioning": "prerelease",
-      "prerelease": true,
-      "prerelease-type": "rc",
+      "versioning": "default",
+      "prerelease": false,
       "extra-files": [
         {
           "type": "json",
