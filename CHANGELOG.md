@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.3.0](https://github.com/ts-76/void-plugin-hono-jsx/compare/v0.2.0...v0.3.0) (2026-10-18)
+
+
+### Features
+
+* **markdown:** render static components with nested content ([#122](https://github.com/ts-76/void-plugin-hono-jsx/issues/122)) ([37889b1](https://github.com/ts-76/void-plugin-hono-jsx/commit/37889b1a679bfb53c364a8b6de143eca7780b769))
+
+
+### Bug Fixes
+
+* **css:** collect SSR styles and retain the document host ([#121](https://github.com/ts-76/void-plugin-hono-jsx/issues/121)) ([543f4d7](https://github.com/ts-76/void-plugin-hono-jsx/commit/543f4d7a8901f9389a1e66b0bfc884953b843635))
+
+
+### Documentation
+
+* **isr:** identify query variant purge enumeration limit ([#120](https://github.com/ts-76/void-plugin-hono-jsx/issues/120)) ([5604497](https://github.com/ts-76/void-plugin-hono-jsx/commit/5604497f537b009c0d92de0e3aa9d1ad8693a3a3))
+* **isr:** record production cache verification and limits ([#119](https://github.com/ts-76/void-plugin-hono-jsx/issues/119)) ([9ed6f78](https://github.com/ts-76/void-plugin-hono-jsx/commit/9ed6f789960af597d06394bd9e703e6ff44b4098))
+* simplify OSS setup and maintenance guides ([#115](https://github.com/ts-76/void-plugin-hono-jsx/issues/115)) ([4b78e15](https://github.com/ts-76/void-plugin-hono-jsx/commit/4b78e15b3e600b3bd75bd439781e4bf5bf827695))
+
 ## [0.2.0](https://github.com/ts-76/void-plugin-hono-jsx/compare/v0.1.0...v0.2.0) (2026-10-18)
 
 
