@@ -12,7 +12,7 @@ Direct Workers/D1 deployment, migrations and cleanup were [verified separately w
 
 | Priority | Work |
 | --- | --- |
-| 1 | [#58](https://github.com/ts-76/void-plugin-hono-jsx/issues/58): verify production ISR privacy, cache boundaries, purge and regeneration. |
+| 1 | [#58](https://github.com/ts-76/void-plugin-hono-jsx/issues/58): investigate the observed query-variant purge failure and verify controlled multi-region behavior; [initial results](isr-cloudflare-verification.md). |
 | 2 | [#100](https://github.com/ts-76/void-plugin-hono-jsx/issues/100): measure multipart's extra GET and evaluate Void public API support for removing it. |
 | 3 | [#102](https://github.com/ts-76/void-plugin-hono-jsx/issues/102): investigate SSR DOM reuse and upstream support. |
 | 4 | [#101](https://github.com/ts-76/void-plugin-hono-jsx/issues/101): evaluate state-preserving HMR. |

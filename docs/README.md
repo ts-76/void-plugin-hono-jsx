@@ -5,7 +5,7 @@
 - [Setup and package exports](../packages/hono-pages/README.md)
 - [Pages, navigation, forms and islands](pages.md)
 - [Markdown](markdown.md)
-- [Local ISR](isr.md)
+- [ISR](isr.md)
 - [Supported versions and behavior](release-contract.md)
 - [Known limitations](known-limitations.md)
 - [Roadmap](stable-roadmap.md)
@@ -24,6 +24,7 @@ These records describe specific versions and checks. Use the guides above for cu
 
 - [Release history](release-history.md)
 - [Workers/D1 verification with RC.1](cloudflare-rc1-verification.md)
+- [Workers ISR verification with 0.2.0](isr-cloudflare-verification.md)
 - [Markdown feature comparison](markdown-compatibility.md)
 - [Scaffold compatibility](scaffold-compatibility.md)
 - [Build measurements](performance.md)
