@@ -190,11 +190,10 @@ Copy-only, script-only and zero-script pages need manual refresh, including when
 
 See the [official feature comparison](markdown-compatibility.md) for design differences and [testing guide](testing.md) for validation coverage.
 
-## Standalone static compilation (development)
+## Standalone static compilation
 
 The new `void-plugin-hono-jsx/markdown/compiler` build-only export supports hosts
-that own their document and client entry, including hono-decks. This API is not
-in the published 0.3.0 package yet. It does not require the Void Pages plugin.
+that own their document and client entry, including hono-decks. This API is available starting in 0.4.0. It does not require the Void Pages plugin.
 
 ```ts
 import { readStaticMarkdown, compileStaticMarkdown } from 'void-plugin-hono-jsx/markdown/compiler';
