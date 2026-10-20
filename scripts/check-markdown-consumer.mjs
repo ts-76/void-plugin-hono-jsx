@@ -29,7 +29,7 @@ export async function checkMarkdownConsumer({ repo, consumer: original, browser,
   await writeFile(join(consumer, 'package.json'), JSON.stringify(pkg, null, 2) + '\n');
   await writeFile(join(consumer, 'package-lock.json'), JSON.stringify(lock, null, 2) + '\n');
   npm(['ci', '--no-audit', '--no-fund']);
-  npm(['install', '--no-save', '--package-lock=false', '--no-audit', '--no-fund', tarball]);
+  npm(['install', '--no-save', '--package-lock=false', '--no-audit', '--no-fund', originalEnv.HONO_MARKDOWN_PACKAGE, tarball]);
   const optionalReport = dependencyAudit({ npmCli, cwd: consumer, env, output: join(consumer, 'markdown-audit.json') });
   for (const name of ['markdown-exit', 'yaml', 'shiki', '@shikijs/transformers', 'markdown-it-container', 'entities', 'linkify-it', 'mdurl', 'punycode.js', 'uc.micro']) assert.equal(optionalReport.vulnerabilities[name], undefined, `New parser advisory: ${name}`);
   if (originalEnv.RELEASE_CONSUMER_AUDIT) await cp(join(consumer, 'markdown-audit.json'), originalEnv.RELEASE_CONSUMER_AUDIT.replace(/\.json$/, '-markdown.json'));

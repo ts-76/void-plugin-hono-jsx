@@ -100,5 +100,8 @@
     "@shikijs/transformers": {
       "optional": true
     }
+  },
+  "dependencies": {
+    "@ts-76/hono-markdown": "^0.1.0"
   }
 }

@@ -154,3 +154,34 @@ See [known limitations](https://github.com/ts-76/void-plugin-hono-jsx/blob/main/
 The reviewed Void dependency tree retains an upstream esbuild advisory.
 The adapter adds no transitive overrides. Publisher tooling is assessed separately.
 See the [security policy](https://github.com/ts-76/void-plugin-hono-jsx/blob/main/SECURITY.md) and report vulnerabilities [privately](https://github.com/ts-76/void-plugin-hono-jsx/security/advisories/new).
+
+## Shared Hono Markdown and host boundaries
+
+`packages/hono-markdown` contains the independent `@ts-76/hono-markdown` package:
+compiler, literal component parsing, metadata context/hooks, CSS and DOM island
+scheduling. It has no Void or Vite dependency. The first common-package release
+is pending; current checks install its local tarball alongside the adapter.
+
+The Void plugin owns page discovery, layouts, head, loaders, virtual modules and
+Void's scheduler. Existing `/markdown`, `/markdown/compiler`, `/markdown/client`
+and theme imports remain supported. The old and common imports share the same
+Markdown context, avoiding duplicate providers when documents and decks coexist.
+The legacy client entry retains the existing slide-activation fallback for older
+hono-decks releases; new hosts supply their own `ready` gate.
+
+Maintainer `npm install`, `npm run typecheck`, and `npm test` automatically build
+the common package. `npm run build:package` builds both packages.
+`npm run check:consumer` first verifies the independent package, then installs
+both candidates and runs the existing real-app checks. Run
+`node scripts/check-independent-markdown-consumer.mjs` to verify Markdown SSR in
+a fresh consumer without Void or Vite installed. Local development checks can supply `HONO_MARKDOWN_PACKAGE`.
+Accepted release artifacts always install the published common dependency;
+local dependency substitutions are rejected for release evidence.
+
+Release the common package before an adapter version that depends on it. The
+existing adapter release gate still checks the exact artifact and permits only
+the documented common dependency; it does not publish the new package implicitly.
+
+The legacy theme exports retain their existing CSS snapshot and source files.
+They do not automatically copy changes from the common theme. This preserves
+existing styling while the new common theme can evolve independently.
