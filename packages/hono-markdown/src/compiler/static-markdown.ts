@@ -8,6 +8,12 @@ import type { HonoMarkdownOptions } from './markdown-features.ts';
 export type { HonoMarkdownOptions } from './markdown-features.ts';
 
 export interface MarkdownIsland { id: string; modulePath: string; hydrate: string }
+export interface MarkdownModuleInput {
+  sourcePath: string;
+  options?: HonoMarkdownOptions;
+  /** Public context entry owned by the host adapter. Defaults to this package. */
+  contextModule?: string;
+}
 
 /** Read the shared prelude without accepting arbitrary browser scripts. */
 export function readMarkdownModule(source: string) {
@@ -24,13 +30,13 @@ export function readStaticMarkdown(source: string) {
 }
 
 /** Compile trusted Markdown for a host that owns its document and client entry. */
-export async function compileStaticMarkdown(source: string, input: { sourcePath: string; options?: HonoMarkdownOptions }) {
+export async function compileStaticMarkdown(source: string, input: MarkdownModuleInput) {
   readStaticMarkdown(source);
   return compileMarkdownModule(source, input);
 }
 
 /** Compile an independent document with structured island metadata for its host. */
-export async function compileMarkdownModule(source: string, input: { sourcePath: string; options?: HonoMarkdownOptions }) {
+export async function compileMarkdownModule(source: string, input: MarkdownModuleInput) {
   readMarkdownModule(source);
   const result = await compileMarkdown(source, input.options);
   const imports = [...result.staticImports.map(entry => ({ ...entry, kind: 'static' as const, hydrate: '' })), ...result.imports.map(entry => ({ ...entry, kind: 'island' as const }))].map((entry, index) => {
@@ -61,7 +67,7 @@ export async function compileMarkdownModule(source: string, input: { sourcePath:
     clientCode: result.hasCode ? markdownCopyCode : '',
     code: `import { jsx, Fragment } from 'hono/jsx/jsx-runtime';
 import { raw } from 'hono/html';
-import { MarkdownContext } from '@ts-76/hono-markdown';
+import { MarkdownContext } from ${JSON.stringify(input.contextModule ?? '@ts-76/hono-markdown')};
 ${imports.map(entry => `import ${entry.alias} from ${JSON.stringify(entry.specifier)};`).join('\n')}
 export const frontmatter = ${literal(result.frontmatter)};
 export const headings = ${literal(result.headings)};

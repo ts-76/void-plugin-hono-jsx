@@ -35,3 +35,12 @@ test('the common distribution retains upstream Markdown and CSS attribution', as
   const notice = await readFile(new URL('../THIRD_PARTY_NOTICES.md',import.meta.url),'utf8');
   assert.match(notice,/Cloudflare, Inc/);assert.match(notice,/Yusuke Wada/);
 });
+
+test('the host selects a directly resolvable public context entry', async () => {
+  const { compileMarkdownModule } = await import('../dist/compiler/static-markdown.js');
+  const normal = await compileMarkdownModule('# Default', { sourcePath: '/tmp/deck.md' });
+  assert.match(normal.code, /from "@ts-76\/hono-markdown"/);
+  const adapted = await compileMarkdownModule('# Adapted', { sourcePath: '/tmp/deck.md', contextModule: 'host-adapter/markdown' });
+  assert.match(adapted.code, /from "host-adapter\/markdown"/);
+  assert.doesNotMatch(adapted.code, /from ['"]@ts-76\/hono-markdown['"]/);
+});
