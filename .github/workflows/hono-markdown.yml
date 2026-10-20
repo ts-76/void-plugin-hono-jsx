@@ -1,0 +1,29 @@
+name: Hono Markdown package
+on:
+  pull_request:
+    paths: ['packages/hono-markdown/**', 'scripts/build-markdown.mjs', 'scripts/check-independent-markdown-consumer.mjs', '.github/workflows/hono-markdown.yml', 'package.json', 'package-lock.json']
+  push:
+    branches: [main]
+    paths: ['packages/hono-markdown/**', 'scripts/build-markdown.mjs', 'scripts/check-independent-markdown-consumer.mjs', '.github/workflows/hono-markdown.yml', 'package.json', 'package-lock.json']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  common:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.21.0'
+          cache: npm
+      - run: npm ci
+      - run: node --test packages/hono-markdown/tests/*.test.mjs
+      - run: node scripts/check-independent-markdown-consumer.mjs
+      - run: npm pack --ignore-scripts --json --pack-destination . ./packages/hono-markdown
+      - uses: actions/upload-artifact@v7
+        with:
+          name: hono-markdown-${{ github.sha }}
+          path: ts-76-hono-markdown-*.tgz
+          if-no-files-found: error

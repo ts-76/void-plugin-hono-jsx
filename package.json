@@ -16,7 +16,7 @@
     "build:pages": "npm --prefix examples/pages run build",
     "preview:pages": "npm --prefix examples/pages run preview",
     "build:package": "node scripts/build-package.mjs",
-    "check:consumer": "node scripts/check-consumer.mjs",
+    "check:consumer": "node scripts/check-independent-markdown-consumer.mjs && node scripts/check-consumer.mjs",
     "check:source": "node scripts/check-source.mjs",
     "audit:release": "node scripts/audit-release.mjs",
     "dev:custom-ssr": "npm --prefix examples/custom-ssr run dev",
@@ -26,10 +26,15 @@
     "release:plan": "node scripts/release/plan.mjs",
     "audit:history": "node scripts/audit-history.mjs",
     "audit:secrets": "bash scripts/gitleaks.sh",
-    "release:verify-consumer": "node scripts/release/verify-consumer.mjs"
+    "release:verify-consumer": "node scripts/release/verify-consumer.mjs",
+    "build:markdown": "node scripts/build-markdown.mjs",
+    "prepare": "npm run build:markdown",
+    "pretypecheck": "npm run build:markdown",
+    "pretest": "npm run build:markdown"
   },
   "dependencies": {
-    "hono": "4.13.13"
+    "hono": "4.13.13",
+    "@ts-76/hono-markdown": "file:packages/hono-markdown"
   },
   "devDependencies": {
     "@jridgewell/remapping": "2.3.5",
