@@ -1,0 +1,98 @@
+{
+  "name": "@ts-76/hono-markdown",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Host-independent Hono JSX Markdown compiler and islands",
+  "license": "MIT",
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/runtime/markdown.d.ts",
+      "default": "./dist/runtime/markdown.js"
+    },
+    "./compiler": {
+      "types": "./dist/compiler/static-markdown.d.ts",
+      "default": "./dist/compiler/static-markdown.js"
+    },
+    "./parser": {
+      "types": "./dist/compiler/markdown-compiler.d.ts",
+      "default": "./dist/compiler/markdown-compiler.js"
+    },
+    "./features": {
+      "types": "./dist/compiler/markdown-features.d.ts",
+      "default": "./dist/compiler/markdown-features.js"
+    },
+    "./components": {
+      "types": "./dist/compiler/markdown-components.d.ts",
+      "default": "./dist/compiler/markdown-components.js"
+    },
+    "./copy": {
+      "types": "./dist/compiler/markdown-copy.d.ts",
+      "default": "./dist/compiler/markdown-copy.js"
+    },
+    "./resolve-component": {
+      "types": "./dist/compiler/resolve-component.d.ts",
+      "default": "./dist/compiler/resolve-component.js"
+    },
+    "./client": {
+      "types": "./dist/runtime/client.d.ts",
+      "import": "./dist/runtime/client.js"
+    },
+    "./style-host": {
+      "types": "./dist/runtime/style-host.d.ts",
+      "default": "./dist/runtime/style-host.js"
+    },
+    "./theme-content.css": "./dist/theme/content.css",
+    "./theme.css": "./dist/theme/index.css"
+  },
+  "dependencies": {
+    "@babel/parser": "^7.29.3"
+  },
+  "peerDependencies": {
+    "hono": ">=4.13.13 <5.0.0",
+    "markdown-exit": ">=1.3.0 <2.0.0",
+    "yaml": ">=2.9.1 <3.0.0",
+    "markdown-it-container": ">=4.0.0 <5.0.0",
+    "shiki": ">=4.5.0 <5.0.0",
+    "@shikijs/transformers": ">=4.5.0 <5.0.0"
+  },
+  "peerDependenciesMeta": {
+    "markdown-exit": {
+      "optional": true
+    },
+    "yaml": {
+      "optional": true
+    },
+    "markdown-it-container": {
+      "optional": true
+    },
+    "shiki": {
+      "optional": true
+    },
+    "@shikijs/transformers": {
+      "optional": true
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node scripts/copy-theme.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ts-76/void-plugin-hono-jsx.git",
+    "directory": "packages/hono-markdown"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/",
+    "tag": "latest"
+  },
+  "homepage": "https://github.com/ts-76/void-plugin-hono-jsx/tree/main/packages/hono-markdown",
+  "bugs": {
+    "url": "https://github.com/ts-76/void-plugin-hono-jsx/issues"
+  }
+}
