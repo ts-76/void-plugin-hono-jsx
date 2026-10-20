@@ -189,3 +189,50 @@ Interactive pages with a development client use full reloads on edits.
 Copy-only, script-only and zero-script pages need manual refresh, including when adding or removing scripts.
 
 See the [official feature comparison](markdown-compatibility.md) for design differences and [testing guide](testing.md) for validation coverage.
+
+## Standalone static compilation (development)
+
+The new `void-plugin-hono-jsx/markdown/compiler` build-only export supports hosts
+that own their document and client entry, including hono-decks. This API is not
+in the published 0.3.0 package yet. It does not require the Void Pages plugin.
+
+```ts
+import { readStaticMarkdown, compileStaticMarkdown } from 'void-plugin-hono-jsx/markdown/compiler';
+const { frontmatter, content, script } = readStaticMarkdown(source);
+const result = await compileStaticMarkdown(source, { sourcePath: '/absolute/path/deck.md' });
+// result.code: Hono JSX ESM; relocate its relative component imports if needed.
+// result.clientCode: include once in the host client entry for fenced-code copying.
+```
+
+`readStaticMarkdown` exposes the validated YAML mapping, body and static-import
+prelude for hosts that split a document into slides. `compileStaticMarkdown`
+returns code, frontmatter, headings and optional copy client code. Static imports
+resolve relative to the absolute `sourcePath`. Generated components provide the
+public Markdown context and wrap content in `.void-md`. Import the optional
+content stylesheet in the host app; the compiler never injects global styles.
+
+Only static TSX/JSX components are supported here. Island imports and remaining
+script-block code fail explicitly because their lifecycle belongs to Void Pages.
+Hosts must build their own client lifecycle before enabling those features.
+Raw HTML remains trusted content, and generated module imports execute authored
+components. Keep this export and all parser/highlighter peers out of client and
+Worker bundles. Ordinary Pages consumers retain optional Markdown dependencies.
+
+
+### Standalone modules with islands
+
+`readMarkdownModule()` and `compileMarkdownModule()` extend the standalone API
+without changing the strict static entry points. They accept relative default
+TSX/JSX imports with `island: "load" | "visible" | "idle" | "media:..."` and
+return `islands: { id, modulePath, hydrate }[]` alongside SSR code and copy code.
+Hosts bundle the island modules for the browser and invoke `hydrateMarkdownIslands`
+from `void-plugin-hono-jsx/markdown/client` with an id-to-loader map. This runtime
+uses Void's shared scheduler and per-element Markdown contexts without requiring
+a Pages manifest or a document-owned `#app`. Visible islands inside slides wait
+for their slide to become active. Component CSS must be emitted by the host;
+hono-decks includes it in deck styles for both interactive and print documents.
+
+Arbitrary script code remains unsupported by the module API. Literal props are
+serialized in the HTML. Keep private data out of frontmatter delivered to client
+islands. The Markdown export has a browser condition so island hooks and the
+client provider share the same context module.

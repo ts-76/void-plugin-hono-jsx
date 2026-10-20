@@ -62,7 +62,7 @@ export function createMarkdownCompiler(options: HonoMarkdownOptions = {}) {
       tokens[index].attrSet('id', slug);
       headings.push({ depth: Number(tokens[index].tag.slice(1)), slug, text });
     }
-    return { ...extracted, source, frontmatter, headings, tokens, env, hasCode: tokens.some(token => token.type === 'fence') };
+    return { ...extracted, source, content, frontmatter, headings, tokens, env, hasCode: tokens.some(token => token.type === 'fence') };
   }
 
   async function render(parsed: ReturnType<typeof parse>) {
