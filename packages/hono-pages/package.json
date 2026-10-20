@@ -35,6 +35,7 @@
     },
     "./markdown": {
       "types": "./dist/server/markdown.d.ts",
+      "browser": "./dist/browser/markdown.js",
       "default": "./dist/server/markdown.js"
     },
     "./theme.css": {
@@ -42,6 +43,14 @@
     },
     "./theme-content.css": {
       "default": "./dist/theme/content.css"
+    },
+    "./markdown/compiler": {
+      "types": "./dist/plugins/static-markdown.d.ts",
+      "default": "./dist/plugins/static-markdown.js"
+    },
+    "./markdown/client": {
+      "types": "./dist/browser/markdown-islands.d.ts",
+      "import": "./dist/browser/markdown-islands.js"
     }
   },
   "peerDependencies": {
