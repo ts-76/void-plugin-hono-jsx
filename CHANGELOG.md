@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.5.0](https://github.com/ts-76/void-plugin-hono-jsx/compare/v0.4.0...v0.5.0) (2026-10-20)
+
+
+### Features
+
+* consume shared Markdown through compatible Void adapters ([020238a](https://github.com/ts-76/void-plugin-hono-jsx/commit/020238ae66cd594f7d46552c198d9c979b8193ff))
+* consume shared Markdown through compatible Void entries ([8174636](https://github.com/ts-76/void-plugin-hono-jsx/commit/8174636a9d61fe51901e146a04470062372f3e64))
+* extract host-independent Hono Markdown package ([7074b66](https://github.com/ts-76/void-plugin-hono-jsx/commit/7074b66219f93c1c6e1567fa3b9bfba260b96e4b))
+* extract host-independent Hono Markdown package ([5cfb9eb](https://github.com/ts-76/void-plugin-hono-jsx/commit/5cfb9eb8ca751ecc42e6af1e4386c3ae0ceed8e9))
+
+
+### Bug Fixes
+
+* let host adapters select a resolvable context entry ([9bdd34d](https://github.com/ts-76/void-plugin-hono-jsx/commit/9bdd34db994d86ac259272697c9407a31f1062c9))
+* resolve generated Markdown through the host adapter ([500d7eb](https://github.com/ts-76/void-plugin-hono-jsx/commit/500d7eb3a97feeafc333dddeb217b8658efcfc0b))
+* retain upstream notices in common Markdown distribution ([ad72b2f](https://github.com/ts-76/void-plugin-hono-jsx/commit/ad72b2faf4d20c7cf341aed73f9cb2289d942188))
+
 ## [0.4.0](https://github.com/ts-76/void-plugin-hono-jsx/compare/v0.3.0...v0.4.0) (2026-10-20)
 
 
