@@ -159,8 +159,8 @@ See the [security policy](https://github.com/ts-76/void-plugin-hono-jsx/blob/mai
 
 `packages/hono-markdown` contains the independent `@ts-76/hono-markdown` package:
 compiler, literal component parsing, metadata context/hooks, CSS and DOM island
-scheduling. It has no Void or Vite dependency. The first common-package release
-is pending; current checks install its local tarball alongside the adapter.
+scheduling. It has no Void or Vite dependency. Accepted release checks install the published common dependency; local
+development checks may select a candidate tarball alongside the adapter.
 
 The Void plugin owns page discovery, layouts, head, loaders, virtual modules and
 Void's scheduler. Existing `/markdown`, `/markdown/compiler`, `/markdown/client`
