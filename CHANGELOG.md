@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/ts-76/void-plugin-hono-jsx/compare/v0.3.0...v0.4.0) (2026-10-20)
+
+
+### Features
+
+* **markdown:** support standalone modules and islands ([#123](https://github.com/ts-76/void-plugin-hono-jsx/issues/123)) ([6402ef9](https://github.com/ts-76/void-plugin-hono-jsx/commit/6402ef9d193c8eda984f0e38202c8b921d270c11))
+
 ## [0.3.0](https://github.com/ts-76/void-plugin-hono-jsx/compare/v0.2.0...v0.3.0) (2026-10-18)
 
 
