@@ -1,3 +1,4 @@
+import './build-markdown.mjs';
 import { execFileSync } from 'node:child_process';
 import { cp, readFile, rm, writeFile } from 'node:fs/promises';
 import { rewritePagesImport } from './rewrite-package-import.mjs';
@@ -19,5 +20,6 @@ for (const target of ['server/form', 'browser/form', 'browser/client']) {
   await writeFile(file + '.map', JSON.stringify(edited.map) + '\n');
 }
 
-// Public theme entries mirror @void/md; keep original CSS in the debug source.
+// Preserve the existing public theme as a compatibility snapshot.
+// Common themes evolve independently; do not overwrite these debug sources.
 await cp('packages/hono-pages/src/theme', 'packages/hono-pages/dist/theme', { recursive: true });

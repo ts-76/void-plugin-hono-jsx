@@ -1,3 +1,4 @@
+import { commonPackageSource } from './common-package-source.mjs';
 import { checkMultipartConsumer } from './check-multipart-consumer.mjs';
 import { checkMarkdownConsumer } from './check-markdown-consumer.mjs';
 import assert from 'node:assert/strict';
@@ -199,7 +200,16 @@ try {
   }
   console.log(`Tarball audit passed. Installing locked consumer ${stack.name}: Void ${stack.void}, npm Vite ${stack.vite}, ${stack.launcher} host ${stack.hostVite}.`);
   npm(['ci', '--no-audit', '--no-fund'], consumer);
-  npm(['install', '--no-save', '--package-lock=false', '--no-audit', '--no-fund', tarball], consumer);
+  const commonPackage = commonPackageSource({
+    accepted: Boolean(args.length), override: process.env.HONO_MARKDOWN_PACKAGE,
+    range: metadata.dependencies?.['@ts-76/hono-markdown'],
+    packLocal() {
+      const packed = JSON.parse(npm(['pack', '--ignore-scripts', '--json', '--pack-destination', temporary], join(repo, 'packages/hono-markdown')));
+      return join(temporary, packed[0].filename);
+    },
+  });
+  env.HONO_MARKDOWN_PACKAGE = commonPackage;
+  npm(['install', '--no-save', '--package-lock=false', '--no-audit', '--no-fund', commonPackage, tarball], consumer);
   assert.equal((await readdir(join(consumer, 'node_modules'))).includes('markdown-exit'), false, 'Ordinary consumers must not install the optional Markdown parser');
   for (const name of ['shiki', 'markdown-it-container']) assert.equal((await readdir(join(consumer, 'node_modules'))).includes(name), false, `Ordinary consumers must not install ${name}`);
   await assert.rejects(access(join(consumer, 'node_modules/@shikijs/transformers')), { code: 'ENOENT' });
