@@ -227,8 +227,10 @@ return `islands: { id, modulePath, hydrate }[]` alongside SSR code and copy code
 Hosts bundle the island modules for the browser and invoke `hydrateMarkdownIslands`
 from `void-plugin-hono-jsx/markdown/client` with an id-to-loader map. This runtime
 uses Void's shared scheduler and per-element Markdown contexts without requiring
-a Pages manifest or a document-owned `#app`. Visible islands inside slides wait
-for their slide to become active. Component CSS must be emitted by the host;
+a Pages manifest or a document-owned `#app`. It does not inspect slide state.
+Hosts that defer visible islands until a slide becomes active must supply the
+`ready(element, start)` option and call `start()` when their condition is met.
+Component CSS must be emitted by the host;
 hono-decks includes it in deck styles for both interactive and print documents.
 
 Arbitrary script code remains unsupported by the module API. Literal props are
