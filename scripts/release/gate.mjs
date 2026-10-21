@@ -88,7 +88,7 @@ export function createPlan(options) {
   return { status: blockers.length ? 'blocked' : 'ready', blockers, commit: options.commit, ref: options.ref,
     package: artifact.evidence.package, tarball: artifact.evidence.tarball, sha256: artifact.evidence.sha256,
     integrity: artifact.integrity, dependencyAudit: dependencyAudit.metadata.vulnerabilities, dependencyAdvisories: advisories,
-    publisherAudit: 'Required in stage job; exact reviewed Rust findings only; new or changed findings block upload',
+    publisherAudit: 'Required in stage job; exact reviewed bundle findings only; new or changed findings block upload',
     stage: 'not executed', approval: 'npm maintainer review and personal 2FA' };
 }
 export function requireEnvironmentReview(environment, branches, policy) {

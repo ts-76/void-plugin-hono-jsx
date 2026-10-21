@@ -57,7 +57,7 @@ Preserve published versions and registration/bootstrap artifacts; bootstrap tag 
 
 ## Security gates
 
-Review fresh consumer and publisher audits separately. Known findings require the exact reviewed scope; new or changed unreviewed findings block upload.
+Review fresh consumer and JavaScript publisher bundle audits separately. Known findings require the exact reviewed scope; new or changed unreviewed findings block upload.
 Do not add transitive overrides or broaden acceptance to pass a check.
 See the [limitations and update policy](known-limitations.md#dependency-and-publisher-boundaries).
 

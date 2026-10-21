@@ -46,4 +46,4 @@ const publisherAudit = await auditPublisher();
 // Re-read the accepted bytes immediately before submission; no pack/build command exists here.
 const artifact = inspectArtifact(options);
 const result = await submitWithPublisher({ binary: process.env.PNPM_RELEASE_CLI, plan, policy, tarball: artifact.tarball });
-writeFileSync('stage-receipt.json', JSON.stringify({ ...plan, publisherAudit, stage: 'submitted; awaiting npm maintainer 2FA', stageId: result.stageId }, null, 2) + '\n');
+writeFileSync('stage-receipt.json', JSON.stringify({ ...plan, publisherAudit, stage: 'submitted; awaiting npm maintainer 2FA', stageId: result.stageId, publisherReachability: result.reachability }, null, 2) + '\n');
