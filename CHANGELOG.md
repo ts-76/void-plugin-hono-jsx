@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.6.0](https://github.com/ts-76/void-plugin-hono-jsx/compare/v0.5.0...v0.6.0) (2026-10-21)
+
+
+### ⚠ BREAKING CHANGES
+
+* **markdown:** keep island readiness host-owned ([#128](https://github.com/ts-76/void-plugin-hono-jsx/issues/128))
+
+### Release Automation
+
+* validate scoped pnpm 11.28.6 stage publisher ([#130](https://github.com/ts-76/void-plugin-hono-jsx/issues/130)) ([f0b1d62](https://github.com/ts-76/void-plugin-hono-jsx/commit/f0b1d62562f44402885825d6915e60c0684befe7))
+
+
+### Refactoring
+
+* **markdown:** keep island readiness host-owned ([#128](https://github.com/ts-76/void-plugin-hono-jsx/issues/128)) ([6fc417c](https://github.com/ts-76/void-plugin-hono-jsx/commit/6fc417cc6e1109eedb90c6d482ab5ef5fe3cbefa))
+
 ## [0.5.0](https://github.com/ts-76/void-plugin-hono-jsx/compare/v0.4.0...v0.5.0) (2026-10-20)
 
 
