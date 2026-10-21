@@ -166,8 +166,8 @@ The Void plugin owns page discovery, layouts, head, loaders, virtual modules and
 Void's scheduler. Existing `/markdown`, `/markdown/compiler`, `/markdown/client`
 and theme imports remain supported. The old and common imports share the same
 Markdown context, avoiding duplicate providers when documents and decks coexist.
-The legacy client entry retains the existing slide-activation fallback for older
-hono-decks releases; new hosts supply their own `ready` gate.
+The client entry only supplies Void's scheduler. Hosts supply a `ready` gate
+for presentation-specific activation; the adapter does not inspect slide DOM.
 
 Maintainer `npm install`, `npm run typecheck`, and `npm test` automatically build
 the common package. `npm run build:package` builds both packages.

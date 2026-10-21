@@ -27,3 +27,36 @@ test('neutral package and scheduler have no Void, Vite or deck conventions', asy
   const source=await readFile(new URL('../packages/hono-markdown/src/runtime/client.ts',import.meta.url),'utf8');
   assert.doesNotMatch(source,/void\/|data-slide-state|section\[/);
 });
+
+test('Void Markdown client does not infer host state and honors an explicit readiness gate', async () => {
+  const { hydrateMarkdownIslands } = await import('../packages/hono-pages/src/runtime/markdown-islands.ts');
+  const documentDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'document');
+  const element = {
+    dataset: { honoMdIsland: 'counter', honoMdHydrate: 'visible' },
+    closest() { assert.fail('Void must not inspect a host-owned DOM ancestor'); },
+  };
+  Object.defineProperty(globalThis, 'document', { configurable: true, value: { querySelectorAll: () => [element] } });
+  try {
+    const scheduled = [];
+    const loader = async () => ({});
+    const options = { schedule: (...args) => scheduled.push(args) };
+    hydrateMarkdownIslands({ counter: loader }, options);
+    assert.equal(scheduled.length, 1, 'without a host gate, schedule immediately');
+    assert.equal(scheduled[0][0], element);
+    assert.equal(scheduled[0][1], loader);
+    assert.equal(scheduled[0][3], 'visible');
+
+    delete element.dataset.honoMdScheduled;
+    let activate;
+    hydrateMarkdownIslands({ counter: loader }, {
+      ...options,
+      ready(target, start) { assert.equal(target, element); activate = start; },
+    });
+    assert.equal(scheduled.length, 1, 'an explicit host gate may defer scheduling');
+    activate();
+    assert.equal(scheduled.length, 2);
+  } finally {
+    if (documentDescriptor) Object.defineProperty(globalThis, 'document', documentDescriptor);
+    else delete globalThis.document;
+  }
+});
