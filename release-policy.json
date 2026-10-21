@@ -13,7 +13,7 @@
   "npmOwner": "ts-76",
   "distTag": "next",
   "provenance": true,
-  "pnpmVersion": "12.14.0",
+  "pnpmVersion": "11.28.6",
   "environment": "npm-stage",
   "reviewers": [
     {

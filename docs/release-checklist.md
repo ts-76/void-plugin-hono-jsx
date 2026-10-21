@@ -9,7 +9,7 @@ Use the [release guide](releasing.md) and [support policy](release-contract.md).
 - [ ] Let Release Please synchronize versions and changelog. Review the selected version, breaking changes and migration notes.
 - [ ] Verify packed README, source/maps, exports, licenses and notices. Source manifests remain private; only the isolated candidate is publishable.
 - [ ] Require common source/history/secret/type/unit/browser checks and both complete consumers on identical bytes.
-- [ ] Review fresh root/consumer/Markdown audits and the separate Linux publisher inventory. Stop for new or changed unreviewed findings; preserve scoped acceptance without overrides.
+- [ ] Review fresh root/consumer/Markdown audits and the separate JavaScript publisher bundle inventory. Stop for new or changed unreviewed findings; preserve scoped acceptance without overrides.
 
 ## Stage
 

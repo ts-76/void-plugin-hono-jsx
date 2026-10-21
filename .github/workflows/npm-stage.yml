@@ -76,7 +76,7 @@ jobs:
         with:
           name: accepted-node-${{ needs.config.outputs.releaseNode }}-${{ github.sha }}-attempt-${{ github.run_attempt }}
           path: artifacts
-      - name: Download and verify the pinned pnpm native publisher
+      - name: Download and verify the pinned JavaScript pnpm publisher
         run: node scripts/release/install-publisher.mjs
       - name: Submit the exact accepted bytes for npm maintainer review
         env:

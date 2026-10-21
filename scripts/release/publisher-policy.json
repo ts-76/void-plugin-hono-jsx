@@ -1,81 +1,28 @@
 {
-  "schema": 1,
+  "schema": 2,
   "manager": "pnpm",
-  "version": "12.14.0",
-  "target": "x86_64-unknown-linux-gnu",
+  "version": "11.28.6",
+  "node": "24.21.0",
+  "target": "linux-x64",
   "sourceCommit": "fe4a0c232384289de82be3d502896ca7e070050c",
-  "sourceArchiveSha256": "83c144a6dceeb4217b131f06a71a830b90802075f3b19ccfc28f7fe5247634a1",
-  "cargoLockSha256": "7d85d931f099d54beca8f945abe3d842a887fa1fb87412e1b8b4e32ef3e8b696",
-  "inventorySha256": "f5db4c850b9783c3da256602d6dd89bb8b62159020b7f1aa9ea4be2b5d6437fb",
+  "inventorySha256": "895c8d15505ac9e5900be1ca92a892438e04d672084cddda657af6d3ea28e1a4",
+  "filesSha256": "6540930808b3aacf161fd905fdf84eb264ec17aa31e3e5f492149daaa25a7ca0",
   "distribution": {
-    "name": "@pnpm/exe.linux-x64",
-    "url": "https://registry.npmjs.org/@pnpm/exe.linux-x64/-/exe.linux-x64-12.14.0.tgz",
-    "integrity": "sha512-F6K8e/jWxiuEYJaQtRRUG9ynBSTEHa+t7Lf86MKuOO5UA7WVVMbi+oB8nY6iKW++ncWS2yG6T9faXZGxqNsfoQ==",
-    "binarySha256": "5e9119e6f4f18dace3795169e9b3672231ab3662505862dc3026571303a8ef32",
-    "files": [
-      "package/LICENSE",
-      "package/pnpm",
-      "package/package.json",
-      "package/THIRD-PARTY-NOTICES.md"
-    ]
+    "name": "pnpm",
+    "url": "https://registry.npmjs.org/pnpm/-/pnpm-11.28.6.tgz",
+    "integrity": "sha512-VdkDkMOzkELxUFoml3ifAlbG2Vuyi918tzGvGIfJ8mKe9YGsufTk7HcgJMggPCrtIqAymblxA/3PMmaOkF0AJA==",
+    "entry": "dist/pnpm.mjs",
+    "entrySha256": "5d2cac585f73db48e086a4391e817e09503cd9b6b5345b864ea52a70a2d3fffe"
   },
-  "acceptedRustFindings": [
+  "acceptedFindings": [
     {
-      "name": "anyhow",
-      "version": "1.0.102",
-      "id": "RUSTSEC-2026-0190",
-      "modified": "2026-06-29T14:15:03.650725453Z",
-      "advisorySha256": "db91857554af6ce5088f723f1b433c179fd35694c0232298f05553e6478704e8",
-      "reason": "No anyhow::Error::downcast_mut caller in publisher path; other downcast methods are distinct implementations."
-    },
-    {
-      "name": "proc-macro-error2",
-      "version": "2.0.1",
-      "id": "RUSTSEC-2026-0173",
-      "modified": "2026-06-07T21:00:04.318567692Z",
-      "advisorySha256": "56e97b096cf3ea441fd4067214ea40407e9ac8d91841c9573ae52b289bf7f3a1",
-      "reason": "Build-time macro; unmaintained information, no reported attack primitive in runtime."
-    },
-    {
-      "name": "rsa",
-      "version": "0.9.10",
-      "id": "RUSTSEC-2023-0071",
-      "modified": "2026-09-14T09:45:02.996132556Z",
-      "advisorySha256": "3579545695e1e306fdc5d2390ddc201b3b1d884865705ad3f72f2df432a37531",
-      "reason": "No RSA private key/decryption in fixed-tarball stage; Sigstore signs with ephemeral ECDSA P-256."
-    },
-    {
-      "name": "xxhash-rust",
-      "version": "0.8.15",
-      "id": "GHSA-6g2r-675j-hx59",
-      "modified": "2026-10-02T18:45:04.881140605Z",
-      "advisorySha256": "36111fd04f113b37198725c3492d00be831b4ca6a7713aef4a9caa073729babc",
-      "reason": "Publisher uses SHA512; ssri uses default Xxh3 only in other modes, with no short custom-secret caller."
-    },
-    {
-      "name": "zip",
-      "version": "8.6.0",
-      "id": "RUSTSEC-2026-0367",
-      "modified": "2026-10-16T23:30:02.392172556Z",
-      "advisorySha256": "57d60beae31a98e2d77ebc16db6bc00d1141dc9dcaa44b5e2f165c681be52539",
-      "reason": "Scoped to the unchanged Linux x64 pnpm 12.14.0 binary and exact accepted tgz stage command. Publish reads gzip/tar entries in memory and uploads the original bytes; no ZIP extraction, install, runtime download or server command. The vulnerable ZipArchive::extract / ZipStreamReader::extract APIs were not found in this publisher call path. Reassess on any version/source/target/command/advisory change."
-    },
-    {
-      "name": "zip",
-      "version": "8.6.0",
-      "id": "RUSTSEC-2026-0368",
-      "modified": "2026-10-16T23:30:02.383750571Z",
-      "advisorySha256": "e46788767f42cf23f665aba64112148f97b18a60e7831ee897581376645b6daa",
-      "reason": "Scoped to the unchanged Linux x64 pnpm 12.14.0 binary and exact accepted tgz stage command. Publish reads gzip/tar entries in memory and uploads the original bytes; no ZIP extraction, install, runtime download or server command. The vulnerable ZipArchive::extract / ZipStreamReader::extract APIs were not found in this publisher call path. Reassess on any version/source/target/command/advisory change."
-    },
-    {
-      "name": "zip",
-      "version": "8.6.0",
-      "id": "RUSTSEC-2026-0369",
-      "modified": "2026-10-16T23:30:02.387698467Z",
-      "advisorySha256": "641c968dcdd39b4e1708e7c391bb319299f30a378c183a0f0f328187f27114d2",
-      "reason": "Scoped to the unchanged Linux x64 pnpm 12.14.0 binary and exact accepted tgz stage command. Publish reads gzip/tar entries in memory and uploads the original bytes; no ZIP extraction, install, runtime download or server command. The vulnerable ZipArchive::extract / ZipStreamReader::extract APIs were not found in this publisher call path. Reassess on any version/source/target/command/advisory change."
+      "name": "braces",
+      "version": "3.0.3",
+      "id": "GHSA-vfj7-8cjw-p6xm",
+      "modified": "2026-10-02T22:45:04.328737432Z",
+      "advisorySha256": "bc24e4bafeb80afb949b0343721ce288486f93251fa8d221060b58cdad875e31",
+      "reason": "Only the pinned pnpm 11.28.6 distribution on Node 24.21.0 Linux x64, staging an exact verified tgz with workspace, git checks and lifecycle scripts disabled. V8 coverage of the unmodified CLI observes no braces functions in five protocol paths; separate benign calls positively exercise parse/compile/expand. No directory pack, recursive publish, workspace discovery, install, query, external patterns or arbitrary arguments. Reassess on distribution, input, command or advisory changes; finding remains present."
     }
   ],
-  "scope": "Linux x64 pnpm stage publish; exact accepted tgz; no install/runtime download/query/server; explicit provenance; isolated config/cache; mandatory OIDC preflight."
+  "scope": "Pinned JavaScript pnpm; exact verified tgz stage only; isolated HOME/config/cache; mandatory OIDC preflight and provenance; owner final approval."
 }

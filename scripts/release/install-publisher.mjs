@@ -5,31 +5,34 @@ import { appendFileSync, mkdirSync, readFileSync, rmSync, writeFileSync } from '
 import path from 'node:path';
 import { loadPublisherPolicy, requestBytes, verifyPublisher } from './publisher.mjs';
 
-// Download only the pinned Linux native distribution; no npm bootstrap,
-// lifecycle scripts, wrapper, node-gyp or implicit runtime download is needed.
+// Fetch only the pinned archive; no package install or lifecycle runs here.
 const policy = loadPublisherPolicy();
-assert.equal(process.platform, 'linux');
-assert.equal(process.arch, 'x64');
+assert.equal(process.platform, 'linux'); assert.equal(process.arch, 'x64');
+assert.equal(process.version, `v${policy.node}`);
 assert.equal(JSON.parse(readFileSync('release-policy.json', 'utf8')).pnpmVersion, policy.version);
 assert.ok(process.env.RUNNER_TEMP);
-const root = path.join(process.env.RUNNER_TEMP, 'publisher-cli');
-mkdirSync(root, { mode: 0o700 });
+const root = path.join(process.env.RUNNER_TEMP, 'publisher-cli'); mkdirSync(root, { mode: 0o700 });
 const archive = path.join(root, 'distribution.tgz');
 try {
   const bytes = await requestBytes(policy.distribution.url, {}, 64 * 1024 * 1024);
   assert.equal(`sha512-${createHash('sha512').update(bytes).digest('base64')}`, policy.distribution.integrity);
   writeFileSync(archive, bytes);
-  const names = execFileSync('tar', ['-tzf', archive], { encoding: 'utf8' }).trim().split('\n');
-  assert.deepEqual([...names].sort(), [...policy.distribution.files].sort());
-  assert.ok(execFileSync('tar', ['-tvzf', archive], { encoding: 'utf8' }).trim().split('\n').every(line => line.startsWith('-')));
-  const pkg = JSON.parse(execFileSync('tar', ['-xOzf', archive, 'package/package.json'], { encoding: 'utf8' }));
-  assert.equal(pkg.name, policy.distribution.name);
-  assert.equal(pkg.version, policy.version);
-  assert.deepEqual(pkg.os, ['linux']);
-  assert.deepEqual(pkg.cpu, ['x64']);
-  const binary = path.join(root, 'pnpm');
-  writeFileSync(binary, execFileSync('tar', ['-xOzf', archive, 'package/pnpm'], { maxBuffer: 64 * 1024 * 1024 }), { mode: 0o755, flag: 'wx' });
-  verifyPublisher(binary, policy);
-  appendFileSync(process.env.GITHUB_ENV, `PNPM_RELEASE_CLI=${binary}\n`);
-  console.log(`Verified pnpm ${policy.version} (${policy.target})`);
+  // The pinned archive digest is checked first; reject paths and non-regular files before extraction.
+  execFileSync('python3', ['-c', `import pathlib,sys,tarfile
+with tarfile.open(sys.argv[1]) as tar:
+ names=set()
+ for member in tar.getmembers():
+  parts=pathlib.PurePosixPath(member.name).parts
+  assert member.isfile() and parts[0]=='package' and '..' not in parts and not member.name.startswith('/')
+  assert member.name not in names
+  names.add(member.name)
+ tar.extractall(sys.argv[2],filter='data')`, archive, root]);
+  const cli = path.join(root, 'package', policy.distribution.entry);
+  verifyPublisher(cli, policy);
+  const output = execFileSync(process.execPath, [cli, '--version', '--ignore-workspace'], {
+    cwd: root, env: { PATH: process.env.PATH, HOME: root, XDG_CONFIG_HOME: path.join(root, 'config'), PNPM_HOME: path.join(root, 'home') }, encoding: 'utf8'
+  });
+  assert.equal(output.trim(), policy.version);
+  appendFileSync(process.env.GITHUB_ENV, `PNPM_RELEASE_CLI=${cli}\n`);
+  console.log(`Verified JavaScript pnpm ${policy.version} on Node ${policy.node}`);
 } finally { rmSync(archive, { force: true }); }
