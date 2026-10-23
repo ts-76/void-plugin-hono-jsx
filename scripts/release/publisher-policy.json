@@ -14,15 +14,6 @@
     "entry": "dist/pnpm.mjs",
     "entrySha256": "5d2cac585f73db48e086a4391e817e09503cd9b6b5345b864ea52a70a2d3fffe"
   },
-  "acceptedFindings": [
-    {
-      "name": "braces",
-      "version": "3.0.3",
-      "id": "GHSA-vfj7-8cjw-p6xm",
-      "modified": "2026-10-02T22:45:04.328737432Z",
-      "advisorySha256": "bc24e4bafeb80afb949b0343721ce288486f93251fa8d221060b58cdad875e31",
-      "reason": "Only the pinned pnpm 11.28.6 distribution on Node 24.21.0 Linux x64, staging an exact verified tgz with workspace, git checks and lifecycle scripts disabled. V8 coverage of the unmodified CLI observes no braces functions in five protocol paths; separate benign calls positively exercise parse/compile/expand. No directory pack, recursive publish, workspace discovery, install, query, external patterns or arbitrary arguments. Reassess on distribution, input, command or advisory changes; finding remains present."
-    }
-  ],
+  "acceptedFindings": [],
   "scope": "Pinned JavaScript pnpm; exact verified tgz stage only; isolated HOME/config/cache; mandatory OIDC preflight and provenance; owner final approval."
 }

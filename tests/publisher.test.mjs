@@ -9,6 +9,9 @@ import { sha256, stageReceipt } from '../scripts/release/gate.mjs';
 
 function auditFixture() {
   const policy = structuredClone(loadPublisherPolicy());
+  // Synthetic accepted advisory keeps content/change rejection coverage even
+  // when the live publisher policy has no accepted findings.
+  policy.acceptedFindings = [{ name: 'braces', version: '3.0.3', id: 'GHSA-vfj7-8cjw-p6xm', modified: 'fixture-date', reason: 'synthetic test scope' }];
   const inventory = JSON.parse(readFileSync(inventoryPath));
   const advisories = policy.acceptedFindings.map(item => ({ id: item.id, modified: item.modified, details: 'reviewed fixture' }));
   for (const [index, item] of policy.acceptedFindings.entries()) item.advisorySha256 = sha256(canonical(advisories[index]));
@@ -37,6 +40,20 @@ test('publisher audit accepts only reviewed versions/content and fails closed on
   await assert.rejects(auditPublisher({ ...f, policy: { ...f.policy, inventorySha256: 'changed' } }), /inventory changed/);
   await assert.rejects(auditPublisher({ ...f, request: async () => ({ results: f.results.map(() => ({ next_page_token: 'more' })) }) }), /pagination/);
   await assert.rejects(auditPublisher({ ...f, request: async () => { throw new Error('service unavailable'); } }), /service unavailable/);
+});
+
+test('current publisher policy requires zero findings after the braces advisory withdrawal', async () => {
+  const policy = loadPublisherPolicy();
+  assert.deepEqual(policy.acceptedFindings, []);
+  const inventory = JSON.parse(readFileSync(inventoryPath));
+  const clean = inventory.map(() => ({}));
+  const report = await auditPublisher({ policy, request: async () => ({ results: clean }) });
+  assert.deepEqual(report.findings, []);
+  const index = inventory.findIndex(pkg => pkg.name === 'braces' && pkg.version === '3.0.3');
+  assert.ok(index >= 0);
+  const results = [...clean];
+  results[index] = { vulns: [{ id: 'GHSA-vfj7-8cjw-p6xm' }] };
+  await assert.rejects(auditPublisher({ policy, request: async url => url.endsWith('/querybatch') ? { results } : { id: 'GHSA-vfj7-8cjw-p6xm' } }), /Unreviewed publisher advisory/);
 });
 
 test('publisher subprocess strips existing credentials, proxy, runtime injection and provenance overrides', () => {
