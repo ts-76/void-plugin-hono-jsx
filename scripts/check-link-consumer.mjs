@@ -41,6 +41,20 @@ export async function checkLinkConsumer({ origin, page, assert }) {
     await page.locator('#state-link').dispatchEvent('click', { button: 0 });
     await page.waitForFunction(() => document.querySelector('#link-value')?.textContent === 'kept:');
     assert.equal(await page.locator('#link-count').textContent(), '1');
+    await page.waitForURL('**/links?value=kept');
+    await page.locator('#app[data-navigation="idle"]').waitFor();
+    // Refresh must refetch a hashed URL without adding history or resetting state.
+    await page.evaluate(() => history.replaceState(history.state, '', location.href + '#retained'));
+    const refreshUrl = page.url();
+    const refreshHistory = await page.evaluate(() => history.length);
+    const refreshed = page.waitForResponse(response => response.request().method() === 'GET' && response.url() === refreshUrl.split('#')[0] && response.request().headers()['x-voidpages'] === 'true');
+    await page.locator('#link-refresh').dispatchEvent('click', { button: 0 });
+    await refreshed;
+    await page.locator('#app[data-navigation="idle"]').waitFor();
+    assert.equal(page.url(), refreshUrl);
+    assert.equal(await page.evaluate(() => history.length), refreshHistory);
+    assert.equal(await page.locator('#link-count').textContent(), '1');
+    assert.equal(await page.evaluate(() => window.scrollY), 600);
     await page.locator('#query-link').dispatchEvent('click', { button: 0 });
     await page.waitForFunction(() => document.querySelector('#link-value')?.textContent === 'query:one,two');
     await page.locator('#app[data-navigation="idle"]').waitFor();
@@ -68,5 +82,5 @@ export async function checkLinkConsumer({ origin, page, assert }) {
     await page.goto(origin);
     await page.locator('#app[data-hono-pages="mounted"]').waitFor();
   } finally { page.off('request', listener); }
-  console.log('Link consumer: query, mutation/named actions, failure, prefetch strategies, cancellation, state/scroll and replace passed.');
+  console.log('Link consumer: query, mutation/named actions, failure, prefetch strategies, cancellation, state/scroll, replace and hashed refresh without extra history passed.');
 }

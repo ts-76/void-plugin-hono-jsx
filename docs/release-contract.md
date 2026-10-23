@@ -7,10 +7,12 @@ The adapter supports the documented Pages APIs on the following stable framework
 | Dependency | Supported range | Tested version |
 | --- | --- | --- |
 | Node.js | >=24.21.0 <25.0.0 | 24.21.0 |
-| Void | >=1.1.11 <1.2.0 | 1.1.11 |
+| Void | >=1.2.1 <1.3.0 | 1.2.1 |
 | Hono | >=4.13.13 <5.0.0 | 4.13.13 |
 | Vite | >=8.0.16 <9.0.0 | 8.3.4 |
 | Vite Plus | Host Vite must satisfy the Vite range | 1.3.0 with matching core alias |
+
+Void 1.2.1 is the minimum supported version; upgrade Void together with this adapter. The router uses its public `refreshPage` helper so refresh refetches hashed URLs without adding history entries, while `preserveState` visits update the address bar.
 
 Only the listed versions are tested results. New releases within a range need refreshed fixtures and audits before being described as verified.
 Void 0.x and historical launchers are unsupported. Run commands from the project root; custom-root and monorepo invocation need separate validation.

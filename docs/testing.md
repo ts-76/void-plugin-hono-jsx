@@ -1,7 +1,7 @@
 # Examples and testing
 
 Use Node 24.21.0 and the repository lockfile.
-Two active packed consumers cover Void 1.1.11 / Hono 4.13.13 with plain Vite 8.3.4 or aligned Vite Plus/core 1.3.0.
+Two active packed consumers cover Void 1.2.1 / Hono 4.13.13 with plain Vite 8.3.4 or aligned Vite Plus/core 1.3.0.
 Select them with `RELEASE_CONSUMER_STACK=baseline` or `RELEASE_CONSUMER_STACK=void-1-vp`.
 
 ## Automated checks

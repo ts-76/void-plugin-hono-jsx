@@ -81,6 +81,6 @@ test('workflow prepares once, covers both supported stacks and leaves stage acce
 
 test('release preparation cannot select historical unsupported frameworks', () => {
   for (const name of ['vite-patch', 'latest-vite', 'scaffold-vp', 'latest-vp', 'void-1-vite']) assert.throws(() => consumerStack({ RELEASE_CONSUMER_STACK: name }), /Unknown consumer stack/);
-  assert.equal(consumerStack({}).void, '1.1.11');
+  assert.equal(consumerStack({}).void, '1.2.1');
   assert.equal(consumerStack({}).fixture, 'consumer-void-1-vite');
 });
