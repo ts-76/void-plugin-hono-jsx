@@ -24,6 +24,10 @@
       "types": "./dist/compiler/markdown-compiler.d.ts",
       "default": "./dist/compiler/markdown-compiler.js"
     },
+    "./render": {
+      "types": "./dist/compiler/render-markdown.d.ts",
+      "default": "./dist/compiler/render-markdown.js"
+    },
     "./features": {
       "types": "./dist/compiler/markdown-features.d.ts",
       "default": "./dist/compiler/markdown-features.js"

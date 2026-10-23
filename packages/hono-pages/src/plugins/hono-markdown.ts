@@ -31,7 +31,8 @@ export function voidHonoMarkdown(options: HonoMarkdownOptions = {}): Plugin {
       const id = normalizePath(relative(pagesDir, file)).replace(/\.md$/, '').replace(/\.island$/, '').replace(/\/index$/, '').replace(/^index$/, '') || 'index';
       const canonical = realpathSync(file);
       const extracted = nextSources.get(canonical) ?? compiler.parse(readFileSync(canonical, 'utf8'));
-      if (!nextSources.has(canonical) && extracted.hasCode) extracted.clientCode = `import ${JSON.stringify(markdownCopyId)};\n` + extracted.clientCode;
+      // Older common packages expose hasCode only; preserve their default copy behavior.
+      if (!nextSources.has(canonical) && (extracted.needsCodeCopy ?? extracted.hasCode)) extracted.clientCode = `import ${JSON.stringify(markdownCopyId)};\n` + extracted.clientCode;
       nextSources.set(canonical, extracted);
       if (extracted.clientCode) { nextScripts.set(id, extracted.clientCode); nextFiles.set(id, file); }
     }

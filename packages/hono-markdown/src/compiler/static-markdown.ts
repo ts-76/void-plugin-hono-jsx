@@ -64,7 +64,7 @@ export async function compileMarkdownModule(source: string, input: MarkdownModul
     islands: imports.filter(entry => entry.kind === 'island').map(({ id, modulePath, hydrate }) => ({ id, modulePath, hydrate })) satisfies MarkdownIsland[],
     frontmatter: result.frontmatter,
     headings: result.headings,
-    clientCode: result.hasCode ? markdownCopyCode : '',
+    clientCode: result.needsCodeCopy ? markdownCopyCode : '',
     code: `import { jsx, Fragment } from 'hono/jsx/jsx-runtime';
 import { raw } from 'hono/html';
 import { MarkdownContext } from ${JSON.stringify(input.contextModule ?? '@ts-76/hono-markdown')};
