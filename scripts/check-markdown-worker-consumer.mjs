@@ -32,6 +32,7 @@ const renderer = createMarkdownRenderer({
 const app = new Hono();
 app.get('/environment', c => c.json({ process: typeof process, Buffer: typeof Buffer }));
 app.post('/default', async c => c.json(await renderMarkdown(await c.req.text())));
+app.post('/optional', async c => c.json(await renderMarkdown(await c.req.text(), { highlight: undefined, shiki: { themes: { light: 'not-installed', dark: 'not-installed' } } })));
 app.post('/trusted', async c => c.json(await renderMarkdown(await c.req.text(), { html: true })));
 app.post('/cms/article', async c => {
   const response = await c.env.CMS.fetch('https://cms.invalid/article', { method: 'POST', body: await c.req.text() });
@@ -103,6 +104,9 @@ export default app;
       const defaults = await render('/default', '# location\n\n# location\n\nhttps://example.com');
       assert.deepEqual(defaults.headings.map(heading => heading.slug), ['user-content-location', 'user-content-location-1']);
       assert.match(defaults.html, /href="https:\/\/example.com"/);
+      const optional = await render('/optional', '```js\nconst answer = 42;\n```');
+      assert.match(optional.html, /^<pre><code class="language-js">/);
+      assert.equal(optional.needsCodeCopy, false);
       for (const input of attackCases) {
         const result = await render('/default', input);
         assert.doesNotMatch(result.html, /<(?:script|img|svg|iframe|math|Counter)\b/i);

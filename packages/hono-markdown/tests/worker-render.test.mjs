@@ -23,6 +23,16 @@ test('Worker renderer resets heading IDs and references across concurrent asynch
   });
 });
 
+test('an undefined optional highlight value retains plain article defaults in both entries', async () => {
+  const options = { highlight: undefined, shiki: { themes: { light: 'not-installed', dark: 'not-installed' } } };
+  const source = '```js\nconst answer = 42;\n```';
+  const worker = await renderMarkdown(source, options);
+  assert.deepEqual(worker, await renderNode(source, options));
+  assert.match(worker.html, /^<pre><code class="language-js">/);
+  assert.doesNotMatch(worker.html, /class="copy"|shiki/);
+  assert.equal(worker.needsCodeCopy, false);
+});
+
 test('Worker HTML opt-in remains explicit and built-in highlighting fails with actionable guidance', async () => {
   assert.match((await renderMarkdown('<b>Trusted</b>')).html, /&lt;b&gt;Trusted/);
   assert.match((await renderMarkdown('<b>Trusted</b>', { html: true })).html, /<b>Trusted<\/b>/);

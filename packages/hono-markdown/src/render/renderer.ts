@@ -4,7 +4,7 @@ import type { HonoMarkdownOptions } from './types.ts';
 
 /** Article content only: no YAML, script prelude, component imports or generated modules. */
 export function createArticleRenderer(options: HonoMarkdownOptions, configureFeatures: MarkdownFeatureConfigurer) {
-  const renderOptions = { highlight: false, ...options };
+  const renderOptions = { ...options, highlight: options.highlight ?? false };
   const parser = createContentParser(renderOptions, false, configureFeatures);
   return {
     async render(source: string) {
