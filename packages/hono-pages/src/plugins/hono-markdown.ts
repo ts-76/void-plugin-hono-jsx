@@ -14,6 +14,15 @@ const clientId = 'virtual:void-hono-markdown-client';
 const scriptQuery = '?hono-markdown-script';
 const literal = (value: unknown) => `JSON.parse(${JSON.stringify(JSON.stringify(value))})`;
 
+// Project from the stable frontmatter result: published common compilers may not
+// expose clientFrontmatter yet, but the Void host still owns its HTML metadata.
+function selectPageFrontmatter(frontmatter: Record<string, unknown>, selection: HonoMarkdownOptions['clientFrontmatter'] = true) {
+  if (selection === true) return frontmatter;
+  if (selection === false) return {};
+  if (!Array.isArray(selection) || selection.some(key => typeof key !== 'string')) throw new Error('Hono Markdown: clientFrontmatter must be a boolean or an array of frontmatter keys.');
+  return Object.fromEntries(selection.filter(key => Object.hasOwn(frontmatter, key)).map(key => [key, frontmatter[key]]));
+}
+
 /** Optional authored Markdown compiler; independent of @void/md private files. */
 export function voidHonoMarkdown(options: HonoMarkdownOptions = {}): Plugin {
   const compiler = createMarkdownCompiler(options);
@@ -79,7 +88,8 @@ if (id && scripts[id]) await scripts[id]();`;
           return { ...entry, alias: `__island${index}`, islandId: normalizePath(relative(root, realpathSync(target))) };
         });
         const chunks = renderChunks(result.html, new Set(imports.map(entry => entry.importName)), new Set(result.staticImports.map(entry => entry.importName)));
-        const limitedFrontmatter = result.clientFrontmatter !== result.frontmatter;
+        const clientFrontmatter = selectPageFrontmatter(result.frontmatter, options.clientFrontmatter);
+        const limitedFrontmatter = clientFrontmatter !== result.frontmatter;
         const wrapsIslands = limitedFrontmatter && result.imports.length > 0;
         const emit = (chunk: (typeof chunks)[number]): string => {
           if ('html' in chunk) return `raw(${JSON.stringify(chunk.html)})`;
@@ -97,7 +107,7 @@ ${imports.map(entry => `import ${entry.alias} from ${JSON.stringify(entry.specif
 ${wrapsIslands ? `import { useContext } from 'hono/jsx';
 import { MarkdownContext as __MarkdownContext } from ${JSON.stringify(markdownRuntimePath)};
 ` : ''}export const frontmatter = ${literal(result.frontmatter)};
-export const clientFrontmatter = ${limitedFrontmatter ? literal(result.clientFrontmatter) : 'frontmatter'};
+export const clientFrontmatter = ${limitedFrontmatter ? literal(clientFrontmatter) : 'frontmatter'};
 export const headings = ${literal(result.headings)};
 ${wrapsIslands ? `function __ClientMarkdown({ children }) { return jsx(__MarkdownContext.Provider, { value: { ...useContext(__MarkdownContext), frontmatter: clientFrontmatter }, children }); }
 ` : ''}
