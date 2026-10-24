@@ -1,9 +1,9 @@
 import MarkdownExit from 'markdown-exit';
-import { configureMarkdownFeatures, type HonoMarkdownOptions } from './markdown-features.ts';
+import type { MarkdownFeatureConfigurer } from './features.ts';
+import type { Heading, HonoMarkdownOptions } from './types.ts';
+export type { Heading } from './types.ts';
 
-export type Heading = { depth: number; slug: string; text: string };
-
-export function createContentParser(options: HonoMarkdownOptions, trusted: boolean) {
+export function createContentParser(options: HonoMarkdownOptions, trusted: boolean, configureFeatures: MarkdownFeatureConfigurer) {
   const parser = new MarkdownExit({ html: options.html ?? trusted, breaks: options.breaks ?? false, linkify: options.linkify ?? true });
   if (!trusted) {
     const validateLink = parser.validateLink;
@@ -15,7 +15,7 @@ export function createContentParser(options: HonoMarkdownOptions, trusted: boole
       return validateLink(url) && (!scheme || ['http', 'https', 'mailto', 'tel'].includes(scheme));
     };
   }
-  configureMarkdownFeatures(parser, options);
+  configureFeatures(parser, options);
   return parser;
 }
 

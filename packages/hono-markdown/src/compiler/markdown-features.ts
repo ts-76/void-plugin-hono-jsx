@@ -1,43 +1,10 @@
-import { createRequire } from 'node:module';
 import type MarkdownExit from 'markdown-exit';
-import type { PluginWithParams } from 'markdown-exit';
+import { configureMarkdownFeatures as configureBaseFeatures } from '../render/features.ts';
+import type { HonoMarkdownOptions } from '../render/types.ts';
 
-export type MarkdownHeading = { depth: number; text: string; index: number };
-export type MarkdownCodeBlock = {
-  code: string;
-  language: string;
-  info: string;
-  /** Escaped <pre><code> output, highlighted unless highlight is false. */
-  html: string;
-};
-
-/** Host-independent rendering options; languages load on demand. */
-export type HonoMarkdownOptions = {
-  /** Raw authored HTML. Defaults to false in /render, true in trusted module compilers. */
-  html?: boolean;
-  breaks?: boolean;
-  linkify?: boolean;
-  /** Called once per heading, with a zero-based index local to this document. IDs stay unique. */
-  headingId?: (heading: MarkdownHeading) => string;
-  /** false emits ordinary escaped <pre><code>. Defaults to false in /render, true in module compilers. */
-  highlight?: boolean;
-  /** Application-owned HTML renderer. Its return value is trusted, never sanitized. */
-  renderCodeBlock?: (block: MarkdownCodeBlock) => string | Promise<string>;
-  shiki?: { themes?: { light: string; dark: string } };
-};
+export type { HonoMarkdownOptions, MarkdownHeading, MarkdownCodeBlock } from '../render/types.ts';
 
 export function configureMarkdownFeatures(md: MarkdownExit, options: HonoMarkdownOptions) {
-  const container = createRequire(import.meta.url)('markdown-it-container') as PluginWithParams;
-  for (const [kind, title] of [['tip', 'TIP'], ['info', 'INFO'], ['warning', 'WARNING'], ['danger', 'DANGER'], ['details', 'Details']]) {
-    md.use(container, kind, { render(tokens: Parameters<NonNullable<typeof md.renderer.rules.fence>>[0], index: number, _options: unknown, env: Parameters<NonNullable<typeof md.renderer.rules.fence>>[3]) {
-      if (tokens[index].nesting !== 1) return kind === 'details' ? '</details>\n' : '</div>\n';
-      const authored = tokens[index].info.trim().slice(kind.length).trim();
-      const rendered = md.renderInline(authored || title, { references: env.references });
-      if (kind === 'details') return `<details class="${kind} custom-block"><summary>${rendered}</summary>\n`;
-      return `<div class="${kind} custom-block"><p class="custom-block-title${authored ? '' : ' custom-block-title-default'}">${rendered}</p>\n`;
-    } });
-  }
-
   // One highlighter per plugin, not a global first-options-wins singleton.
   const themes = { light: options.shiki?.themes?.light ?? 'github-light', dark: options.shiki?.themes?.dark ?? 'github-dark' };
   const initialize = async () => {
@@ -54,17 +21,7 @@ export function configureMarkdownFeatures(md: MarkdownExit, options: HonoMarkdow
   };
   let initialized: ReturnType<typeof initialize> | undefined;
   const loading = new Map<string, Promise<void>>();
-  if (options.renderCodeBlock) md.renderer.rules.code_block = async (tokens, index) => {
-    const code = tokens[index].content;
-    return options.renderCodeBlock!({ code, language: 'text', info: '', html: `<pre><code>${md.utils.escapeHtml(code)}</code></pre>\n` });
-  };
-  md.renderer.rules.fence = async (tokens, index) => {
-    const token = tokens[index];
-    const label = /^[\w+-]+/.exec(token.info.trim())?.[0] ?? 'text';
-    if (options.highlight === false) {
-      const html = `<pre><code${token.info.trim() ? ` class="language-${md.utils.escapeHtml(label)}"` : ''}>${md.utils.escapeHtml(token.content)}</code></pre>\n`;
-      return options.renderCodeBlock ? options.renderCodeBlock({ code: token.content, language: label, info: token.info, html }) : html;
-    }
+  configureBaseFeatures(md, options, async (code, label, info) => {
     const { highlighter, selected, languages, transformers } = await (initialized ??= initialize());
     let lang = label;
     if (!['text', 'txt', 'plain', 'plaintext', 'ansi'].includes(lang) && !highlighter.getLoadedLanguages().includes(lang)) {
@@ -73,13 +30,13 @@ export function configureMarkdownFeatures(md: MarkdownExit, options: HonoMarkdow
         await loading.get(lang);
       } else lang = 'text';
     }
-    const highlighted = highlighter.codeToHtml(token.content, { lang, themes: selected, defaultColor: 'light', transformers, meta: { __raw: token.info } });
-    if (options.renderCodeBlock) return options.renderCodeBlock({ code: token.content, language: label, info: token.info, html: highlighted });
-    const numbers = /:line-numbers\b/.test(token.info);
-    const start = Number(/\{=(\d+)\}/.exec(token.info)?.[1] ?? 1);
+    const highlighted = highlighter.codeToHtml(code, { lang, themes: selected, defaultColor: 'light', transformers, meta: { __raw: info } });
+    if (options.renderCodeBlock) return options.renderCodeBlock({ code, language: label, info, html: highlighted });
+    const numbers = /:line-numbers\b/.test(info);
+    const start = Number(/\{=(\d+)\}/.exec(info)?.[1] ?? 1);
     const count = [...highlighted.matchAll(/class="line(?:[ "])/g)].length;
     const gutter = numbers ? `<div class="line-numbers-wrapper" aria-hidden="true">${Array.from({ length: count }, (_, offset) => `<span class="line-number">${start + offset}</span><br>`).join('')}</div>` : '';
-    const active = /(?:^|\s)active(?:\s|$)/.test(token.info) ? ' active' : '';
+    const active = /(?:^|\s)active(?:\s|$)/.test(info) ? ' active' : '';
     return `<div class="language-${md.utils.escapeHtml(label)}${active}${numbers ? ' line-numbers-mode' : ''}"><button type="button" title="Copy Code" aria-label="Copy Code" class="copy"></button><span class="lang">${md.utils.escapeHtml(label)}</span>${highlighted}${gutter}</div>\n`;
-  };
+  });
 }
