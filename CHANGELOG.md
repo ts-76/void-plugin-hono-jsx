@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.7.0](https://github.com/ts-76/void-plugin-hono-jsx/compare/v0.6.0...v0.7.0) (2026-10-24)
+
+
+### ⚠ BREAKING CHANGES
+
+* Node.js >=24.22.1 <25.0.0 is required; update the local Node selector together with the adapter.
+* upgrade Void together with the adapter; the minimum supported version is now 1.2.1.
+
+### Features
+
+* **markdown:** release common article API in 0.1.1 ([#134](https://github.com/ts-76/void-plugin-hono-jsx/issues/134)) ([f5dcadf](https://github.com/ts-76/void-plugin-hono-jsx/commit/f5dcadf5856374caba81c145e0e457817276970b))
+* support Void 1.2.1 navigation contracts ([#131](https://github.com/ts-76/void-plugin-hono-jsx/issues/131)) ([c17aa72](https://github.com/ts-76/void-plugin-hono-jsx/commit/c17aa72eab6cedf5caa797abed2f2eb66610d1c3))
+
+
+### Bug Fixes
+
+* **release:** record the owner's 0.7.0-only consumer dependency risk acceptance with version, lock and advisory-content gates. The undici/Zod findings remain nonzero and include a reachable toolchain availability failure; see the dependency security guide.
+
+* align remaining Node baselines and consolidate 0.7.0 assessment ([#135](https://github.com/ts-76/void-plugin-hono-jsx/issues/135)) ([d8ca3b7](https://github.com/ts-76/void-plugin-hono-jsx/commit/d8ca3b7633408f3a7aab44a4155e0e14b20c867c))
+* **markdown:** honor shared copy requirements in Void adapter ([#132](https://github.com/ts-76/void-plugin-hono-jsx/issues/132)) ([18bab90](https://github.com/ts-76/void-plugin-hono-jsx/commit/18bab90782cd3441f6a5cec359632636f13903c4))
+* **release:** reconstruct npm publisher with fixed locked dependencies ([#136](https://github.com/ts-76/void-plugin-hono-jsx/issues/136)) ([b932119](https://github.com/ts-76/void-plugin-hono-jsx/commit/b9321197a56c963ac8b06208bd83de80ec25ca82))
+
 ## [0.6.0](https://github.com/ts-76/void-plugin-hono-jsx/compare/v0.5.0...v0.6.0) (2026-10-21)
 
 

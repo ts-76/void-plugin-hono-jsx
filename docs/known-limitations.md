@@ -27,7 +27,7 @@ See the [dated results](cloudflare-rc1-verification.md). Re-test when Void, Mini
 
 ## Dependency and publisher boundaries
 
-- **Consumer dependencies:** the existing esbuild no-serve acceptance remains narrow. The 2026-10-24 audit of the Void 1.2.1 root tree additionally reports three undici advisories and one Zod advisory (16 propagated entries, five distinct advisories including esbuild). The malformed-response fetch failure is reachable in the development/CLI toolchain; no new advisory acceptance was added. See the [current reassessment and release conditions](rc-security-assessment.md#2026-10-24-follow-up-void-121-consumer-and-runner-findings).
+- **Consumer dependencies:** the existing esbuild no-serve acceptance remains narrow. The Void 1.2.1 root tree additionally reports three undici advisories and one Zod advisory (16 propagated entries, five distinct advisories including esbuild). The malformed-response fetch failure is reachable in the development/CLI toolchain. The owner accepted these residual risks for 0.7.0 only, bound to exact locks and advisory contents; they are not fixed. See the [current acceptance and usage limits](dependency-security.md#070-owner-acceptance--2026-10-24).
 - **Publisher only:** The private npm 11.21.1 runtime uses fixed dependencies resolved within upstream ranges and pinned by archive integrity, lock and complete runtime hashes. Node 24.22.1 and a fresh zero-finding inventory audit are required. Standard upstream npm/pnpm archives were not repaired in place. See the [publisher assessment](pnpm-publisher-assessment.md).
 - **Historical scaffold:** Vite Plus 0.1.24 has unaccepted Critical findings and is unsupported. See [scaffold history](scaffold-compatibility.md).
 

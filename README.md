@@ -1,5 +1,7 @@
 # void-plugin-hono-jsx
 
+0.7.0 retains known undici/Zod risks in the required Void/Cloudflare development and CLI tooling, including a reachable process-termination case. The owner accepted them for this release only; they are not fixed. See the [dependency acceptance and usage limits](docs/dependency-security.md).
+
 Hono JSX for [Void](https://void.cloud): server-rendered pages, client navigation, forms and islands. Void handles routing, loaders, actions and caching.
 
 This is a community adapter, licensed under [MIT](LICENSE).
