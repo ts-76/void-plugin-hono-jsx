@@ -8,6 +8,8 @@ Module compilation reuses one parser and lazy Shiki highlighter per `options` ob
 
 The browser scheduler supports load, idle, visible and media. Hosts may inject a scheduler and a `ready(element, start)` gate for visible islands. Routing, document/head ownership and presentation activation belong to host adapters. The compiler preserves literal attribute restrictions and rejects arbitrary scripts in standalone modules.
 
+`hydrateMarkdownIslands` returns a function that cancels islands that have not started mounting; custom schedulers may return their own cleanup. Load and mount failures are passed to `reportError` (or `console.error`), mark the element with `data-hono-md-error` and leave it retryable by a later call.
+
 ## Article content
 
 Use `@ts-76/hono-markdown/render` for CMS article text or other content that must
