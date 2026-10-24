@@ -2,6 +2,12 @@
 
 2026-10-21時点の対象は **pnpm 11.28.6のJavaScript配布物、Node 24.21.0、Linux x64** です。固定した受入済みtgzを `stage publish` する処理だけに使用します。開発・ビルド・候補作成のパッケージマネージャーは変更しません。
 
+## 2026-10-24 follow-up: withdrawn braces advisory
+
+GitHub [withdrew GHSA-vfj7-8cjw-p6xm on 2026-10-23](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm), stating that it is not a practically exploitable vulnerability. The fresh OSV query for the pinned 370-package inventory returns no findings. The exact-set gate correctly stopped when its previous one-finding expectation disappeared.
+
+Remove that advisory from `acceptedFindings`; the current policy requires zero findings. Keep the pinned distribution, inventory and file hashes, fixed staging command, OIDC/provenance, owner approval, isolation and braces reachability checks. A new finding or a reappearing advisory still stops the gate. The 2026-10-21 assessment below is historical; the consumer esbuild advisory is separate and remains reported.
+
 ## 残る指摘と判断
 
 配布archiveのintegrityを照合し、454ファイルのSHA256表と、バンドル内の版付きmodule pathおよび同梱package.jsonから抽出した370パッケージ・バージョンを固定しました。各回のCIと公開ジョブでOSVへ再照会します。

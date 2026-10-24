@@ -31,7 +31,12 @@ jobs:
       - name: Install locked dependencies
         run: npm ci
       - name: Install browser runtime
-        run: npx playwright install --with-deps chromium
+        run: |
+          # The Azure apt mirror stalled dependency downloads until the job timed out.
+          if [ -f /etc/apt/apt-mirrors.txt ]; then
+            sudo sed -i 's|http://azure.archive.ubuntu.com/ubuntu|https://archive.ubuntu.com/ubuntu|g' /etc/apt/apt-mirrors.txt
+          fi
+          npx playwright install --with-deps chromium
       - name: Validate common source and prepare the baseline-accepted candidate once
         env:
           RELEASE_CONSUMER_STACK: baseline
@@ -68,7 +73,12 @@ jobs:
       - name: Install locked dependencies
         run: npm ci
       - name: Install browser runtime
-        run: npx playwright install --with-deps chromium
+        run: |
+          # Use the same official Ubuntu mirror as the baseline job.
+          if [ -f /etc/apt/apt-mirrors.txt ]; then
+            sudo sed -i 's|http://azure.archive.ubuntu.com/ubuntu|https://archive.ubuntu.com/ubuntu|g' /etc/apt/apt-mirrors.txt
+          fi
+          npx playwright install --with-deps chromium
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: npm-candidate-${{ github.sha }}-baseline-attempt-${{ github.run_attempt }}

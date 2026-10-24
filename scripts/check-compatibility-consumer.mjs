@@ -23,7 +23,7 @@ export async function checkCompatibilityConsumer({ consumer, env, stack }) {
   const voidPath = join(consumer, 'node_modules/void/package.json');
   const originalVoid = await readFile(voidPath, 'utf8');
   try {
-    for (const version of ['0.26.1', '0.27.0', '1.2.0']) {
+    for (const version of ['0.26.1', '0.27.0', '1.1.11', '1.2.0', '1.3.0']) {
       await writeFile(voidPath, JSON.stringify({ ...JSON.parse(originalVoid), version }));
       const result = build();
       assert.notEqual(result.status, 0, `Unsupported Void ${version} must fail`);

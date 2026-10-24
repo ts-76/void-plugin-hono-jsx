@@ -1,4 +1,4 @@
-import { createPageNavigationEngine, createRouterFacade, idleNavigationState, isAbortError, VoidActionError, type VisitOptions, type PageNavigationResource, type VoidRouter, type VoidRouterConfig, type NavigationMethod } from 'void/pages-client';
+import { createPageNavigationEngine, createRouterFacade, refreshPage, idleNavigationState, isAbortError, VoidActionError, type VisitOptions, type PageNavigationResource, type VoidRouter, type VoidRouterConfig, type NavigationMethod } from 'void/pages-client';
 
 /** DOM updates still complete when a native animation is skipped or replaced. */
 export async function applyWithTransition(enabled: boolean, update: () => Promise<void>) {
@@ -104,7 +104,7 @@ export async function createHonoRouter(config: VoidRouterConfig) {
       multipartController?.abort(); multipartController = undefined;
       return apply(engine.prepareVisit(normalize(url), options));
     },
-    refresh(options = {}) { return raw.visit(window.location.pathname + window.location.search, { preserveState: true, preserveScroll: true, ...options }); },
+    refresh(options = {}) { return refreshPage(raw, options); },
     prefetch(url, options = {}) { return engine.prefetch(normalize(url), options); },
     flush(url, method = 'GET') { engine.flush(normalize(url), method); },
     flushAll() { engine.flushAll(); },

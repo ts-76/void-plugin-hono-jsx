@@ -107,6 +107,7 @@ export async function checkNavigationFallback({ origin, browser }) {
 
     await page.locator('#transition-local').click();
     await page.waitForFunction(() => document.getElementById('transition-local')?.textContent === '1');
+    const beforePreservedHistory = await page.evaluate(() => history.length);
     await page.evaluate(async () => {
       await window.transitionRouter.prefetch('/transitions?value=fallback-cached');
       window.fallbackSamples.length = 0;
@@ -119,9 +120,9 @@ export async function checkNavigationFallback({ origin, browser }) {
     // The contract is duration-based, not a guarantee about runner performance.
     if (fast.duration < 150) assert.equal(fast.displayed, 0, 'A visit completing before the delay must not flash a fallback');
     assert.equal(await page.locator('[data-hono-navigation-fallback]').count(), 0);
-    // Void intentionally skips history writes for preserveState visits.
-    assert.equal(new URL(page.url()).searchParams.get('value'), 'fallback-new');
-    await visit('/transitions?value=fallback-cached'); await finish();
+    // Void 1.2.1 updates history even when the component state is preserved.
+    assert.equal(new URL(page.url()).searchParams.get('value'), 'fallback-cached');
+    assert.equal(await page.evaluate(() => history.length), beforePreservedHistory + 1);
     await page.goBack();
     await page.waitForFunction(() => document.getElementById('transition-value')?.textContent === 'fallback-new' && document.getElementById('app')?.dataset.navigation === 'idle');
     await page.goForward();

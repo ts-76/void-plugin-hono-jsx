@@ -88,7 +88,8 @@ export async function checkSourceContracts(base, checkBuild) {
   const redirect = await action('/named?redirect');
   await redirect.text();
   assert.equal(redirect.status, 302);
-  assert.equal(redirect.headers.get('location'), '/users/saved?redirect');
+  // Void 1.2 removes the source action name from a GET redirect destination.
+  assert.equal(redirect.headers.get('location'), '/users/saved');
   // Unknown-action routing does not need a body. A body-bearing unknown POST
   // can reset Workerd's reused dev connection (documented upstream limitation).
   // Keep that transport repro separate from this HTTP 404 contract check.

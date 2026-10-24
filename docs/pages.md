@@ -33,7 +33,7 @@ export default function Page() {
 
 External URLs, downloads and links with a target retain native browser behavior.
 An event handler can prevent the adapter's action.
-GET visits reset page state; refresh preserves it. Layouts retain state while they remain in the active chain.
+GET visits reset page state; refresh preserves it. `preserveState` visits still update the address bar and browser history; use `replace` to replace the current entry. `refresh()` refetches the current URL, including a hash, while preserving the history entry and scroll by default. Layouts retain state while they remain in the active chain.
 
 `useNavigation()` exposes reactive `state`, `location` and `method` fields.
 States are `idle`, `loading` and `submitting`; SSR starts idle.
