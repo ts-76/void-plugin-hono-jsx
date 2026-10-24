@@ -241,6 +241,10 @@ uses Void's shared scheduler and per-element Markdown contexts without requiring
 a Pages manifest or a document-owned `#app`. It does not inspect slide state.
 Hosts that defer visible islands until a slide becomes active must supply the
 `ready(element, start)` option and call `start()` when their condition is met.
+The call returns a function that cancels islands that have not started mounting,
+for hosts that replace documents without a full page load. Load and mount
+failures are reported through `reportError`, mark the element with
+`data-hono-md-error` and can be retried by calling `hydrateMarkdownIslands` again.
 Component CSS must be emitted by the host;
 hono-decks includes it in deck styles for both interactive and print documents.
 

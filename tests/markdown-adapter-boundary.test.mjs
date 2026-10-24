@@ -38,12 +38,14 @@ test('Void Markdown client does not infer host state and honors an explicit read
   Object.defineProperty(globalThis, 'document', { configurable: true, value: { querySelectorAll: () => [element] } });
   try {
     const scheduled = [];
-    const loader = async () => ({});
+    const module = {};
+    const loader = async () => module;
     const options = { schedule: (...args) => scheduled.push(args) };
     hydrateMarkdownIslands({ counter: loader }, options);
     assert.equal(scheduled.length, 1, 'without a host gate, schedule immediately');
     assert.equal(scheduled[0][0], element);
-    assert.equal(scheduled[0][1], loader);
+    // The common runtime wraps the loader so host schedulers cannot leak load failures.
+    assert.equal(await scheduled[0][1](), module);
     assert.equal(scheduled[0][3], 'visible');
 
     delete element.dataset.honoMdScheduled;
