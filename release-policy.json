@@ -5,9 +5,9 @@
   "defaultBranch": "main",
   "tagPrefix": "v",
   "nodeVersions": [
-    "24.21.0"
+    "24.22.1"
   ],
-  "releaseNode": "24.21.0",
+  "releaseNode": "24.22.1",
   "stageEnabled": true,
   "publicPackageEnabled": true,
   "npmOwner": "ts-76",

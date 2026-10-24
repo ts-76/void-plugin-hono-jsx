@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "manager": "npm",
+  "version": "12.2.1",
+  "node": "24.22.1",
+  "status": "evaluation-only; not an upload policy",
+  "sourceCommit": "136fc5dacc1a2f3d9a051dbf03a4951228144658",
+  "distribution": {
+    "url": "https://registry.npmjs.org/npm/-/npm-12.2.1.tgz",
+    "integrity": "sha512-bKCmFRVT/BB+YPEYbZwQ1XUI3N5t4xKSpU1MxOjo7z3iWzKBJ0ZXRC1xFdEN+TC7N5TdywaBzf2dMXGJq/e2PQ==",
+    "entry": "bin/npm-cli.js"
+  },
+  "files": 1942,
+  "filesSha256": "d1987aadf9ea0e24afc4907547f88db394bea3f1d9fee315567f9230f0c4451d",
+  "packages": 145,
+  "inventorySha256": "d8a2c06cc1c0aebd8d53e5f5cc7b6ac144c497c305c6ae280c5231fa1168bdb6"
+}

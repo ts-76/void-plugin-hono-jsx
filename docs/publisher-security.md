@@ -8,6 +8,8 @@
 
 ## 監査対象と配布対象
 
+2026-10-24追記: 以下は旧 npm 11.21.0 の履歴評価です。現在の代替候補 npm 12.2.1 は指摘・配布物・依存版が異なり、この受容提案を引き継ぎません。[最新の候補評価と採用条件](pnpm-publisher-assessment.md#node-baseline-update-and-evaluated-alternatives)を参照してください。また、旧文中の「Node 24.21.0 内蔵 undici 7.29.1 は修正版」という記述は誤りでした。今回の3指摘に対する修正は undici 7.30.1 で、Node 24.22.1 が同梱しています。
+
 隔離した設定と新しい監査キャッシュで npm 11.21.0 の依存関係を再監査しました。High 3 / Moderate 2 の計 5 パッケージ、独立した advisory は 12 件、Critical は 0 件です。npm 12.2.0 への更新、非公開 fixture の override、audit fix でも、この 5 ライブラリの同梱版と指摘は変わりませんでした。
 
 これらは公開ツールに同梱された依存関係で、アダプターの tarball に含まれません。[Void 経由の esbuild の既知制約](dependency-security.md)の受け入れとは別の判断です。指摘の非到達性を限定的に確認しても audit は 0 件になりません。
@@ -31,7 +33,7 @@ stage.mjs: commit / artifact / environment / registry の事前照合
 
 `libnpmpack` はこの経路で既存 tgz の bytes を読みます。directory の pack/publish と異なり、ライフサイクルスクリプトと node-gyp を実行する経路ではありません。npm の OIDC は token を request options とメモリー上の CLI config に設定し、設定ファイルへ保存しません。ただし失敗時には既存の認証情報へフォールバックできる設計なので、長期 token・既存ログインのない設定を使うことが条件です。
 
-npm の registry/OIDC と Sigstore の HTTP client は `make-fetch-happen → minipass-fetch → @npmcli/agent` を使います。npm に同梱された undici を registry HTTP client と同一視していません。`stage.mjs` 自体の事前照合に使う Node の `fetch` は別実装で、実測した Node 24.21.0 の内蔵 undici は 7.29.1 です。これは今回の undici 3 advisory の修正版に該当します。[Node 24.21.0 release](https://github.com/nodejs/node/releases/tag/v24.21.0)
+npm の registry/OIDC と Sigstore の HTTP client は `make-fetch-happen → minipass-fetch → @npmcli/agent` を使います。npm に同梱された undici を registry HTTP client と同一視していません。`stage.mjs` 自体の事前照合に使う Node の `fetch` は別実装で、当時実測した Node 24.21.0 の内蔵 undici は 7.29.1 です。これは現在の3指摘の対象であり、今回 Node 24.22.1 / undici 7.30.1 へ基準を更新します。[Node 24.22.1 release](https://nodejs.org/en/blog/release/v24.22.1)
 
 ## 各指摘の発動条件との照合
 

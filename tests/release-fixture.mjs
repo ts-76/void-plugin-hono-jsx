@@ -10,7 +10,7 @@ export function releaseFixture() {
   const artifactRoot = path.join(root, 'artifacts');
   const candidate = path.join(root, 'candidate/package');
   for (const directory of [pkgRoot, artifactRoot, candidate]) mkdirSync(directory, { recursive: true });
-  const policy = { repository: 'ts-76/void-plugin-hono-jsx', packageName: 'void-plugin-hono-jsx', packagePath: 'packages/hono-pages', tagPrefix: 'v', releaseNode: '24.21.0', pnpmVersion: '12.11.2', nodeVersions: ['24.21.0'], distTag: 'next', stageEnabled: false, publicPackageEnabled: false, provenance: true, historyDisclosureApproved: false, npmOwner: '', reviewers: [], preventSelfReview: true };
+  const policy = { repository: 'ts-76/void-plugin-hono-jsx', packageName: 'void-plugin-hono-jsx', packagePath: 'packages/hono-pages', tagPrefix: 'v', releaseNode: '24.22.1', pnpmVersion: '12.11.2', nodeVersions: ['24.22.1'], distTag: 'next', stageEnabled: false, publicPackageEnabled: false, provenance: true, historyDisclosureApproved: false, npmOwner: '', reviewers: [], preventSelfReview: true };
   const pkg = { name: policy.packageName, version: '0.1.0-alpha.0', private: true, license: 'MIT', repository: { url: 'https://github.com/' + policy.repository + '.git' }, publishConfig: { access: 'public', registry: 'https://registry.npmjs.org/', tag: 'next' }, exports: { './plugin': { types: './dist/plugin.d.ts', import: './dist/plugin.js' } } };
   writeFileSync(path.join(root, 'release-policy.json'), JSON.stringify(policy));
   writeFileSync(path.join(pkgRoot, 'package.json'), JSON.stringify(pkg));
@@ -26,7 +26,7 @@ export function releaseFixture() {
   }
   const tarball = path.join(artifactRoot, 'candidate.tgz');
   execFileSync('tar', ['-czf', tarball, '-C', path.join(root, 'candidate'), ...Object.keys(contents).map(file => 'package/' + file)]);
-  const evidence = { schema: 2, commit: 'abc', node: 'v24.21.0', package: { name: pkg.name, version: pkg.version }, packagePath: policy.packagePath, sourceMetadataSha256: sha256(readFileSync(path.join(pkgRoot, 'package.json'))), tarball: 'candidate.tgz', files: Object.keys(contents), sha256: sha256(readFileSync(tarball)), validation: { typecheck: true, build: true, test: true, source: true, history: true, secrets: true, dryRun: true, externalConsumer: true } };
+  const evidence = { schema: 2, commit: 'abc', node: 'v24.22.1', package: { name: pkg.name, version: pkg.version }, packagePath: policy.packagePath, sourceMetadataSha256: sha256(readFileSync(path.join(pkgRoot, 'package.json'))), tarball: 'candidate.tgz', files: Object.keys(contents), sha256: sha256(readFileSync(tarball)), validation: { typecheck: true, build: true, test: true, source: true, history: true, secrets: true, dryRun: true, externalConsumer: true } };
   evidence.integrity = 'sha512-' + createHash('sha512').update(readFileSync(tarball)).digest('base64');
   for (const [file, key] of [['history-audit.json', 'historyReportSha256'], ['dependency-audit.json', 'dependencyReportSha256'], ['consumer-dependency-audit.json', 'consumerDependencyReportSha256']]) {
     const content = JSON.stringify({ metadata: { vulnerabilities: { total: 0 } }, vulnerabilities: {} });

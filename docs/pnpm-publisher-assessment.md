@@ -4,6 +4,30 @@
 
 ## 2026-10-24 reassessment: new undici advisories block publication
 
+### Node baseline update and evaluated alternatives
+
+The follow-up change raises the project/adapter minimum to **Node >=24.22.1 <25**, sets `.node-version`, all active CI/release runtime pins and the publisher runtime policy to 24.22.1, and updates the two active consumer locks' root engines. Historical measurements and historical scaffold fixtures retain their original versions. The runtime guard rejects 24.21.x and 24.22.0. The required consumer status context retains its legacy `Pinned framework baseline on Node 24.21.0` name because that exact identity is protected on main; its actual runtime is now 24.22.1. The `rust` required publisher context, administrator enforcement and all audit/upload gates remain intact.
+
+| Candidate checked on 2026-10-24 | Evidence | Selection |
+| --- | --- | --- |
+| pnpm 11.28.6 / 11.28.8 JavaScript | Active 370-entry and candidate 369-entry inventories retain affected bundled undici 7.29.1; fixed-stage fetch is reachable. | Keep active tool blocked; do not adopt 11.28.8 as a security fix. |
+| npm 12.2.1 JavaScript | Official SHA512 verified; all 1,942 files hashed; 145 distinct package/version manifests audited. Three unreviewed matches remain: ip-address 10.7.2 / GHSA-rxp7-6hxx-x8q5 and undici 6.29.0 / GHSA-4qv8-2p9j-2685, GHSA-xjj6-f33q-929c. | Leading **evaluation-only** alternative; not connected to upload, no new exception granted. |
+| pnpm 12.15.0 native implementation | Wrapper's 22 manifest entries have no OSV findings, but that is not a native inventory. Official source Cargo.lock contains 779 registry entries and 19 advisory-ID matches in a conservative whole-workspace scan, including tokio, webpki-roots, quinn-proto and zip. Some IDs can alias the same vulnerability. Target-specific inclusion is unresolved. | Not adopted. A wrapper-only audit cannot justify this switch; native target inventory/source/binary and reachability work remains. |
+
+The npm candidate descriptor `scripts/release/npm-candidate.json` pins source metadata commit `136fc5dacc1a2f3d9a051dbf03a4951228144658`, distribution integrity, complete file-table digest and manifest inventory digest. `check-npm-candidate.mjs` independently downloads and checks them, records full OSV advisory modified/content hashes and refuses incomplete/paginated audit data. It never changes `publisher-policy.json` or enables npm staging. Its CI job has read-only repository permissions, no environment approval or OIDC write permission, and runs the unmodified CLI in a loopback-only Linux network namespace with fake credentials. The final step fails while unreviewed findings remain, retaining reports for review.
+
+Local Node 24.22.1/macOS results from `probe-npm-candidate.py`:
+
+- All six original-CLI cases passed their protocol assertions: exact bytes and one stage POST, missing-token rejection before POST, signing failure before POST, one POST on stage-500, dry-run with no POST, and malformed OIDC response rejection without an unhandled stream error or POST. Normal fixture cases deliberately disable provenance; the signing case exercises failure only. Successful real signing is not established.
+- V8 coverage shows no npm-bundled undici module loaded in any case. Source inspection routes registry/OIDC through `make-fetch-happen`/`minipass-fetch`, while the observed undici import is in node-gyp's download helper. The fixed-tgz/ignore-scripts command does not invoke that helper.
+- Address6 construction is **not zero**: each case records 70 calls, matching a separate import-only baseline of the pinned ip-address module. Source `dist/ipv6.js` initializes fixed subnet tables at module load. A benign explicit IPv6 construction raises the control count to 71, and a separate benign undici fetch loads and executes the otherwise-unobserved implementation. These controls prevent mistaking missing instrumentation for non-use. They do not establish non-reachability for arbitrary npm commands, proxy configuration or all signing/error paths.
+
+The newly detected [ip-address advisory](https://github.com/advisories/GHSA-rxp7-6hxx-x8q5) needs a long attacker-controlled string with many percent signs and a line terminator passed to Address6 before its length check; fixed 10.7.4 is upstream. The bounded subnet constants are not that input. Before adopting npm, require renewed Linux evidence, a complete successful signing-path assessment, exact finding acceptance decisions and upload integration that retains isolated HOME/config/cache, no proxy/credential inheritance, mandatory OIDC preflight, same-byte verification, provenance, protected review and owner final approval. The current findings and descriptor are **not** an approved acceptance set. Consumer findings remain an independent block.
+
+For local reproduction use `PUBLISHER_CANDIDATE_NODE=<verified-node-24.22.1> python3 scripts/release/probe-npm-candidate.py <verified-npm-cli> <report-directory> --local --malformed-oidc`. Use the candidate CI job for Linux namespace observations. The official npm distribution integrity is `sha512-bKCmFRVT/BB+YPEYbZwQ1XUI3N5t4xKSpU1MxOjo7z3iWzKBJ0ZXRC1xFdEN+TC7N5TdywaBzf2dMXGJq/e2PQ==`. The pnpm source Cargo.lock SHA256 is `6b0fdea9da5535746e334a1636fe3f47859b4eea9c3e863259ebd68f6a1d0b9c`; this identifies the conservative source scan, not a verified deployed native dependency inventory.
+
+### Original reachability reassessment
+
 **Decision: keep publication blocked; no new accepted findings.** The earlier zero-finding observation below predates the refreshed advisory data. The current complete OSV query over the same 370 package/version entries reports five package/version/advisory matches, representing three distinct advisories:
 
 | Package | Advisory | Current assessment |

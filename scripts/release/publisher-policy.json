@@ -2,7 +2,7 @@
   "schema": 2,
   "manager": "pnpm",
   "version": "11.28.6",
-  "node": "24.21.0",
+  "node": "24.22.1",
   "target": "linux-x64",
   "sourceCommit": "fe4a0c232384289de82be3d502896ca7e070050c",
   "inventorySha256": "895c8d15505ac9e5900be1ca92a892438e04d672084cddda657af6d3ea28e1a4",

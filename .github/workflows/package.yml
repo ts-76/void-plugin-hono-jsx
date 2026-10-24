@@ -15,7 +15,7 @@ env:
   CLOUDFLARE_CF_FETCH_ENABLED: 'false'
 jobs:
   baseline:
-    name: baseline consumer on Node 24.21.0
+    name: baseline consumer on Node 24.22.1
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -26,7 +26,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
-          node-version: '24.21.0'
+          node-version: '24.22.1'
           cache: npm
       - name: Install locked dependencies
         run: npm ci
@@ -54,7 +54,7 @@ jobs:
     needs: baseline
     strategy:
       matrix:
-        node: ['24.21.0']
+        node: ['24.22.1']
         stack: ['void-1-vp']
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -94,6 +94,7 @@ jobs:
           retention-days: 7
           if-no-files-found: error
   required-baseline:
+    # Required check context is pinned in branch protection; runtime is 24.22.1.
     name: Pinned framework baseline on Node 24.21.0
     needs: [baseline, consumer]
     if: always()
