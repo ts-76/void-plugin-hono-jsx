@@ -1,8 +1,24 @@
 import type MarkdownExit from 'markdown-exit';
+import type { ShikiTransformer } from 'shiki';
 import { configureMarkdownFeatures as configureBaseFeatures } from '../render/features.ts';
 import type { HonoMarkdownOptions } from '../render/types.ts';
 
 export type { HonoMarkdownOptions, MarkdownHeading, MarkdownCodeBlock } from '../render/types.ts';
+
+/** `{1,3-5}` fence metadata, clamped to the block so authored ranges cannot allocate beyond it. */
+function highlightedLines(info: string, lineCount: number) {
+  const ranges = (/\{([\d,-]+)\}/.exec(info)?.[1].split(',') ?? []).flatMap(part => {
+    const [start, end = start] = part.split('-', 2).map(value => Number.parseInt(value, 10));
+    return start >= 1 && end >= start && start <= lineCount ? [[start, Math.min(end, lineCount)]] : [];
+  }).sort((a, b) => a[0] - b[0]);
+  const lines = new Set<number>();
+  let next = 1;
+  for (const [start, end] of ranges) {
+    for (let line = Math.max(start, next); line <= end; line++) lines.add(line);
+    next = Math.max(next, end + 1);
+  }
+  return lines;
+}
 
 export function configureMarkdownFeatures(md: MarkdownExit, options: HonoMarkdownOptions) {
   // One highlighter per plugin, not a global first-options-wins singleton.
@@ -15,7 +31,7 @@ export function configureMarkdownFeatures(md: MarkdownExit, options: HonoMarkdow
     const selected = themes as { light: keyof typeof shiki.bundledThemes; dark: keyof typeof shiki.bundledThemes };
     const highlighter = await shiki.createHighlighter({ engine: createJavaScriptRegexEngine(), themes: [...new Set(Object.values(selected))], langs: [] });
     return { highlighter, selected, languages: shiki.bundledLanguages, transformers: [
-      transformers.transformerMetaHighlight(), transformers.transformerNotationDiff(),
+      transformers.transformerNotationDiff(),
       transformers.transformerNotationHighlight(), transformers.transformerNotationFocus(), transformers.transformerNotationErrorLevel(),
     ] };
   };
@@ -30,7 +46,9 @@ export function configureMarkdownFeatures(md: MarkdownExit, options: HonoMarkdow
         await loading.get(lang);
       } else lang = 'text';
     }
-    const highlighted = highlighter.codeToHtml(code, { lang, themes: selected, defaultColor: 'light', transformers, meta: { __raw: info } });
+    const lines = highlightedLines(info, code.split('\n').length);
+    const metaHighlight: ShikiTransformer = { name: 'hono-markdown:meta-highlight', line(node, line) { if (lines.has(line)) this.addClassToHast(node, 'highlighted'); } };
+    const highlighted = highlighter.codeToHtml(code, { lang, themes: selected, defaultColor: 'light', transformers: [metaHighlight, ...transformers], meta: { __raw: info } });
     if (options.renderCodeBlock) return options.renderCodeBlock({ code, language: label, info, html: highlighted });
     const numbers = /:line-numbers\b/.test(info);
     const start = Number(/\{=(\d+)\}/.exec(info)?.[1] ?? 1);

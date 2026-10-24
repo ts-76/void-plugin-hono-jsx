@@ -49,3 +49,17 @@ test('official focus and warning/error annotations reach the highlighted HTML', 
   assert.match(result.html,/has-focus/);assert.match(result.html,/class="line focused"/);
   assert.match(result.html,/highlighted warning/);assert.match(result.html,/highlighted error/);
 });
+
+test('fence line highlighting is clamped to the block and ignores malformed ranges', async () => {
+  // Shiki keeps the empty line after the fence content's final newline.
+  const lines = html => [...html.matchAll(/<span class="line([^"]*)"/g)].map(match => match[1].includes('highlighted'));
+  const ranged = await compileMarkdown('```js {1,3-5}\na\nb\nc\nd\ne\nf\n```');
+  assert.deepEqual(lines(ranged.html), [true, false, true, true, true, false, false]);
+  const started = performance.now();
+  const huge = await compileMarkdown('```js {1-50000000,2-90000000,' + '1-40000000,'.repeat(2000) + '3}\na\nb\nc\n```');
+  assert.deepEqual(lines(huge.html), [true, true, true, true]);
+  assert.ok(performance.now() - started < 2000, 'oversized ranges must not scale with their declared size');
+  for (const meta of ['{5-1}', '{-3}', '{0}', '{,}', '{1-}', '{99}']) {
+    assert.deepEqual(lines((await compileMarkdown('```js ' + meta + '\na\nb\n```')).html), [false, false, false], meta);
+  }
+});
