@@ -19,6 +19,9 @@ export function createContentParser(options: HonoMarkdownOptions, trusted: boole
   return parser;
 }
 
+/** Files and CMS bodies may start with a byte order mark; it is never authored content. */
+export const stripByteOrderMark = (source: string) => source.replace(/^\uFEFF/, '');
+
 export function parseContent(parser: MarkdownExit, content: string, options: HonoMarkdownOptions, env: Record<string, unknown> = {}, headingPrefix = '') {
   const tokens = parser.parse(content, env);
   const headings: Heading[] = [];
@@ -32,7 +35,7 @@ export function parseContent(parser: MarkdownExit, content: string, options: Hon
     const depth = Number(tokens[index].tag.slice(1));
     const generated = options.headingId?.({ depth, text, index: headings.length });
     if (options.headingId && (typeof generated !== 'string' || !generated || /[\s\u0000-\u001f\u007f]/u.test(generated))) throw new Error('Hono Markdown: headingId must return a non-empty ID without whitespace or control characters.');
-    const base = generated ?? headingPrefix + (text.toLowerCase().replace(/[^\p{L}\p{N} _-]/gu, '').trim().replace(/\s+/g, '-') || 'heading');
+    const base = generated ?? headingPrefix + (text.toLowerCase().replace(/[^\p{L}\p{M}\p{N} _-]/gu, '').trim().replace(/\s+/g, '-') || 'heading');
     let count = slugs.get(base) ?? 0;
     let slug = count ? `${base}-${count}` : base;
     while (usedIds.has(slug)) { count++; slug = `${base}-${count}`; }
