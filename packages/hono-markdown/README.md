@@ -90,6 +90,10 @@ async `renderCodeBlock` callback. It does not require Node compatibility and
 does not bundle Node APIs, the module compiler, Babel, YAML, Shiki, Void or Vite.
 Install only `@ts-76/hono-markdown`, `hono`, `markdown-exit` and
 `markdown-it-container` for this use case.
+`@babel/parser` is still installed as a regular dependency because the module
+compiler needs it and the Void adapter ships `@ts-76/hono-markdown` as its only
+dependency; article and browser entries never import or bundle it. Only the CSS
+exports are marked as side effects.
 
 ```ts
 import { Hono } from 'hono';
