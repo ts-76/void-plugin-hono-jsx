@@ -57,6 +57,17 @@ for (const attributes of ['value={data}', '{...props}', 'onclick="alert(1)"', 'c
   });
 }
 
+for (const attributes of ['onClick="alert(1)"', 'onclick="alert(1)"', 'ONMOUSEOVER="x"', 'onPointerDown="x"', 'onanimationend="x"', 'onSomething="x"', 'children="replace"', 'key="x"', 'Ref="x"', 'dangerouslySetInnerHTML="x"']) {
+  test('island props reject renderer-owned attributes and event handlers: ' + attributes, () => {
+    assert.throws(() => renderChunks(`<Counter ${attributes} />`, new Set(['Counter'])), /reserved/);
+  });
+}
+
+test('island props keep ordinary data names that merely start with "on"', () => {
+  const [island] = renderChunks('<Counter onboarding="intro" online once="1" one="2" onion __proto__="data" constructor="c" />', new Set(['Counter']));
+  assert.deepEqual(Object.keys(island.props), ['onboarding', 'online', 'once', 'one', 'onion', '__proto__', 'constructor']);
+});
+
 test('unknown/container-island names and malformed static imports fail clearly', async () => {
   await assert.rejects(compileMarkdown(declarations + ':::component Missing\nText\n:::'), /declared static/);
   await assert.rejects(compileMarkdown('<script>import Note from "../Note" with { island: "load" };</script>\n:::component Note\nText\n:::'), /declared static/);

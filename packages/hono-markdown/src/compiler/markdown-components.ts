@@ -3,7 +3,12 @@ import MarkdownExit from 'markdown-exit';
 
 const unescapeAttribute = new MarkdownExit().utils.unescapeAll;
 
-/** Data only: never evaluate JSX expressions or allow renderer-owned props. */
+// HTML event handler attributes (case-insensitive in HTML). Island props reach
+// components as strings, so a spread onto an element must not become inline script.
+const eventHandlers = new Set(('abort afterprint animationcancel animationend animationiteration animationstart auxclick beforecopy beforecut beforeinput beforematch beforepaste beforeprint beforetoggle beforeunload beforexrselect blur cancel canplay canplaythrough change click close command contentvisibilityautostatechange contextlost contextmenu contextrestored copy cuechange cut dblclick drag dragend dragenter dragexit dragleave dragover dragstart drop durationchange emptied ended error focus focusin focusout formdata fullscreenchange fullscreenerror gotpointercapture hashchange input invalid keydown keypress keyup languagechange load loadeddata loadedmetadata loadend loadstart lostpointercapture message messageerror mousedown mouseenter mouseleave mousemove mouseout mouseover mouseup mousewheel offline online pagehide pagereveal pageshow pageswap paste pause play playing pointercancel pointerdown pointerenter pointerleave pointermove pointerout pointerover pointerrawupdate pointerup popstate progress ratechange readystatechange rejectionhandled reset resize scroll scrollend scrollsnapchange scrollsnapchanging search securitypolicyviolation seeked seeking select selectionchange selectstart slotchange stalled storage submit suspend timeupdate toggle touchcancel touchend touchmove touchstart transitioncancel transitionend transitionrun transitionstart unhandledrejection unload visibilitychange volumechange waiting webkitanimationend webkitanimationiteration webkitanimationstart webkittransitionend wheel').split(' ').map(name => 'on' + name));
+const rendererProps = /^(?:children|key|ref|dangerouslySetInnerHTML)$/i;
+
+/** Data only: never evaluate JSX expressions or allow renderer-owned props or event handlers. Static components are stricter than island data. */
 export function componentAttributes(source: string, restricted = true) {
   const props: Record<string, string | boolean> = Object.create(null);
   const attribute = /\s+(\w[\w-]*)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+)))?/y;
@@ -14,7 +19,10 @@ export function componentAttributes(source: string, restricted = true) {
     if (!match) throw new Error('Hono Markdown: use literal component attributes; JSX expressions are unsupported.');
     const key = match[1];
     const value = match[2] ?? match[3] ?? match[4];
-    if (Object.hasOwn(props, key) || match[4]?.startsWith('{') || restricted && (!/^[A-Za-z]/.test(key) || /^(?:children|key|ref|dangerouslySetInnerHTML|__proto__|prototype|constructor)$/i.test(key) || /^on/i.test(key))) throw new Error(`Hono Markdown: invalid or reserved component attribute ${key}.`);
+    const reserved = restricted
+      ? !/^[A-Za-z]/.test(key) || rendererProps.test(key) || /^(?:__proto__|prototype|constructor)$/i.test(key) || /^on/i.test(key)
+      : rendererProps.test(key) || /^on[A-Z]/.test(key) || eventHandlers.has(key.toLowerCase());
+    if (Object.hasOwn(props, key) || match[4]?.startsWith('{') || reserved) throw new Error(`Hono Markdown: invalid or reserved component attribute ${key}.`);
     props[key] = value === undefined ? true : unescapeAttribute(value);
     cursor = attribute.lastIndex;
   }
