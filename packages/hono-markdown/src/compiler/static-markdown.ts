@@ -1,6 +1,6 @@
 import { dirname } from 'node:path';
 import { createHash } from 'node:crypto';
-import { compileMarkdown, createMarkdownCompiler, renderChunks } from './markdown-compiler.ts';
+import { createMarkdownCompiler, renderChunks } from './markdown-compiler.ts';
 import { resolveComponent } from './resolve-component.ts';
 import { markdownCopyCode } from './markdown-copy.ts';
 import type { HonoMarkdownOptions } from './markdown-features.ts';
@@ -15,30 +15,61 @@ export interface MarkdownModuleInput {
   contextModule?: string;
 }
 
+type MarkdownCompiler = ReturnType<typeof createMarkdownCompiler>;
+type ParsedMarkdown = ReturnType<MarkdownCompiler['parse']>;
+
+// Parsing is per call; the parser and its lazy Shiki highlighter are shared per options object.
+let defaultCompiler: MarkdownCompiler | undefined;
+const compilers = new WeakMap<HonoMarkdownOptions, MarkdownCompiler>();
+function compilerFor(options?: HonoMarkdownOptions) {
+  if (!options) return defaultCompiler ??= createMarkdownCompiler();
+  let compiler = compilers.get(options);
+  if (!compiler) compilers.set(options, compiler = createMarkdownCompiler(options));
+  return compiler;
+}
+
+function assertModulePrelude({ clientCode }: ParsedMarkdown) {
+  if (clientCode) throw new Error('Hono Markdown: standalone modules accept component imports only; arbitrary scripts require a host-specific page compiler.');
+}
+
+function assertStaticPrelude({ imports, clientCode }: ParsedMarkdown) {
+  if (imports.length || clientCode) throw new Error('Hono Markdown: standalone slides support static components only; page islands and scripts require a host-specific page compiler.');
+}
+
 /** Read the shared prelude without accepting arbitrary browser scripts. */
 export function readMarkdownModule(source: string) {
-  const { frontmatter, content, script, clientCode } = createMarkdownCompiler().parse(source);
-  if (clientCode) throw new Error('Hono Markdown: standalone modules accept component imports only; arbitrary scripts require a host-specific page compiler.');
+  const parsed = compilerFor().parse(source);
+  assertModulePrelude(parsed);
+  const { frontmatter, content, script } = parsed;
   return { frontmatter, content, script };
 }
 
 /** Read YAML and the shared static-import prelude before splitting slides. */
 export function readStaticMarkdown(source: string) {
-  const { frontmatter, content, script, imports, clientCode } = createMarkdownCompiler().parse(source);
-  if (imports.length || clientCode) throw new Error('Hono Markdown: standalone slides support static components only; page islands and scripts require a host-specific page compiler.');
+  const parsed = compilerFor().parse(source);
+  assertStaticPrelude(parsed);
+  const { frontmatter, content, script } = parsed;
   return { frontmatter, content, script };
 }
 
 /** Compile trusted Markdown for a host that owns its document and client entry. */
 export async function compileStaticMarkdown(source: string, input: MarkdownModuleInput) {
-  readStaticMarkdown(source);
-  return compileMarkdownModule(source, input);
+  const compiler = compilerFor(input.options);
+  const parsed = compiler.parse(source);
+  assertStaticPrelude(parsed);
+  return emitMarkdownModule(compiler, parsed, input);
 }
 
 /** Compile an independent document with structured island metadata for its host. */
 export async function compileMarkdownModule(source: string, input: MarkdownModuleInput) {
-  readMarkdownModule(source);
-  const result = await compileMarkdown(source, input.options);
+  const compiler = compilerFor(input.options);
+  const parsed = compiler.parse(source);
+  assertModulePrelude(parsed);
+  return emitMarkdownModule(compiler, parsed, input);
+}
+
+async function emitMarkdownModule(compiler: MarkdownCompiler, parsed: ParsedMarkdown, input: MarkdownModuleInput) {
+  const result = await compiler.render(parsed);
   const imports = [...result.staticImports.map(entry => ({ ...entry, kind: 'static' as const, hydrate: '' })), ...result.imports.map(entry => ({ ...entry, kind: 'island' as const }))].map((entry, index) => {
     const target = entry.specifier.startsWith('.') && resolveComponent(entry.specifier, dirname(input.sourcePath), ['.tsx', '.jsx']);
     if (!target) throw new Error(`Hono Markdown: cannot resolve relative TSX/JSX component ${entry.specifier} in ${input.sourcePath}.`);

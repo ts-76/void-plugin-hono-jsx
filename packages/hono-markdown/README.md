@@ -4,6 +4,8 @@ Markdown module compiler, request-time article renderer and browser island runti
 
 Use `/compiler` for readMarkdownModule / compileMarkdownModule (or the strict static API), the root export for the shared MarkdownContext and hooks, and `/client` for hydrateMarkdownIslands. The Markdown parser and container peers are used by article rendering and compilation; YAML and Shiki are needed only for the corresponding module/highlighting features. No Void or Vite peer is required.
 
+Module compilation reuses one parser and lazy Shiki highlighter per `options` object. Pass the same object for every document in a build, and do not mutate it after the first call.
+
 The browser scheduler supports load, idle, visible and media. Hosts may inject a scheduler and a `ready(element, start)` gate for visible islands. Routing, document/head ownership and presentation activation belong to host adapters. The compiler preserves literal attribute restrictions and rejects arbitrary scripts in standalone modules.
 
 ## Article content
