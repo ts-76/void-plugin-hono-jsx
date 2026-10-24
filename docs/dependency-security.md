@@ -1,5 +1,20 @@
 # Dependency advisory acceptance
 
+## 0.8.0 owner acceptance — 2026-10-25
+
+The owner explicitly accepted the remaining Void/Cloudflare tooling risks for **void-plugin-hono-jsx 0.8.0 only** after reassessment. This is a new, version-specific decision; it does not extend the earlier 0.7.0 approval to arbitrary releases. The latest root, ordinary-consumer and Markdown-consumer audits retain 16 propagated entries (High 6, Moderate 10, Critical 0), representing the existing esbuild advisory and the same four undici/Zod advisories described below. Upstream Void's latest release remains 1.2.1. These dependencies are not repaired by this acceptance.
+
+- A malformed response from a contacted peer can terminate Node development/CLI tooling through affected undici, even when fetch rejection is caught (GHSA-xjj6-f33q-929c).
+- The affected EventSource parser can exhaust memory (GHSA-4qv8-2p9j-2685). No EventSource call was observed in the adapter path; arbitrary application use is outside this assessment.
+- Mixed-case SRI tokens can bypass affected undici's integrity checks (GHSA-f72v-6w45-q472). Inspected toolchain callers do not set SRI; applications relying on it need a fixed implementation.
+- Oversized invalid input can make affected Zod allocate excessive validation issues (GHSA-mrhx-c7xc-m3w5). Reviewed toolchain input is project configuration; anonymous application endpoints were not proven vulnerable.
+
+Use trusted project configuration, keep dev/preview interfaces private, bound external input before validation, and avoid adding untrusted remote peers or affected EventSource/SRI paths. Do not use the affected esbuild version's own serve feature. These are usage limits rather than code fixes or a guarantee for every upstream command. Worker-native fetch and application-defined handlers require their own assessment. The independent Markdown 0.1.2 article consumer has a separate dependency graph and passed its minimal/full-peer audits with zero findings; that does not remove the Void toolchain findings.
+
+`consumerRiskAcceptance` is restricted to 0.8.0, Node 24.22.1, Void `>=1.2.1 <1.3.0`, the three recorded lockfile hashes, and the four exact OSV advisory records. The root lock differs from the reviewed 0.7.0 lock only in its two release-version fields; its hash is renewed for 0.8.0. The adapter now requires the separately published common runtime `^0.1.2`. Root and both locked ordinary/Markdown consumer audits, exact-artifact checks and fresh advisory validation remain mandatory. Changed dependencies, peers, Node, advisory records, any additional finding or a later release require reassessment. The separately fixed npm publisher keeps its zero-finding gate. No dependency override, forced transitive upgrade or automatic waiver is added.
+
+The earlier decisions below are historical records. Prefer a compatible upstream fixed release, then remove this exception after complete lock/bundle and real-consumer verification.
+
 ## 0.7.0 owner acceptance — 2026-10-24
 
 The owner explicitly accepted the remaining Void/Cloudflare consumer risks for **void-plugin-hono-jsx 0.7.0 only** after reviewing the reachable undici process-termination case and the Zod allocation behavior. This accepts risk; it does not repair the affected dependencies or make the audit zero. The reviewed root and locked consumers report 16 propagated entries (High 6, Moderate 10), representing the historical esbuild advisory and these four additional advisories:

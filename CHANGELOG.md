@@ -5,7 +5,7 @@
 
 ### ⚠ BREAKING CHANGES
 
-* **markdown:** Markdown island tags using these attribute names now fail compilation. Pass the value through a differently named prop or a TSX wrapper component.
+* **markdown:** Markdown island tags now reject renderer-owned props (`children`, `key`, `ref`, `dangerouslySetInnerHTML`), known HTML event-handler attributes regardless of case, and JSX-style `on` + uppercase names such as `onClick`. Rename data props or pass event callbacks from a TSX wrapper component.
 
 ### Features
 
@@ -25,6 +25,10 @@
 ### Performance Improvements
 
 * **markdown:** reuse module compilers per options object ([#147](https://github.com/ts-76/void-plugin-hono-jsx/issues/147)) ([f643d8b](https://github.com/ts-76/void-plugin-hono-jsx/commit/f643d8b607a04a822304dc5925eb3c45281d71c3)), closes [#140](https://github.com/ts-76/void-plugin-hono-jsx/issues/140)
+
+### Dependency risk acceptance
+
+The owner explicitly accepts the remaining Void/Cloudflare undici and Zod tooling risks for **0.8.0 only**, under the pinned Node/Void/lockfile and usage conditions in [dependency-security.md](https://github.com/ts-76/void-plugin-hono-jsx/blob/v0.8.0/docs/dependency-security.md). A malformed remote response can terminate Node development/CLI tooling; oversized invalid input can increase validation memory. Keep dev/preview private and use trusted, bounded configuration. The consumer audit remains nonzero. This does not relax fresh audits, exact-artifact checks or final owner approval, and does not cover later releases.
 
 ## [0.7.0](https://github.com/ts-76/void-plugin-hono-jsx/compare/v0.6.0...v0.7.0) (2026-10-24)
 
