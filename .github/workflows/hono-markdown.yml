@@ -27,3 +27,32 @@ jobs:
           name: hono-markdown-${{ github.sha }}
           path: ts-76-hono-markdown-*.tgz
           if-no-files-found: error
+  provenance:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: common
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24.22.1'
+          package-manager-cache: false
+      - run: node scripts/release/install-publisher.mjs
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: hono-markdown-${{ github.sha }}
+          path: common-artifact
+      - run: node scripts/release/attest-common.mjs
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: hono-markdown-provenance-${{ github.sha }}
+          path: common-artifact/*.sigstore
+          if-no-files-found: warn

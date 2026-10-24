@@ -73,8 +73,10 @@ Keep using `/compiler` for authored `.md` modules with components, frontmatter
 and islands. Its existing HTML, script-prelude and generated-module contracts
 are unchanged; **never pass untrusted CMS content to that API**, even with
 `html: false`. The Void adapter accepts the shared display options, but its page
-compiler remains a trusted-source compiler. Disabling highlighting or supplying
-custom code markup omits the default copy script.
+compiler remains a trusted-source compiler. The common module compiler omits
+default copy code when highlighting is disabled or custom code markup is used.
+Void adapters must consume `needsCodeCopy` for the same omission; older adapters
+continue loading their default copy client.
 
 This API covers article rendering and the documented Hono Markdown syntax. It
 does not implement Marked's tokenizer/extension ecosystem or promise identical
