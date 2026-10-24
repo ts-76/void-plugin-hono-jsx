@@ -157,7 +157,7 @@ export async function renderPage(pageObj, assetTags) {
   if (${JSON.stringify(staticData.enabled)} && pageObj.deferredKeys) throw new Error('Hono Pages: deferred props cannot be statically prerendered; remove defer().');
   const load = components[pageObj.component];
   if (!load) throw new Error('Hono Pages: unknown page component ' + pageObj.component);
-  const { default: Page, frontmatter = {}, headings = [] } = await load();
+  const { default: Page, frontmatter = {}, clientFrontmatter = frontmatter, headings = [] } = await load();
   if (typeof Page !== 'function') throw new Error('Hono Pages: a page must export a component function.');
   let content = jsx(Page, pageObj.props);
   const ids = layoutTree[pageObj.component] ?? [];
@@ -168,7 +168,7 @@ export async function renderPage(pageObj, assetTags) {
   }
   ${markdown ? 'content = jsx(MarkdownContext.Provider, { value: { frontmatter, headings, props: pageObj.props }, children: content });' : ''}
   content = jsx(RouterContext.Provider, { value: createSsrRouter(pageObj.url, pageObj.params), children: jsx(PageContext.Provider, { value: pageObj, children: jsx(NavigationContext.Provider, { value: idleNavigationState(), children: content }) }) });
-  return renderHonoDocument(content, pageObj, assetTags, { markdownScript: markdownScriptIds.has(pageObj.component) ? pageObj.component : undefined, ${markdown ? 'markdown: JSON.stringify({ frontmatter, headings }),' : ''} });
+  return renderHonoDocument(content, pageObj, assetTags, { markdownScript: markdownScriptIds.has(pageObj.component) ? pageObj.component : undefined, ${markdown ? 'markdown: JSON.stringify({ frontmatter: clientFrontmatter, headings }),' : ''} });
 }
 `;
       }

@@ -26,6 +26,14 @@ export function extractMarkdown(source: string) {
   return { body, script, imports, staticImports, graphSource, clientCode };
 }
 
+/** The frontmatter subset that may appear in HTML for browser islands. */
+export function selectClientFrontmatter(frontmatter: Record<string, unknown>, selection: HonoMarkdownOptions['clientFrontmatter'] = true) {
+  if (selection === true) return frontmatter;
+  if (selection === false) return {};
+  if (!Array.isArray(selection) || selection.some(key => typeof key !== 'string')) throw new Error('Hono Markdown: clientFrontmatter must be a boolean or an array of frontmatter keys.');
+  return Object.fromEntries(selection.filter(key => Object.hasOwn(frontmatter, key)).map(key => [key, frontmatter[key]]));
+}
+
 export function createMarkdownCompiler(options: HonoMarkdownOptions = {}) {
   const compiler = createContentParser(options, true, configureMarkdownFeatures);
   configureComponentContainers(compiler);
@@ -43,7 +51,7 @@ export function createMarkdownCompiler(options: HonoMarkdownOptions = {}) {
     }
     const content = match ? extracted.body.slice(match[0].length) : extracted.body;
     const env: Record<string, unknown> = { components: new Set(extracted.staticImports.map(entry => entry.importName)) };
-    return { ...extracted, source, content, frontmatter, ...parseContent(compiler, content, options, env) };
+    return { ...extracted, source, content, frontmatter, clientFrontmatter: selectClientFrontmatter(frontmatter, options.clientFrontmatter), ...parseContent(compiler, content, options, env) };
   }
 
   async function render(parsed: ReturnType<typeof parse>) {

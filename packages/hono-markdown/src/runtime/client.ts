@@ -54,7 +54,8 @@ export function hydrateMarkdownIslands(loaders: Record<string, IslandLoader>, op
           const component = (module as { default?: unknown }).default;
           if (typeof component !== 'function') throw new Error('Hono Markdown: island must export a default component.');
           ensureHonoStyleHost();
-          const metadata = JSON.parse(element.dataset.honoMdContext || '{}');
+          // Documents serialize one context on their wrapper; older output put it on each island.
+          const metadata = JSON.parse(element.closest('[data-hono-md-context]')?.getAttribute('data-hono-md-context') || '{}');
           render(jsx(MarkdownContext.Provider, { value: metadata, children: jsx(component, props) }), element);
           element.dataset.honoMdMounted = 'true';
         } catch (error) { fail(error); }

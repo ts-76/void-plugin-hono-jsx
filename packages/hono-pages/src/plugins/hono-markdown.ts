@@ -8,6 +8,7 @@ import type { HonoMarkdownOptions } from './markdown-features.ts';
 import { markdownCopyId, markdownCopyCode } from './markdown-copy.ts';
 export type { HonoMarkdownOptions } from './markdown-features.ts';
 import type { HonoMarkdownApi } from './markdown-api.ts';
+import { markdownRuntimePath } from './runtime-paths.ts';
 
 const clientId = 'virtual:void-hono-markdown-client';
 const scriptQuery = '?hono-markdown-script';
@@ -78,19 +79,28 @@ if (id && scripts[id]) await scripts[id]();`;
           return { ...entry, alias: `__island${index}`, islandId: normalizePath(relative(root, realpathSync(target))) };
         });
         const chunks = renderChunks(result.html, new Set(imports.map(entry => entry.importName)), new Set(result.staticImports.map(entry => entry.importName)));
+        const limitedFrontmatter = result.clientFrontmatter !== result.frontmatter;
+        const wrapsIslands = limitedFrontmatter && result.imports.length > 0;
         const emit = (chunk: (typeof chunks)[number]): string => {
           if ('html' in chunk) return `raw(${JSON.stringify(chunk.html)})`;
           const entry = imports.find(entry => entry.importName === chunk.name)!;
           const props = literal(chunk.props);
           if (entry.kind === 'static') return `jsx(${entry.alias}, { ...${props}${chunk.children ? `, children: [${chunk.children.map(emit).join(',')}]` : ''} })`;
-          return `jsx('div', { 'data-island': ${JSON.stringify(entry.islandId)}, 'data-hydrate': ${JSON.stringify(entry.hydrate)}, 'data-props': JSON.stringify(${props}), children: jsx(${entry.alias}, ${props}) })`;
+          // Islands render with the browser frontmatter during SSR too, so hydration sees the same values.
+          const island = `jsx(${entry.alias}, ${props})`;
+          return `jsx('div', { 'data-island': ${JSON.stringify(entry.islandId)}, 'data-hydrate': ${JSON.stringify(entry.hydrate)}, 'data-props': JSON.stringify(${props}), children: ${limitedFrontmatter ? `jsx(__ClientMarkdown, { children: ${island} })` : island} })`;
         };
         const children = chunks.map(emit);
         return { code: `import { jsx, Fragment } from 'hono/jsx/jsx-runtime';
 import { raw } from 'hono/html';
 ${imports.map(entry => `import ${entry.alias} from ${JSON.stringify(entry.specifier)};`).join('\n')}
-export const frontmatter = ${literal(result.frontmatter)};
+${wrapsIslands ? `import { useContext } from 'hono/jsx';
+import { MarkdownContext as __MarkdownContext } from ${JSON.stringify(markdownRuntimePath)};
+` : ''}export const frontmatter = ${literal(result.frontmatter)};
+export const clientFrontmatter = ${limitedFrontmatter ? literal(result.clientFrontmatter) : 'frontmatter'};
 export const headings = ${literal(result.headings)};
+${wrapsIslands ? `function __ClientMarkdown({ children }) { return jsx(__MarkdownContext.Provider, { value: { ...useContext(__MarkdownContext), frontmatter: clientFrontmatter }, children }); }
+` : ''}
 export default function MarkdownPage() { return jsx(Fragment, { children: [${children.join(',')}] }); }`, map: null };
       },
     },

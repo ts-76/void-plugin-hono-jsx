@@ -10,6 +10,8 @@ The browser scheduler supports load, idle, visible and media. Hosts may inject a
 
 `hydrateMarkdownIslands` returns a function that cancels islands that have not started mounting; custom schedulers may return their own cleanup. Load and mount failures are passed to `reportError` (or `console.error`), mark the element with `data-hono-md-error` and leave it retryable by a later call.
 
+Module compilation serializes one island context per document on its `.void-md` wrapper. That context includes frontmatter, which therefore appears in the HTML. Set `clientFrontmatter` to an array of keys, or to `false`, to limit what islands receive. The default `true` keeps every key. The module's `frontmatter` export and server rendering outside islands keep the full mapping. Islands see the same subset during SSR and hydration.
+
 ## Article content
 
 Use `@ts-76/hono-markdown/render` for CMS article text or other content that must
