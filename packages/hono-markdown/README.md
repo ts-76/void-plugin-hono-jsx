@@ -135,3 +135,7 @@ This API covers article rendering and the documented Hono Markdown syntax. It
 does not implement Marked's tokenizer/extension ecosystem or promise identical
 HTML for every Markdown input. Validate the site's existing article fixtures
 and CSS before replacing its renderer.
+
+## 0.1.2 compatibility notes
+
+This release adds request-time article rendering in Cloudflare Workers through `/render/worker`. Bundlers using the `workerd` or `worker` export condition also select that implementation for `/render`. Built-in `highlight: true` is Node/build-time only; Worker applications can use escaped plain code or an application-owned `renderCodeBlock` callback. Node imports retain optional Shiki support. An explicit `highlight: undefined` now keeps the documented plain-code default in both environments. Existing compiler, client islands and adapter APIs remain compatible.
