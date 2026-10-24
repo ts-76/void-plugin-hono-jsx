@@ -104,3 +104,18 @@ test('plain article code needs no scripts, and module options omit unused copy c
     assert.doesNotMatch(result.code, /class=\\"copy\\"/);
   }
 });
+
+test('a leading byte order mark does not hide the first heading or module frontmatter', async () => {
+  const article = '# First\n\nBody';
+  assert.deepEqual(await renderMarkdown('﻿' + article), await renderMarkdown(article));
+  const module = '---\ntitle: Doc\n---\n\n# First';
+  const withMark = await compileMarkdown('﻿' + module);
+  assert.deepEqual(withMark.frontmatter, { title: 'Doc' });
+  assert.deepEqual(withMark.headings, (await compileMarkdown(module)).headings);
+  assert.match((await renderMarkdown('﻿﻿# Kept')).html, /﻿/, 'only one leading mark is removed');
+});
+
+test('heading slugs keep combining marks and leave other text unchanged', async () => {
+  const { headings } = await renderMarkdown('# हिन्दी\n\n# ภาษาไทย\n\n# 日本語の見出し\n\n# Hello, World!\n\n# café');
+  assert.deepEqual(headings.map(heading => heading.slug), ['user-content-हिन्दी', 'user-content-ภาษาไทย', 'user-content-日本語の見出し', 'user-content-hello-world', 'user-content-café']);
+});
