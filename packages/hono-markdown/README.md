@@ -82,6 +82,12 @@ default copy code when highlighting is disabled or custom code markup is used.
 Void adapters must consume `needsCodeCopy` for the same omission; older adapters
 continue loading their default copy client.
 
+Component attributes are literal data. Static component attributes reject every
+`on*` name and renderer-owned props. Island props reject renderer-owned props
+(`children`, `key`, `ref`, `dangerouslySetInnerHTML`), names with `on` followed by an
+uppercase letter, and known HTML event attributes in any case. Other keys, such as
+`onboarding`, remain data.
+
 ## Cloudflare Workers and CMS bodies
 
 `@ts-76/hono-markdown/render/worker` converts article text at request time with
