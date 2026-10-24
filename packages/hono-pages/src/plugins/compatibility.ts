@@ -13,7 +13,7 @@ export const supportedNodeRange = '>=24.22.1 <25.0.0';
 export function supportsNode(version: unknown): boolean {
   if (typeof version !== 'string') return false;
   const match = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.exec(version);
-  return !!match && match[1] === '24' && Number.isSafeInteger(Number(match[2])) && Number.isSafeInteger(Number(match[3])) && (Number(match[2]) > 22 || (Number(match[2]) === 22 && Number(match[3]) >= 1));
+  return !!match && match[1] === '24' && Number.isSafeInteger(Number(match[2])) && Number.isSafeInteger(Number(match[3])) && (Number(match[2]) > 22 || Number(match[2]) === 22 && Number(match[3]) >= 1);
 }
 
 // Only stable releases are admitted. Void minors are validated explicitly

@@ -8,7 +8,7 @@
 
 ## 監査対象と配布対象
 
-2026-10-24追記: 以下は旧 npm 11.21.0 の履歴評価です。現在の代替候補 npm 12.2.1 は指摘・配布物・依存版が異なり、この受容提案を引き継ぎません。[最新の候補評価と採用条件](pnpm-publisher-assessment.md#node-baseline-update-and-evaluated-alternatives)を参照してください。また、旧文中の「Node 24.21.0 内蔵 undici 7.29.1 は修正版」という記述は誤りでした。今回の3指摘に対する修正は undici 7.30.1 で、Node 24.22.1 が同梱しています。
+2026-10-24追記: 以下は旧 npm 11.21.0 の履歴評価です。現在は上流 npm 11.21.1 のコードと修正済み依存を固定した非公開の公開用runtimeを使用しており、この旧受容提案を引き継ぎません。[最新の候補評価と採用条件](pnpm-publisher-assessment.md#node-baseline-update-and-evaluated-alternatives)を参照してください。また、旧文中の「Node 24.21.0 内蔵 undici 7.29.1 は修正版」という記述は誤りでした。今回の3指摘に対する修正は undici 7.30.1 で、Node 24.22.1 が同梱しています。
 
 隔離した設定と新しい監査キャッシュで npm 11.21.0 の依存関係を再監査しました。High 3 / Moderate 2 の計 5 パッケージ、独立した advisory は 12 件、Critical は 0 件です。npm 12.2.0 への更新、非公開 fixture の override、audit fix でも、この 5 ライブラリの同梱版と指摘は変わりませんでした。
 

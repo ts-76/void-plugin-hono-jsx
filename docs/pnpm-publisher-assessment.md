@@ -1,12 +1,32 @@
-# pnpm 公開ジョブの依存評価と採用条件
+# Fixed-dependency npm publisher
+
+## Current publisher — 2026-10-24
+
+The standard pnpm 11 and npm staging distributions still include affected dependencies. The current publisher is a **private reconstruction of official npm 11.21.1 code**, with runtime dependencies resolved inside its original manifest ranges and frozen in `scripts/release/npm-publisher-lock.json`. It is not the byte-identical standard npm distribution and is not published as another npm package.
+
+The CLI source archive is integrity-pinned. Reconstruction drops its affected bundled dependencies, development/workspace/lifecycle metadata, preserves every declared runtime range and sets `private: true`. A bounded downloader verifies every locked registry tarball before safe extraction; no package manager, lifecycle, git hook, build or arbitrary dependency update runs during reconstruction/staging. There are no transitive overrides or source patches. All installed paths/bytes, the complete package inventory and the lock have pinned digests.
+
+The selected runtime contains undici 6.29.1 and ip-address 10.7.4. Local npm audit and full OSV inventory audit returned zero findings across 145 distinct package/version entries. Linux publisher validation on merged main repeated reconstruction, digests, a fresh full-inventory audit and protocol/response regressions successfully ([PR #136](https://github.com/ts-76/void-plugin-hono-jsx/pull/136)). Each final release must repeat these gates. Node 24.22.1 supplies fixed built-in undici 7.30.1 independently of the installed copy.
+
+The stage runner retains mandatory fresh OIDC exchange, scoped temporary auth, exact accepted tgz bytes, provenance, protected environment review and owner final 2FA. It does not accept directory publication, inherited auth/proxy/runtime injection, lifecycle scripts or automatic stage retries. Execution coverage must show the verified npm stage command ran. Failure after a possible remote submission still requires registry inspection before retry.
+
+Protocol fixtures use fake credentials and loopback only (a Linux network namespace in CI), cover fixed bytes/tag/access, missing auth, signature failure, stage HTTP failure and dry-run. Separate bounded malformed content-encoding and lowercase/uppercase wrong-SRI tests must reject without crashing for both Node fetch and the fixed installed undici. Real signing, owner authentication and public verification remain separate release checks.
+
+This publisher update does not approve newly reported Void/Cloudflare/Zod consumer findings. The normal-release artifact/consumer policy still blocks new unreviewed advisories.
+
+## Historical pnpm assessment
+
+### pnpm 公開ジョブの依存評価と採用条件
 
 2026-10-21時点の対象は **pnpm 11.28.6のJavaScript配布物、Node 24.21.0、Linux x64** です。固定した受入済みtgzを `stage publish` する処理だけに使用します。開発・ビルド・候補作成のパッケージマネージャーは変更しません。
 
-## 2026-10-24 reassessment: new undici advisories block publication
+## Historical 2026-10-24 reassessment: superseded publisher candidates
+
+This section records the investigation before [PR #136](https://github.com/ts-76/void-plugin-hono-jsx/pull/136) selected the fixed-dependency npm runtime described above. Its pnpm/npm candidate findings and adoption proposals are historical, not the active publisher policy. Separate Void/Cloudflare consumer findings still block 0.7.0; see the [current consumer assessment](rc-security-assessment.md#2026-10-24-follow-up-void-121-consumer-and-runner-findings). Original investigation source: [PR #135 at f6a6d146](https://github.com/ts-76/void-plugin-hono-jsx/tree/f6a6d14643fc9b79198e7fb1f43e0e9248f1f7c2).
 
 ### Node baseline update and evaluated alternatives
 
-The follow-up change raises the project/adapter minimum to **Node >=24.22.1 <25**, sets `.node-version`, all active CI/release runtime pins and the publisher runtime policy to 24.22.1, and updates the two active consumer locks' root engines. Historical measurements and historical scaffold fixtures retain their original versions. The runtime guard rejects 24.21.x and 24.22.0. The required consumer status context retains its legacy `Pinned framework baseline on Node 24.21.0` name because that exact identity is protected on main; its actual runtime is now 24.22.1. The `rust` required publisher context, administrator enforcement and all audit/upload gates remain intact.
+The follow-up change raises the project/adapter minimum to **Node >=24.22.1 <25**, sets `.node-version`, all active CI/release runtime pins and the publisher runtime policy to 24.22.1, and updates the two active consumer locks' root engines. Historical measurements and historical scaffold fixtures retain their original versions. The runtime guard rejects 24.21.x and 24.22.0. The current required consumer context is `Pinned framework baseline on Node 24.22.1`; branch protection was migrated after the corresponding checks passed. The `rust` required publisher context, administrator enforcement and all audit/upload gates remain intact.
 
 | Candidate checked on 2026-10-24 | Evidence | Selection |
 | --- | --- | --- |
@@ -14,7 +34,7 @@ The follow-up change raises the project/adapter minimum to **Node >=24.22.1 <25*
 | npm 12.2.1 JavaScript | Official SHA512 verified; all 1,942 files hashed; 145 distinct package/version manifests audited. Three unreviewed matches remain: ip-address 10.7.2 / GHSA-rxp7-6hxx-x8q5 and undici 6.29.0 / GHSA-4qv8-2p9j-2685, GHSA-xjj6-f33q-929c. | Leading **evaluation-only** alternative; not connected to upload, no new exception granted. |
 | pnpm 12.15.0 native implementation | Wrapper's 22 manifest entries have no OSV findings, but that is not a native inventory. Official source Cargo.lock contains 779 registry entries and 19 advisory-ID matches in a conservative whole-workspace scan, including tokio, webpki-roots, quinn-proto and zip. Some IDs can alias the same vulnerability. Target-specific inclusion is unresolved. | Not adopted. A wrapper-only audit cannot justify this switch; native target inventory/source/binary and reachability work remains. |
 
-The npm candidate descriptor `scripts/release/npm-candidate.json` pins source metadata commit `136fc5dacc1a2f3d9a051dbf03a4951228144658`, distribution integrity, complete file-table digest and manifest inventory digest. `check-npm-candidate.mjs` independently downloads and checks them, records full OSV advisory modified/content hashes and refuses incomplete/paginated audit data. It never changes `publisher-policy.json` or enables npm staging. Its CI job has read-only repository permissions, no environment approval or OIDC write permission, and runs the unmodified CLI in a loopback-only Linux network namespace with fake credentials. The final step fails while unreviewed findings remain, retaining reports for review.
+The npm candidate descriptor `scripts/release/npm-candidate.json` pins source metadata commit `136fc5dacc1a2f3d9a051dbf03a4951228144658`, distribution integrity, complete file-table digest and manifest inventory digest. `check-npm-candidate.mjs` independently downloads and checks them, records full OSV advisory modified/content hashes and refuses incomplete/paginated audit data. It never changes `publisher-policy.json` or enables npm staging. Its historical read-only CI job had no environment approval or OIDC write permission and ran the unmodified CLI in a loopback-only Linux network namespace with fake credentials ([run 40056993813](https://github.com/ts-76/void-plugin-hono-jsx/actions/runs/40056993813)). It failed on unreviewed findings. That unsuccessful candidate job is not part of the active publication workflow.
 
 Local Node 24.22.1/macOS results from `probe-npm-candidate.py`:
 
@@ -24,7 +44,7 @@ Local Node 24.22.1/macOS results from `probe-npm-candidate.py`:
 
 The newly detected [ip-address advisory](https://github.com/advisories/GHSA-rxp7-6hxx-x8q5) needs a long attacker-controlled string with many percent signs and a line terminator passed to Address6 before its length check; fixed 10.7.4 is upstream. The bounded subnet constants are not that input. Before adopting npm, require renewed Linux evidence, a complete successful signing-path assessment, exact finding acceptance decisions and upload integration that retains isolated HOME/config/cache, no proxy/credential inheritance, mandatory OIDC preflight, same-byte verification, provenance, protected review and owner final approval. The current findings and descriptor are **not** an approved acceptance set. Consumer findings remain an independent block.
 
-For local reproduction use `PUBLISHER_CANDIDATE_NODE=<verified-node-24.22.1> python3 scripts/release/probe-npm-candidate.py <verified-npm-cli> <report-directory> --local --malformed-oidc`. Use the candidate CI job for Linux namespace observations. The official npm distribution integrity is `sha512-bKCmFRVT/BB+YPEYbZwQ1XUI3N5t4xKSpU1MxOjo7z3iWzKBJ0ZXRC1xFdEN+TC7N5TdywaBzf2dMXGJq/e2PQ==`. The pnpm source Cargo.lock SHA256 is `6b0fdea9da5535746e334a1636fe3f47859b4eea9c3e863259ebd68f6a1d0b9c`; this identifies the conservative source scan, not a verified deployed native dependency inventory.
+For local reproduction use `PUBLISHER_CANDIDATE_NODE=<verified-node-24.22.1> python3 scripts/release/probe-npm-candidate.py <verified-npm-cli> <report-directory> --local --malformed-oidc`. The linked historical run records Linux namespace observations; this alternative is not selected for publication. The official npm distribution integrity is `sha512-bKCmFRVT/BB+YPEYbZwQ1XUI3N5t4xKSpU1MxOjo7z3iWzKBJ0ZXRC1xFdEN+TC7N5TdywaBzf2dMXGJq/e2PQ==`. The pnpm source Cargo.lock SHA256 is `6b0fdea9da5535746e334a1636fe3f47859b4eea9c3e863259ebd68f6a1d0b9c`; this identifies the conservative source scan, not a verified deployed native dependency inventory.
 
 ### Original reachability reassessment
 
@@ -52,9 +72,9 @@ The runner is also affected independently: Node 24.21.0 embeds undici 7.29.1. Lo
 4. Resolve or narrowly reassess the separate [consumer findings](rc-security-assessment.md#2026-10-24-follow-up-void-121-consumer-and-runner-findings). Any accepted finding must pin package/version/advisory modified/content hashes and explicit execution conditions. Reappearing, changed or additional findings continue to fail closed.
 5. Repeat the five protocol cases, malformed-response check, positive controls and real-stage coverage on Linux; then repeat final-head/main CI and both consumers on identical accepted bytes. Carry the official HTTPS Ubuntu mirror setup into `npm-stage.yml` before staging. Preserve the protected environment, mandatory OIDC preflight, provenance and npm-owner final approval, followed by public byte/signature/provenance/consumer verification.
 
-The local diagnostic is `node scripts/release/probe-response-security.mjs [absolute-undici-entry ...]`. It uses only loopback responses, bounded child processes and small invalid arrays; run it with both old and candidate Node versions. It reports observations and deliberately does not modify the acceptance policy or turn a successful diagnostic run into publication approval.
+The local diagnostic is `node scripts/release/diagnose-consumer-response.mjs [absolute-undici-entry ...]`. It uses only loopback responses, bounded child processes and small invalid arrays; run it with both old and candidate Node versions. It reports observations and deliberately does not modify the acceptance policy or turn a successful diagnostic run into publication approval.
 
-For the unmodified CLI itself, run `PNPM_RELEASE_NODE=<node> python3 scripts/release/probe-publisher-js.py <verified-cli> <report-directory> --local --malformed-oidc`. The sixth optional case records `unhandledStreamError` and requires that the malformed exchange never reaches stage POST. Both a caught rejection and an unhandled stream error stop submission; the report distinguishes them. This does not replace the real runner's mandatory preflight. Use the existing Linux namespace invocation without `--local` when renewing target-platform evidence.
+The original pnpm diagnostic command was `PNPM_RELEASE_NODE=<node> python3 scripts/release/probe-publisher-js.py <verified-cli> <report-directory> --local --malformed-oidc` at the linked historical source revision, not the current npm probe. The sixth optional case records `unhandledStreamError` and requires that the malformed exchange never reaches stage POST. Both a caught rejection and an unhandled stream error stop submission; the report distinguishes them. This does not replace the real runner's mandatory preflight. Use the existing Linux namespace invocation without `--local` when renewing target-platform evidence.
 
 ## Earlier 2026-10-24 observation: withdrawn braces advisory
 

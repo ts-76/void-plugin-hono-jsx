@@ -2,8 +2,27 @@ import { createRequire } from 'node:module';
 import type MarkdownExit from 'markdown-exit';
 import type { PluginWithParams } from 'markdown-exit';
 
-/** Matches @void/md's public Markdown options; languages load on demand. */
+export type MarkdownHeading = { depth: number; text: string; index: number };
+export type MarkdownCodeBlock = {
+  code: string;
+  language: string;
+  info: string;
+  /** Escaped <pre><code> output, highlighted unless highlight is false. */
+  html: string;
+};
+
+/** Host-independent rendering options; languages load on demand. */
 export type HonoMarkdownOptions = {
+  /** Raw authored HTML. Defaults to false in /render, true in trusted module compilers. */
+  html?: boolean;
+  breaks?: boolean;
+  linkify?: boolean;
+  /** Called once per heading, with a zero-based index local to this document. IDs stay unique. */
+  headingId?: (heading: MarkdownHeading) => string;
+  /** false emits ordinary escaped <pre><code>. Defaults to false in /render, true in module compilers. */
+  highlight?: boolean;
+  /** Application-owned HTML renderer. Its return value is trusted, never sanitized. */
+  renderCodeBlock?: (block: MarkdownCodeBlock) => string | Promise<string>;
   shiki?: { themes?: { light: string; dark: string } };
 };
 
@@ -35,10 +54,18 @@ export function configureMarkdownFeatures(md: MarkdownExit, options: HonoMarkdow
   };
   let initialized: ReturnType<typeof initialize> | undefined;
   const loading = new Map<string, Promise<void>>();
+  if (options.renderCodeBlock) md.renderer.rules.code_block = async (tokens, index) => {
+    const code = tokens[index].content;
+    return options.renderCodeBlock!({ code, language: 'text', info: '', html: `<pre><code>${md.utils.escapeHtml(code)}</code></pre>\n` });
+  };
   md.renderer.rules.fence = async (tokens, index) => {
     const token = tokens[index];
-    const { highlighter, selected, languages, transformers } = await (initialized ??= initialize());
     const label = /^[\w+-]+/.exec(token.info.trim())?.[0] ?? 'text';
+    if (options.highlight === false) {
+      const html = `<pre><code${token.info.trim() ? ` class="language-${md.utils.escapeHtml(label)}"` : ''}>${md.utils.escapeHtml(token.content)}</code></pre>\n`;
+      return options.renderCodeBlock ? options.renderCodeBlock({ code: token.content, language: label, info: token.info, html }) : html;
+    }
+    const { highlighter, selected, languages, transformers } = await (initialized ??= initialize());
     let lang = label;
     if (!['text', 'txt', 'plain', 'plaintext', 'ansi'].includes(lang) && !highlighter.getLoadedLanguages().includes(lang)) {
       if (Object.hasOwn(languages, lang)) {
@@ -47,6 +74,7 @@ export function configureMarkdownFeatures(md: MarkdownExit, options: HonoMarkdow
       } else lang = 'text';
     }
     const highlighted = highlighter.codeToHtml(token.content, { lang, themes: selected, defaultColor: 'light', transformers, meta: { __raw: token.info } });
+    if (options.renderCodeBlock) return options.renderCodeBlock({ code: token.content, language: label, info: token.info, html: highlighted });
     const numbers = /:line-numbers\b/.test(token.info);
     const start = Number(/\{=(\d+)\}/.exec(token.info)?.[1] ?? 1);
     const count = [...highlighted.matchAll(/class="line(?:[ "])/g)].length;

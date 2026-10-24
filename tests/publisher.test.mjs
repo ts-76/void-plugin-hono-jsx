@@ -11,8 +11,8 @@ function auditFixture() {
   const policy = structuredClone(loadPublisherPolicy());
   // Synthetic accepted advisory keeps content/change rejection coverage even
   // when the live publisher policy has no accepted findings.
-  policy.acceptedFindings = [{ name: 'braces', version: '3.0.3', id: 'GHSA-vfj7-8cjw-p6xm', modified: 'fixture-date', reason: 'synthetic test scope' }];
   const inventory = JSON.parse(readFileSync(inventoryPath));
+  policy.acceptedFindings = [{ ...inventory[0], id: 'GHSA-vfj7-8cjw-p6xm', modified: 'fixture-date', reason: 'synthetic test scope' }];
   const advisories = policy.acceptedFindings.map(item => ({ id: item.id, modified: item.modified, details: 'reviewed fixture' }));
   for (const [index, item] of policy.acceptedFindings.entries()) item.advisorySha256 = sha256(canonical(advisories[index]));
   const results = inventory.map(pkg => ({ vulns: policy.acceptedFindings.filter(item => item.name === pkg.name && item.version === pkg.version).map(item => ({ id: item.id })) }));
@@ -23,7 +23,7 @@ function auditFixture() {
 test('publisher audit accepts only reviewed versions/content and fails closed on new, changed or incomplete findings', async () => {
   const f = auditFixture();
   const report = await auditPublisher(f);
-  assert.equal(report.auditedPackages, 370);
+  assert.equal(report.auditedPackages, JSON.parse(readFileSync(inventoryPath)).length);
   assert.equal(report.findings.length, 1);
   assert.equal(report.findings[0].id, 'GHSA-vfj7-8cjw-p6xm');
   for (const [index, advisory] of f.advisories.entries()) {
@@ -42,14 +42,14 @@ test('publisher audit accepts only reviewed versions/content and fails closed on
   await assert.rejects(auditPublisher({ ...f, request: async () => { throw new Error('service unavailable'); } }), /service unavailable/);
 });
 
-test('current publisher policy requires zero findings after the braces advisory withdrawal', async () => {
+test('current publisher policy requires zero findings with the fixed locked dependencies', async () => {
   const policy = loadPublisherPolicy();
   assert.deepEqual(policy.acceptedFindings, []);
   const inventory = JSON.parse(readFileSync(inventoryPath));
   const clean = inventory.map(() => ({}));
   const report = await auditPublisher({ policy, request: async () => ({ results: clean }) });
   assert.deepEqual(report.findings, []);
-  const index = inventory.findIndex(pkg => pkg.name === 'braces' && pkg.version === '3.0.3');
+  const index = inventory.findIndex(pkg => pkg.name === 'undici' && pkg.version === '6.29.1');
   assert.ok(index >= 0);
   const results = [...clean];
   results[index] = { vulns: [{ id: 'GHSA-vfj7-8cjw-p6xm' }] };
@@ -65,7 +65,9 @@ test('publisher subprocess strips existing credentials, proxy, runtime injection
   assert.equal(env.ACTIONS_ID_TOKEN_REQUEST_TOKEN, 'oidc-request');
   for (const key of ['NPM_TOKEN', 'NODE_AUTH_TOKEN', 'GH_TOKEN', 'NODE_OPTIONS', 'HTTPS_PROXY', 'ALL_PROXY', 'PNPM_CONFIG__AUTH', 'PNPM_CONFIG_PROVENANCE', 'npm_config_userconfig', 'PNPM_CONFIG_NPMRC_AUTH_FILE']) assert.ok(!(key in env));
   assert.equal(env.XDG_CONFIG_HOME, '/isolated/config');
-  assert.equal(env.PNPM_CONFIG_STATE_DIR, '/isolated/state');
+  assert.equal(env.NPM_CONFIG_GLOBALCONFIG, '/isolated/global.npmrc');
+  assert.equal(env.NPM_CONFIG_CACHE, '/isolated/cache');
+  assert.equal(env.NODE_DISABLE_COMPILE_CACHE, '1');
 });
 
 function stageFixture() {
@@ -112,7 +114,7 @@ test('staging preserves bytes, uses only fresh scoped auth and provenance, and r
       assert.equal(binary, process.execPath);
       assert.equal(args[0], f.binary);
       assert.deepEqual(args.slice(1, 3), ['stage', 'publish']);
-      assert.ok(args.includes('--provenance') && args.includes('--ignore-scripts') && args.includes('--reporter=silent'));
+      assert.ok(args.includes('--provenance') && args.includes('--ignore-scripts') && args.includes('--workspaces=false'));
       assert.ok(!args.includes('--force') && !args.includes('--otp') && !args.includes('--no-provenance'));
       assert.equal(args[args.indexOf('--tag') + 1], 'next');
       assert.equal(args[args.indexOf('--access') + 1], 'public');
@@ -162,13 +164,13 @@ test('failed CLI and invalid receipt remove temporary credentials and never retr
 });
 
 
-test('unexpected braces execution after stage submission stops completion without retry and removes credentials', async () => {
+test('missing execution coverage after stage submission stops completion without retry and removes credentials', async () => {
   const f = stageFixture(); let calls = 0;
   try {
     await assert.rejects(submitWithPublisher({ ...f,
       run: () => { calls++; return JSON.stringify(f.receipt); },
-      measure: () => { throw new Error('braces executed'); },
-    }), /braces executed/);
+      measure: () => { throw new Error('coverage missing'); },
+    }), /coverage missing/);
     assert.equal(calls, 1);
     assert.deepEqual(readdirSync(f.root), ['accepted.tgz']);
   } finally { f.cleanup(); }

@@ -48,6 +48,11 @@ Island props are literal strings or boolean attributes. Put arrays, objects and 
 
 Standard Markdown, tables, heading anchors and authored HTML are supported.
 **Use trusted content:** raw HTML is preserved without sanitization.
+For CMS article text, use the common package's
+[`@ts-76/hono-markdown/render`](../packages/hono-markdown/README.md#article-content)
+entry instead. It escapes authored HTML by default and does not interpret scripts
+or component imports. `html: false` on the page plugin changes HTML rendering;
+it does not make the executable page/compiler API safe for untrusted input.
 Footnotes, emoji, arbitrary attributes, GitHub alerts, inline TOC and link/image normalization are outside this syntax subset.
 
 ## Static components
@@ -105,6 +110,12 @@ voidHonoMarkdown({
 ```
 
 Bundled Shiki themes are supported. Languages load on demand; there is no `shiki.langs` setting.
+The shared options also include `breaks`, `linkify`, `headingId`, `highlight` and
+`renderCodeBlock`. See the common package's
+[options and trust boundaries](../packages/hono-markdown/README.md#options-and-trust-boundaries).
+For example, `headingId: ({ index }) => 'post-section-' + (index + 1)` uses
+document-local sequential anchors. `highlight: false` emits escaped ordinary
+code blocks without copy controls or their client script.
 Use highlight/diff/focus/warning/error annotations and line numbers:
 
 ````md

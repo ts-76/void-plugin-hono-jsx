@@ -18,42 +18,17 @@ jobs:
         with:
           node-version: '24.22.1'
           package-manager-cache: false
-      - name: Verify the pinned JavaScript distribution and bundle inventory
+      - name: Reconstruct the integrity-pinned npm runtime and fixed dependency inventory
         run: node scripts/release/install-publisher.mjs
       - name: Audit every inventoried package against current advisories
         run: node scripts/release/check-publisher.mjs
       - name: Verify the publisher's OIDC, isolation and failure gates
         run: node --test tests/publisher.test.mjs tests/publisher-js.test.mjs
-      - name: Exercise protocol and braces reachability with external networking disabled
-        run: sudo env PNPM_RELEASE_NODE="$(command -v node)" unshare --net python3 scripts/release/probe-publisher-js.py "$PNPM_RELEASE_CLI" "$RUNNER_TEMP/publisher-report" --malformed-oidc
+      - name: Exercise staging with external networking disabled
+        run: sudo env PUBLISHER_NODE="$(command -v node)" unshare --net python3 scripts/release/probe-publisher-js.py "$RELEASE_CLI" "$RUNNER_TEMP/publisher-report"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: publisher-${{ github.sha }}
           path: ${{ runner.temp }}/publisher-report/
           retention-days: 7
           if-no-files-found: error
-  npm-candidate:
-    name: npm candidate evaluation (no upload)
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: '24.22.1'
-          package-manager-cache: false
-      - name: Verify candidate files and record a complete current audit
-        run: node scripts/release/check-npm-candidate.mjs
-      - name: Evaluate original CLI with fake credentials and external networking disabled
-        run: sudo env PUBLISHER_CANDIDATE_NODE="$(command -v node)" unshare --net python3 scripts/release/probe-npm-candidate.py "$NPM_CANDIDATE_CLI" "$RUNNER_TEMP/npm-candidate-report" --malformed-oidc
-      - name: Keep unreviewed findings blocking
-        run: node --input-type=module -e 'import {readFileSync} from "node:fs"; import assert from "node:assert/strict"; const r=JSON.parse(readFileSync(process.env.RUNNER_TEMP+"/npm-candidate-report/audit.json")); assert.equal(r.findings.length,0,"Unreviewed npm candidate findings; not approved for upload");'
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        if: always()
-        with:
-          name: npm-candidate-${{ github.sha }}-${{ github.run_attempt }}
-          path: ${{ runner.temp }}/npm-candidate-report/
-          retention-days: 7
-          if-no-files-found: warn

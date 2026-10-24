@@ -94,8 +94,7 @@ jobs:
           retention-days: 7
           if-no-files-found: error
   required-baseline:
-    # Required check context is pinned in branch protection; runtime is 24.22.1.
-    name: Pinned framework baseline on Node 24.21.0
+    name: Pinned framework baseline on Node 24.22.1
     needs: [baseline, consumer]
     if: always()
     runs-on: ubuntu-latest
