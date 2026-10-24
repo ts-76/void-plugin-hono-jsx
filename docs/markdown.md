@@ -184,6 +184,10 @@ Layouts and islands receive the page's frontmatter, headings and serialized load
 Hook type parameters describe data; they do not validate it.
 Frontmatter must be a JSON-serializable mapping. Duplicate keys, invalid YAML and cycles fail compilation.
 
+The frontmatter given to islands is serialized into the page HTML, so readers can see it in the page source.
+Use `voidHonoMarkdown({ clientFrontmatter: ['title'] })` to send only the listed keys, or `false` to send none.
+The default `true` keeps every key. Layouts and the module's `frontmatter` export still receive the full mapping. Islands get the selected subset during both SSR and hydration, so their output matches.
+
 ## Navigation and assets
 
 Markdown uses document navigation, including links to and from full Pages.

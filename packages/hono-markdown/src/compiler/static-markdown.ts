@@ -85,10 +85,14 @@ async function emitMarkdownModule(compiler: MarkdownCompiler, parsed: ParsedMark
   const names = new Set(imports.map(entry => entry.importName));
   const chunks = renderChunks(result.html, names, new Set(result.staticImports.map(entry => entry.importName)));
   const literal = (value: unknown) => `JSON.parse(${JSON.stringify(JSON.stringify(value))})`;
+  const hasIslands = imports.some(entry => entry.kind === 'island');
+  const limitedFrontmatter = result.clientFrontmatter !== result.frontmatter;
   const emit = (chunk: (typeof chunks)[number]): string => {
     if ('html' in chunk) return `raw(${JSON.stringify(chunk.html)})`;
     const entry = imports.find(entry => entry.importName === chunk.name)!;
-    if (entry.kind === 'island') return `jsx('div', { 'data-hono-md-island': ${JSON.stringify(entry.id)}, 'data-hono-md-hydrate': ${JSON.stringify(entry.hydrate)}, 'data-hono-md-props': JSON.stringify(${literal(chunk.props)}), 'data-hono-md-context': JSON.stringify({ frontmatter, headings, props: {} }), children: jsx(${entry.alias}, ${literal(chunk.props)}) })`;
+    // Islands render with the browser context during SSR too, so hydration sees the same frontmatter.
+    const island = `jsx(${entry.alias}, ${literal(chunk.props)})`;
+    if (entry.kind === 'island') return `jsx('div', { 'data-hono-md-island': ${JSON.stringify(entry.id)}, 'data-hono-md-hydrate': ${JSON.stringify(entry.hydrate)}, 'data-hono-md-props': JSON.stringify(${literal(chunk.props)}), children: ${limitedFrontmatter ? `jsx(MarkdownContext.Provider, { value: islandContext, children: ${island} })` : island} })`;
     return `jsx(${entry.alias}, { ...${literal(chunk.props)}${chunk.children ? `, children: [${chunk.children.map(emit).join(',')}]` : ''} })`;
   };
   return {
@@ -102,8 +106,10 @@ import { MarkdownContext } from ${JSON.stringify(input.contextModule ?? '@ts-76/
 ${imports.map(entry => `import ${entry.alias} from ${JSON.stringify(entry.specifier)};`).join('\n')}
 export const frontmatter = ${literal(result.frontmatter)};
 export const headings = ${literal(result.headings)};
-export default function MarkdownSlide() {
-  return jsx(MarkdownContext.Provider, { value: { frontmatter, headings, props: {} }, children: jsx('div', { class: 'void-md', children: jsx(Fragment, { children: [${chunks.map(emit).join(',')}] }) }) });
+${hasIslands ? `// Serialized once per document for every island it contains.
+const islandContext = { frontmatter: ${limitedFrontmatter ? literal(result.clientFrontmatter) : 'frontmatter'}, headings, props: {} };
+` : ''}export default function MarkdownSlide() {
+  return jsx(MarkdownContext.Provider, { value: { frontmatter, headings, props: {} }, children: jsx('div', { class: 'void-md', ${hasIslands ? `'data-hono-md-context': JSON.stringify(islandContext), ` : ''}children: jsx(Fragment, { children: [${chunks.map(emit).join(',')}] }) }) });
 }`,
   };
 }

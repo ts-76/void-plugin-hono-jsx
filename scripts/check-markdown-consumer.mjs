@@ -211,6 +211,48 @@ export async function checkMarkdownConsumer({ repo, consumer: original, browser,
 
   await withServer('development', async (origin, mode) => { await checkPages(origin, mode); await checkFeatures(origin, mode); });
   build(); await withServer('preview', async (origin, mode) => { await checkPages(origin, mode); await checkFeatures(origin, mode); });
+  // Exercise the packed adapter against the published common package, whose
+  // compiler may not expose the newer clientFrontmatter result property.
+  const vitePath = join(consumer, 'vite.config.ts');
+  const articlePath = join(consumer, 'pages/docs/interactive.md');
+  const originalVite = await readFile(vitePath, 'utf8');
+  const originalArticle = await readFile(articlePath, 'utf8');
+  try {
+    await writeFile(articlePath, originalArticle.replace('title: Interactive Markdown', 'title: Interactive Markdown\ndraft_note: private-client-frontmatter-regression'));
+    for (const selection of [['title'], false]) {
+      await writeFile(vitePath, originalVite.replace('voidHonoMarkdown()', `voidHonoMarkdown({ clientFrontmatter: ${JSON.stringify(selection)} })`));
+      execFileSync(process.execPath, ['node_modules/typescript/bin/tsc', '--noEmit'], { cwd: consumer, env, stdio: 'inherit' });
+      const check = async (origin, mode) => {
+        const html = await (await fetch(origin + '/docs/interactive')).text();
+        assert.doesNotMatch(html, /private-client-frontmatter-regression/);
+        assert.match(html, /id="markdown-layout-title"[^>]*>Interactive Markdown<\/header>/, 'layouts retain full frontmatter');
+        const page = await browser.newPage();
+        const errors = []; page.on('pageerror', error => errors.push(error.message));
+        try {
+          await page.goto(origin + '/docs/interactive');
+          const metadata = JSON.parse(await page.locator('#app').getAttribute('data-hono-markdown'));
+          assert.deepEqual(metadata.frontmatter, selection === false ? {} : { title: 'Interactive Markdown' });
+          assert.equal(await page.locator('#first-frontmatter').textContent(), selection === false ? 'undefined' : 'Interactive Markdown');
+          await page.locator('[data-hono-island] #first-increment').click();
+          await page.waitForFunction(() => document.getElementById('first-value')?.textContent === '5');
+          assert.equal(await page.locator('#first-frontmatter').textContent(), selection === false ? 'undefined' : 'Interactive Markdown');
+          const layoutHtml = await (await fetch(origin + '/docs/layout-counter')).text();
+          assert.match(layoutHtml, new RegExp(`id="layout-frontmatter">${selection === false ? 'undefined' : 'Layout counter'}<`), 'layout islands use browser frontmatter during SSR');
+          await page.goto(origin + '/docs/layout-counter');
+          await page.locator('[data-hono-island] #layout-increment').click();
+          await page.waitForFunction(() => document.getElementById('layout-value')?.textContent === '3');
+          assert.equal(await page.locator('#layout-frontmatter').textContent(), selection === false ? 'undefined' : 'Layout counter');
+          assert.deepEqual(errors, []);
+        } finally { await page.close(); }
+        console.log(`Markdown ${mode}: published common compiler, clientFrontmatter ${JSON.stringify(selection)}, complete layout metadata and SSR/hydration isolation passed.`);
+      };
+      await withServer('development', check);
+      build(); await withServer('preview', check);
+    }
+  } finally {
+    await writeFile(vitePath, originalVite);
+    await writeFile(articlePath, originalArticle);
+  }
   await writeFile(join(consumer, 'void.config.ts'), "import { defineConfig } from 'void/config'; export default defineConfig({ output: 'static', cloudflare: { name: 'hono-markdown-static' }, head: { link: [{ rel: 'icon', href: 'data:,' }] } });");
   build();
   const output = join(consumer, 'dist/client');

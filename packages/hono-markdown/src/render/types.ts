@@ -22,4 +22,10 @@ export type HonoMarkdownOptions = {
   /** Application-owned HTML renderer. Its return value is trusted, never sanitized. */
   renderCodeBlock?: (block: MarkdownCodeBlock) => string | Promise<string>;
   shiki?: { themes?: { light: string; dark: string } };
+  /**
+   * Module compilation only: frontmatter serialized into HTML for browser islands.
+   * true (default) exposes every key, false none, an array only the listed keys.
+   * Server layouts and generated module exports always receive the full mapping.
+   */
+  clientFrontmatter?: boolean | readonly string[];
 };
