@@ -27,7 +27,7 @@ See the [dated results](cloudflare-rc1-verification.md). Re-test when Void, Mini
 
 ## Dependency and publisher boundaries
 
-- **Consumer dependencies:** the reviewed Void/Drizzle tree retains [GHSA-67mh-4wv8-2f99](https://github.com/advisories/GHSA-67mh-4wv8-2f99). The inspected path uses esbuild transforms, not the affected serve API. Consumers still install the dependency; avoid its serve feature. See the [reassessment](rc-security-assessment.md).
+- **Consumer dependencies:** the existing esbuild no-serve acceptance remains narrow. The 2026-10-24 audit of the Void 1.2.1 root tree additionally reports three undici advisories and one Zod advisory (16 propagated entries, five distinct advisories including esbuild). The malformed-response fetch failure is reachable in the development/CLI toolchain; no new advisory acceptance was added. See the [current reassessment and release conditions](rc-security-assessment.md#2026-10-24-follow-up-void-121-consumer-and-runner-findings).
 - **Publisher only:** The private npm 11.21.1 runtime uses fixed dependencies resolved within upstream ranges and pinned by archive integrity, lock and complete runtime hashes. Node 24.22.1 and a fresh zero-finding inventory audit are required. Standard upstream npm/pnpm archives were not repaired in place. See the [publisher assessment](pnpm-publisher-assessment.md).
 - **Historical scaffold:** Vite Plus 0.1.24 has unaccepted Critical findings and is unsupported. See [scaffold history](scaffold-compatibility.md).
 

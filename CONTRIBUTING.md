@@ -4,7 +4,7 @@ Bug reports, fixes and documentation improvements are welcome. The project is li
 
 ## Setup
 
-Use Node.js >=24.21.0 <25.0.0 and the repository lockfile:
+Use Node.js >=24.22.1 <25.0.0 and the repository lockfile:
 
 ```sh
 npm ci

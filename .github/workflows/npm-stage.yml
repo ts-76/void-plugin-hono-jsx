@@ -40,7 +40,13 @@ jobs:
           node-version: ${{ needs.config.outputs.releaseNode }}
           package-manager-cache: false
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
+      - name: Install browser runtime
+        run: |
+          # Match the verified mirror setup in package.yml.
+          if [ -f /etc/apt/apt-mirrors.txt ]; then
+            sudo sed -i 's|http://azure.archive.ubuntu.com/ubuntu|https://archive.ubuntu.com/ubuntu|g' /etc/apt/apt-mirrors.txt
+          fi
+          npx playwright install --with-deps chromium
       - run: npm run release:prepare
       - id: plan
         run: |
