@@ -81,6 +81,21 @@ test('tarball allowlist rejects unexpected files and symbolic links', () => {
   } finally { f.cleanup(); }
 });
 
+test('release archives cannot retain a common Markdown range without the island security fixes', () => {
+  const f = fixture();
+  try {
+    const metadata = path.join(f.root, 'candidate/package/package.json');
+    for (const range of ['^0.1.0', '^0.1.1', '^0.1.2']) {
+      writeFileSync(metadata, JSON.stringify({ ...f.pkg, private: false, dependencies: { '@ts-76/hono-markdown': range } }));
+      execFileSync('tar', ['-czf', f.tarball, '-C', path.join(f.root, 'candidate'), ...f.evidence.files.map(file => 'package/' + file)]);
+      if (range === '^0.1.2') inspectTarball(f.tarball);
+      else assert.throws(() => inspectTarball(f.tarball), /fixed common Markdown runtime/);
+    }
+    const actual = JSON.parse(readFileSync(new URL('../packages/hono-pages/package.json', import.meta.url)));
+    assert.equal(actual.dependencies['@ts-76/hono-markdown'], '^0.1.2');
+  } finally { f.cleanup(); }
+});
+
 test('artifact inspection rejects packaged source differing from the reviewed checkout', () => {
   const f = fixture(); try {
     writeFileSync(path.join(f.pkgRoot, 'src/plugins/plugin.ts'), 'export const changed = 2;');

@@ -183,6 +183,6 @@ function inspectArchive(bytes, expectedFiles) {
   const pkg = JSON.parse(contents.get('package.json'));
   assert.ok(!pkg.scripts, 'Publishable adapter must not run package lifecycle scripts');
   assert.ok(!pkg.devDependencies, 'Only documented peer dependencies are shipped');
-  assert.ok(!pkg.dependencies || (Object.keys(pkg.dependencies).length === 1 && pkg.dependencies['@ts-76/hono-markdown'] === '^0.1.0'), 'Only documented peer dependencies and the common Markdown runtime are shipped');
+  assert.ok(!pkg.dependencies || (Object.keys(pkg.dependencies).length === 1 && pkg.dependencies['@ts-76/hono-markdown'] === '^0.1.2'), 'Only documented peer dependencies and the fixed common Markdown runtime (^0.1.2) are shipped');
   return { files, contents };
 }
