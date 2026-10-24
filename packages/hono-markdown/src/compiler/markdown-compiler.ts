@@ -1,11 +1,11 @@
-import type { HonoMarkdownOptions } from './markdown-features.ts';
-import { createContentParser, parseContent } from './markdown-content.ts';
+import { configureMarkdownFeatures, type HonoMarkdownOptions } from './markdown-features.ts';
+import { createContentParser, parseContent } from '../render/content.ts';
 import { parseSync, findIslandImports, editIslandSource } from './script-imports.ts';
 import { parseDocument } from 'yaml';
 import { configureComponentContainers } from './markdown-components.ts';
 export { renderComponentChunks as renderChunks } from './markdown-components.ts';
 
-export type { Heading } from './markdown-content.ts';
+export type { Heading } from '../render/content.ts';
 export function extractMarkdown(source: string) {
   const match = source.match(/^<script\b[^>]*>([\s\S]*?)<\/script>\s*\n?/);
   const script = match?.[1] ?? '';
@@ -27,7 +27,7 @@ export function extractMarkdown(source: string) {
 }
 
 export function createMarkdownCompiler(options: HonoMarkdownOptions = {}) {
-  const compiler = createContentParser(options, true);
+  const compiler = createContentParser(options, true, configureMarkdownFeatures);
   configureComponentContainers(compiler);
   function parse(source: string) {
     const extracted = extractMarkdown(source);

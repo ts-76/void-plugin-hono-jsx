@@ -1,10 +1,10 @@
 name: Hono Markdown package
 on:
   pull_request:
-    paths: ['packages/hono-markdown/**', 'scripts/build-markdown.mjs', 'scripts/check-independent-markdown-consumer.mjs', '.github/workflows/hono-markdown.yml', 'package.json', 'package-lock.json']
+    paths: ['packages/hono-markdown/**', 'scripts/build-markdown.mjs', 'scripts/check-independent-markdown-consumer.mjs', 'scripts/check-markdown-worker-consumer.mjs', '.github/workflows/hono-markdown.yml', 'package.json', 'package-lock.json']
   push:
     branches: [main]
-    paths: ['packages/hono-markdown/**', 'scripts/build-markdown.mjs', 'scripts/check-independent-markdown-consumer.mjs', '.github/workflows/hono-markdown.yml', 'package.json', 'package-lock.json']
+    paths: ['packages/hono-markdown/**', 'scripts/build-markdown.mjs', 'scripts/check-independent-markdown-consumer.mjs', 'scripts/check-markdown-worker-consumer.mjs', '.github/workflows/hono-markdown.yml', 'package.json', 'package-lock.json']
   workflow_dispatch:
 permissions:
   contents: read
