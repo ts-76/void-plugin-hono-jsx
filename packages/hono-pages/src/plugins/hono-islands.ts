@@ -5,7 +5,7 @@ import { scanPages, resolveEffectiveLayoutChain, resolvePagesDir, type PageScanR
 import { findIslandImports, findStaticCssImports, rewriteCssImportForVirtualModule, editIslandSource, computePagesNeedingClientJS, ISLANDS_RENDERER_ID, ISLANDS_CLIENT_ENTRY_ID } from 'void/pages-islands-plugin';
 
 import { resolveComponent } from './resolve-component.ts';
-import { styleHostPath } from './runtime-paths.ts';
+import { styleHostPath, markdownRuntimePath } from './runtime-paths.ts';
 
 import { markdownApi, markdownDiagnostic, type HonoMarkdownApi } from './markdown-api.ts';
 
@@ -188,8 +188,13 @@ export function honoIslands(): Plugin {
         const islandId = normalizePath(relative(root, realpathSync(path)));
         const component = `__honoIslandComponent${entry.start}`;
         return { start: entry.start, end: entry.end, text: `import ${component} from ${entry.specifierRaw};
-const ${entry.importName} = (props) => __honoIslandJsx('div', { 'data-island': ${JSON.stringify(islandId)}, 'data-hydrate': ${JSON.stringify(entry.hydrate)}, 'data-props': JSON.stringify(props), children: __honoIslandJsx(${component}, props) });` };
-      }), { prepend: "import { jsx as __honoIslandJsx } from 'hono/jsx/jsx-runtime';\n" });
+const ${entry.importName} = (props) => {
+  let content = __honoIslandJsx(${component}, props);
+  ${markdown ? `const metadata = __honoIslandUseContext(__honoIslandMarkdownContext);
+  if (metadata.clientFrontmatter !== undefined && metadata.clientFrontmatter !== metadata.frontmatter) content = __honoIslandJsx(__honoIslandMarkdownContext.Provider, { value: { ...metadata, frontmatter: metadata.clientFrontmatter }, children: content });` : ''}
+  return __honoIslandJsx('div', { 'data-island': ${JSON.stringify(islandId)}, 'data-hydrate': ${JSON.stringify(entry.hydrate)}, 'data-props': JSON.stringify(props), children: content });
+};` };
+      }), { prepend: "import { jsx as __honoIslandJsx } from 'hono/jsx/jsx-runtime';\n" + (markdown ? `import { useContext as __honoIslandUseContext } from 'hono/jsx';\nimport { MarkdownContext as __honoIslandMarkdownContext } from ${JSON.stringify(markdownRuntimePath)};\n` : '') });
     },
     load(id) {
       if (id === `\0${ISLANDS_RENDERER_ID}`) {

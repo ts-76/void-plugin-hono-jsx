@@ -236,6 +236,12 @@ export async function checkMarkdownConsumer({ repo, consumer: original, browser,
           await page.locator('[data-hono-island] #first-increment').click();
           await page.waitForFunction(() => document.getElementById('first-value')?.textContent === '5');
           assert.equal(await page.locator('#first-frontmatter').textContent(), selection === false ? 'undefined' : 'Interactive Markdown');
+          const layoutHtml = await (await fetch(origin + '/docs/layout-counter')).text();
+          assert.match(layoutHtml, new RegExp(`id="layout-frontmatter">${selection === false ? 'undefined' : 'Layout counter'}<`), 'layout islands use browser frontmatter during SSR');
+          await page.goto(origin + '/docs/layout-counter');
+          await page.locator('[data-hono-island] #layout-increment').click();
+          await page.waitForFunction(() => document.getElementById('layout-value')?.textContent === '3');
+          assert.equal(await page.locator('#layout-frontmatter').textContent(), selection === false ? 'undefined' : 'Layout counter');
           assert.deepEqual(errors, []);
         } finally { await page.close(); }
         console.log(`Markdown ${mode}: published common compiler, clientFrontmatter ${JSON.stringify(selection)}, complete layout metadata and SSR/hydration isolation passed.`);

@@ -7,6 +7,7 @@ import { build } from 'esbuild';
 import { compileMarkdownModule } from '../packages/hono-markdown/dist/compiler/static-markdown.js';
 import { selectClientFrontmatter } from '../packages/hono-markdown/dist/compiler/markdown-compiler.js';
 import { voidHonoMarkdown } from '../packages/hono-pages/src/plugins/hono-markdown.ts';
+import { honoIslands } from '../packages/hono-pages/src/plugins/hono-islands.ts';
 
 const repo = resolve(import.meta.dirname, '..');
 const source = '<script>import Probe from "./Probe.tsx" with { island: "load" };</script>\n---\ntitle: Public\ndraft_note: internal only\n---\n# Doc\n\n<Probe slot="a" />\n\n<Probe slot="b" />';
@@ -78,4 +79,27 @@ test('Void Markdown pages expose clientFrontmatter and keep page props for SSR i
   const plain = (await unrestricted.transform.handler(await readFile(file, 'utf8'), file)).code;
   assert.match(plain, /export const clientFrontmatter = frontmatter;/);
   assert.doesNotMatch(plain, /__ClientMarkdown/);
+}));
+
+test('Void layout islands use the public context during SSR while static layouts keep full metadata', () => workspace(async root => {
+  const previous = process.cwd();
+  try {
+    process.chdir(root);
+    await mkdir(join(root, 'pages'));
+    await writeFile(join(root, 'pages/doc.md'), '# Document');
+    const layoutPath = join(root, 'pages/layout.island.tsx');
+    const layout = 'import Probe from "../Probe.tsx" with { island: "load" }; import { useFrontmatter } from "@ts-76/hono-markdown"; export default function Layout({children}) { return <main data-layout-frontmatter={JSON.stringify(useFrontmatter())}><Probe slot="layout" />{children}</main>; }';
+    await writeFile(layoutPath, layout);
+    const markdown = voidHonoMarkdown({ highlight: false });
+    markdown.configResolved({ root, plugins: [{ name: 'void-hono:pages' }, markdown] });
+    const islands = honoIslands(); islands.configResolved({ plugins: [markdown] }); await islands.buildStart();
+    const transformed = islands.transform.call({ environment: { config: { consumer: 'server' } } }, layout, layoutPath);
+    const page = await evaluate(join(root, 'pages'), transformed.code + "\nexport { MarkdownContext as __Context } from '@ts-76/hono-markdown';\nexport { jsx as __jsx } from 'hono/jsx/jsx-runtime';", 'layout-output.tsx');
+    const frontmatter = { title: 'Public', draft_note: 'internal only' };
+    for (const clientFrontmatter of [{ title: 'Public' }, {}]) {
+      const html = String(page.__jsx(page.__Context.Provider, { value: { frontmatter, clientFrontmatter, headings: [], props: { user: 'ada' } }, children: page.__jsx(page.default, {}) }));
+      assert.deepEqual(islandFrontmatter(html), [clientFrontmatter]);
+      assert.match(html, /data-layout-frontmatter="\{&quot;title&quot;:&quot;Public&quot;,&quot;draft_note&quot;:&quot;internal only&quot;\}"/);
+    }
+  } finally { process.chdir(previous); }
 }));

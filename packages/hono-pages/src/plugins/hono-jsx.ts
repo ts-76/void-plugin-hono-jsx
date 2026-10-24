@@ -166,7 +166,7 @@ export async function renderPage(pageObj, assetTags) {
     if (typeof Layout !== 'function') throw new Error('Hono Pages: a layout must export a component function.');
     content = jsx(Layout, { children: content });
   }
-  ${markdown ? 'content = jsx(MarkdownContext.Provider, { value: { frontmatter, headings, props: pageObj.props }, children: content });' : ''}
+  ${markdown ? 'content = jsx(MarkdownContext.Provider, { value: { frontmatter, clientFrontmatter, headings, props: pageObj.props }, children: content });' : ''}
   content = jsx(RouterContext.Provider, { value: createSsrRouter(pageObj.url, pageObj.params), children: jsx(PageContext.Provider, { value: pageObj, children: jsx(NavigationContext.Provider, { value: idleNavigationState(), children: content }) }) });
   return renderHonoDocument(content, pageObj, assetTags, { markdownScript: markdownScriptIds.has(pageObj.component) ? pageObj.component : undefined, ${markdown ? 'markdown: JSON.stringify({ frontmatter: clientFrontmatter, headings }),' : ''} });
 }
