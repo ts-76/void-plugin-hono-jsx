@@ -4,7 +4,8 @@ import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { publisherInventory } from '../scripts/release/publisher-inventory.mjs';
-import { bracesCoverage, assertNoBracesCalls } from '../scripts/release/publisher-coverage.mjs';
+import { measurePublisherCoverage } from '../scripts/release/publisher.mjs';
+import { pathToFileURL } from 'node:url';
 
 test('publisher inventory includes bundled versions, scoped names and vendored manifests', () => {
   const files = new Map([
@@ -15,26 +16,23 @@ test('publisher inventory includes bundled versions, scoped names and vendored m
   assert.deepEqual(publisherInventory(files), [
     { name: '@sigstore/sign', version: '4.0.2' }, { name: 'braces', version: '3.0.3' }, { name: 'example', version: '1.2.3' },
   ]);
-  assert.throws(() => publisherInventory(new Map()), /Expected bundled braces/);
+  assert.throws(() => publisherInventory(new Map()), /inventory is empty/);
 });
 
-test('coverage rejects missing data and actual brace calls while allowing module initialization', () => {
+test('coverage requires the verified npm entry and stage command to execute', () => {
   const directory = mkdtempSync(path.join(tmpdir(), 'publisher-coverage-'));
-  const source = '// fixture/node_modules/braces/lib/parse.js\nfunction parse() {}\n// another/module.js\n';
-  const url = 'file:///fixture/pnpm.mjs';
-  const functions = [
-    { functionName: 'fixture/node_modules/braces/lib/parse.js', ranges: [{ startOffset: 1, endOffset: 60, count: 1 }] },
-    { functionName: 'parse', ranges: [{ startOffset: 45, endOffset: 59, count: 0 }] },
-  ];
+  const cli = path.join(directory, 'runtime/bin/npm-cli.js');
+  const entry = file => ({ url: pathToFileURL(path.join(directory, 'runtime', file)).href, functions: [{ functionName: '', ranges: [{ startOffset: 0, endOffset: 10, count: 1 }] }] });
   const write = data => writeFileSync(path.join(directory, 'coverage.json'), JSON.stringify(data));
   try {
-    assert.throws(() => bracesCoverage(source, url, directory), /Missing CLI/);
-    write({ result: [{ url, functions }] });
-    assertNoBracesCalls(bracesCoverage(source, url, directory));
-    functions[1].ranges[0].count = 1;
-    write({ result: [{ url, functions }] });
-    assert.throws(() => assertNoBracesCalls(bracesCoverage(source, url, directory)), /braces executed/);
-    write({ result: [{ url, functions: [] }] });
-    assert.throws(() => bracesCoverage(source, url, directory), /Incomplete coverage/);
+    assert.throws(() => measurePublisherCoverage(cli, directory), /Missing publisher execution/);
+    write({ result: [entry('bin/npm-cli.js')] });
+    assert.throws(() => measurePublisherCoverage(cli, directory), /stage\/publish/);
+    const stage = entry('lib/commands/stage/publish.js');
+    write({ result: [entry('bin/npm-cli.js'), stage] });
+    assert.equal(measurePublisherCoverage(cli, directory).stageCommandExecuted, true);
+    stage.functions[0].ranges[0].count = 0;
+    write({ result: [entry('bin/npm-cli.js'), stage] });
+    assert.throws(() => measurePublisherCoverage(cli, directory), /Missing publisher execution/);
   } finally { rmSync(directory, { recursive: true, force: true }); }
 });

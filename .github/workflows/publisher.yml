@@ -16,16 +16,16 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: '24.21.0'
+          node-version: '24.22.1'
           package-manager-cache: false
-      - name: Verify the pinned JavaScript distribution and bundle inventory
+      - name: Reconstruct the integrity-pinned npm runtime and fixed dependency inventory
         run: node scripts/release/install-publisher.mjs
       - name: Audit every inventoried package against current advisories
         run: node scripts/release/check-publisher.mjs
       - name: Verify the publisher's OIDC, isolation and failure gates
         run: node --test tests/publisher.test.mjs tests/publisher-js.test.mjs
-      - name: Exercise protocol and braces reachability with external networking disabled
-        run: sudo env PNPM_RELEASE_NODE="$(command -v node)" unshare --net python3 scripts/release/probe-publisher-js.py "$PNPM_RELEASE_CLI" "$RUNNER_TEMP/publisher-report"
+      - name: Exercise staging with external networking disabled
+        run: sudo env PUBLISHER_NODE="$(command -v node)" unshare --net python3 scripts/release/probe-publisher-js.py "$RELEASE_CLI" "$RUNNER_TEMP/publisher-report"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: publisher-${{ github.sha }}

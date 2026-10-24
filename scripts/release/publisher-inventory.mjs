@@ -16,6 +16,6 @@ export function publisherInventory(files) {
       if (typeof pkg.name === 'string' && typeof pkg.version === 'string') add(pkg.name, pkg.version);
     }
   }
-  assert.ok(packages.has('braces@3.0.3'), 'Expected bundled braces is absent; reassess publisher');
+  assert.ok(packages.size, 'Publisher inventory is empty');
   return [...packages.values()].sort((a, b) => a.name.localeCompare(b.name, 'en') || a.version.localeCompare(b.version, 'en'));
 }

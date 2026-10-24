@@ -60,6 +60,6 @@ test('validated Void lines and Hono major boundaries follow the declared peer po
 });
 
 test('Node support is limited to the documented 24 LTS line and minimum', () => {
-  for (const version of ['24.21.0', '24.21.1', '24.99.0']) assert.equal(supportsNode(version), true);
-  for (const version of ['22.0.0', '24.20.9', '25.0.0', '26.0.0', '24.21.0-rc.0', '24.021.0', undefined]) assert.equal(supportsNode(version), false);
+  for (const version of ['24.22.1', '24.22.2', '24.99.0']) assert.equal(supportsNode(version), true);
+  for (const version of ['22.0.0', '24.21.9', '24.22.0', '24.20.9', '25.0.0', '26.0.0', '24.21.0-rc.0', '24.021.0', undefined]) assert.equal(supportsNode(version), false);
 });

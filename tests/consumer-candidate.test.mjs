@@ -70,7 +70,7 @@ test('workflow prepares once, covers both supported stacks and leaves stage acce
   const download = jobs.consumer.steps.find(step => step.uses?.startsWith('actions/download-artifact@'));
   const upload = jobs.baseline.steps.find(step => step.uses?.startsWith('actions/upload-artifact@'));
   assert.equal(download.with.name, upload.with.name); assert.match(download.with.name, /github\.run_attempt/);
-  assert.equal(jobs['required-baseline'].name, 'Pinned framework baseline on Node 24.21.0');
+  assert.equal(jobs['required-baseline'].name, 'Pinned framework baseline on Node 24.22.1');
   assert.deepEqual(jobs['required-baseline'].needs, ['baseline', 'consumer']);
   assert.match(jobs['required-baseline'].steps[0].run, /needs\.baseline\.result.*needs\.consumer\.result/);
   const stage = parse(readFileSync(new URL('../.github/workflows/npm-stage.yml', import.meta.url), 'utf8'));

@@ -1,7 +1,7 @@
 import { writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { auditPublisher, verifyPublisher } from './publisher.mjs';
-verifyPublisher(process.env.PNPM_RELEASE_CLI);
+verifyPublisher(process.env.RELEASE_CLI);
 const report = await auditPublisher();
 import { mkdirSync } from 'node:fs';
 mkdirSync(path.join(process.env.RUNNER_TEMP, 'publisher-report'), { recursive: true });

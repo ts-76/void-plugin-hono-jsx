@@ -38,12 +38,12 @@ assert.equal(version.status, 404, 'Version exists or registry preflight failed')
 const existing = await fetch(`${registry}${encodeURIComponent(plan.package.name)}`, { signal: AbortSignal.timeout(15000) });
 assert.equal(existing.status, 200, 'Bootstrap package and Trusted Publisher manually first');
 assert.ok((await existing.json()).maintainers?.some(m => m.name === policy.npmOwner));
-assert.ok(process.env.PNPM_RELEASE_CLI);
+assert.ok(process.env.RELEASE_CLI);
 const publisherPolicy = loadPublisherPolicy();
-assert.equal(policy.pnpmVersion, publisherPolicy.version);
-verifyPublisher(process.env.PNPM_RELEASE_CLI, publisherPolicy);
+assert.equal(policy.publisherVersion, publisherPolicy.version);
+verifyPublisher(process.env.RELEASE_CLI, publisherPolicy);
 const publisherAudit = await auditPublisher();
 // Re-read the accepted bytes immediately before submission; no pack/build command exists here.
 const artifact = inspectArtifact(options);
-const result = await submitWithPublisher({ binary: process.env.PNPM_RELEASE_CLI, plan, policy, tarball: artifact.tarball });
+const result = await submitWithPublisher({ binary: process.env.RELEASE_CLI, plan, policy, tarball: artifact.tarball });
 writeFileSync('stage-receipt.json', JSON.stringify({ ...plan, publisherAudit, stage: 'submitted; awaiting npm maintainer 2FA', stageId: result.stageId, publisherReachability: result.reachability }, null, 2) + '\n');

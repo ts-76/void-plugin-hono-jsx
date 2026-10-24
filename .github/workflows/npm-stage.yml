@@ -13,7 +13,7 @@ jobs:
     outputs:
       releaseNode: ${{ steps.policy.outputs.releaseNode }}
       environment: ${{ steps.policy.outputs.environment }}
-      pnpmVersion: ${{ steps.policy.outputs.pnpmVersion }}
+      publisherVersion: ${{ steps.policy.outputs.publisherVersion }}
       stageEnabled: ${{ steps.policy.outputs.stageEnabled }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -22,7 +22,7 @@ jobs:
           persist-credentials: false
       - id: policy
         run: |
-          node --input-type=module -e 'import {readFileSync,appendFileSync} from "node:fs"; const p=JSON.parse(readFileSync("release-policy.json")); appendFileSync(process.env.GITHUB_OUTPUT,[`releaseNode=${p.releaseNode}`,`environment=${p.environment}`,`pnpmVersion=${p.pnpmVersion}`,`stageEnabled=${p.stageEnabled}`].join("\n")+"\n");'
+          node --input-type=module -e 'import {readFileSync,appendFileSync} from "node:fs"; const p=JSON.parse(readFileSync("release-policy.json")); appendFileSync(process.env.GITHUB_OUTPUT,[`releaseNode=${p.releaseNode}`,`environment=${p.environment}`,`publisherVersion=${p.publisherVersion}`,`stageEnabled=${p.stageEnabled}`].join("\n")+"\n");'
   prepare:
     needs: config
     runs-on: ubuntu-latest
@@ -76,7 +76,7 @@ jobs:
         with:
           name: accepted-node-${{ needs.config.outputs.releaseNode }}-${{ github.sha }}-attempt-${{ github.run_attempt }}
           path: artifacts
-      - name: Download and verify the pinned JavaScript pnpm publisher
+      - name: Download and verify the locked fixed-dependency npm publisher
         run: node scripts/release/install-publisher.mjs
       - name: Submit the exact accepted bytes for npm maintainer review
         env:
