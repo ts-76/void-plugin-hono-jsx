@@ -1,6 +1,5 @@
-import { createRequire } from 'node:module';
+import container from 'markdown-it-container';
 import MarkdownExit from 'markdown-exit';
-import type { PluginWithParams } from 'markdown-exit';
 
 const unescapeAttribute = new MarkdownExit().utils.unescapeAll;
 
@@ -24,7 +23,7 @@ export function componentAttributes(source: string, restricted = true) {
 
 /** Reuse Markdown's block parser so nested headings/references retain page scope. */
 export function configureComponentContainers(md: MarkdownExit) {
-  md.use(createRequire(import.meta.url)('markdown-it-container') as PluginWithParams, 'component', {
+  md.use(container, 'component', {
     render(tokens: Parameters<NonNullable<typeof md.renderer.rules.fence>>[0], index: number) {
       const token = tokens[index];
       if (token.nesting !== 1) return `</${token.meta.name}>\n`;
