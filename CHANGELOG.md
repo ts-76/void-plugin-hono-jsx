@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.8.0](https://github.com/ts-76/void-plugin-hono-jsx/compare/v0.7.0...v0.8.0) (2026-10-24)
+
+
+### ⚠ BREAKING CHANGES
+
+* **markdown:** Markdown island tags using these attribute names now fail compilation. Pass the value through a differently named prop or a TSX wrapper component.
+
+### Features
+
+* **markdown:** limit island frontmatter with clientFrontmatter ([#153](https://github.com/ts-76/void-plugin-hono-jsx/issues/153)) ([e3a3baf](https://github.com/ts-76/void-plugin-hono-jsx/commit/e3a3baf61dd60f3d8f4c4aedbdbf8b5c1a2a6061))
+
+
+### Bug Fixes
+
+* **markdown:** bound fence line highlighting ranges ([#146](https://github.com/ts-76/void-plugin-hono-jsx/issues/146)) ([1da6db9](https://github.com/ts-76/void-plugin-hono-jsx/commit/1da6db984dd9a216fa6e22412090e0f64cb05115)), closes [#139](https://github.com/ts-76/void-plugin-hono-jsx/issues/139)
+* **markdown:** ignore a leading BOM and keep combining marks in slugs ([#148](https://github.com/ts-76/void-plugin-hono-jsx/issues/148)) ([bead231](https://github.com/ts-76/void-plugin-hono-jsx/commit/bead2315bf3e66589054cc1f2c16ca127ff89d15)), closes [#143](https://github.com/ts-76/void-plugin-hono-jsx/issues/143)
+* **markdown:** reject renderer props and event handlers in island attributes ([#152](https://github.com/ts-76/void-plugin-hono-jsx/issues/152)) ([b3b6b03](https://github.com/ts-76/void-plugin-hono-jsx/commit/b3b6b03d68c6b935ef7308e90582746affd26b10)), closes [#141](https://github.com/ts-76/void-plugin-hono-jsx/issues/141)
+* **markdown:** report island load failures and allow cancelling hydration ([#149](https://github.com/ts-76/void-plugin-hono-jsx/issues/149)) ([a628192](https://github.com/ts-76/void-plugin-hono-jsx/commit/a628192713ffba721f5c238171970405ceb53548)), closes [#144](https://github.com/ts-76/void-plugin-hono-jsx/issues/144)
+* **markdown:** require common runtime with island security fixes ([#154](https://github.com/ts-76/void-plugin-hono-jsx/issues/154)) ([2ca8afc](https://github.com/ts-76/void-plugin-hono-jsx/commit/2ca8afc94d146f9dfff1963c3293f33103305c65))
+* **markdown:** support request-time article rendering in Workers ([#138](https://github.com/ts-76/void-plugin-hono-jsx/issues/138)) ([9ee9f98](https://github.com/ts-76/void-plugin-hono-jsx/commit/9ee9f982aa5650528fb1dd6a1a206223ca7ff1c1))
+
+
+### Performance Improvements
+
+* **markdown:** reuse module compilers per options object ([#147](https://github.com/ts-76/void-plugin-hono-jsx/issues/147)) ([f643d8b](https://github.com/ts-76/void-plugin-hono-jsx/commit/f643d8b607a04a822304dc5925eb3c45281d71c3)), closes [#140](https://github.com/ts-76/void-plugin-hono-jsx/issues/140)
+
 ## [0.7.0](https://github.com/ts-76/void-plugin-hono-jsx/compare/v0.6.0...v0.7.0) (2026-10-24)
 
 
