@@ -2,7 +2,7 @@
 
 ## Current release baseline — 2026-10-24
 
-The current baseline uses Node 24.21.0 / Void 1.2.1 / Hono 4.13.13 / TypeScript 7.0.2. Required Hono-only consumers are plain Vite 8.3.4 and aligned Vite Plus/core 1.3.0 (host Vite 8.3.4). The current ranges are Void >=1.2.1 <1.3.0, Hono >=4.13.13 <5.0.0, Vite >=8.0.16 <9.0.0, Node >=24.21.0 <25.0.0. Only locked fixtures are tested results, not every future release within a range. Old Void 0.x fixtures cannot select a release stack.
+The current baseline uses Node 24.22.1 / Void 1.2.1 / Hono 4.13.13 / TypeScript 7.0.2. Required Hono-only consumers are plain Vite 8.3.4 and aligned Vite Plus/core 1.3.0 (host Vite 8.3.4). The current ranges are Void >=1.2.1 <1.3.0, Hono >=4.13.13 <5.0.0, Vite >=8.0.16 <9.0.0, Node >=24.22.1 <25.0.0. Only locked fixtures are tested results, not every future release within a range. Old Void 0.x fixtures cannot select a release stack.
 
 Use the [release contract](release-contract.md), [limitations/update procedure](known-limitations.md#updating-the-supported-baseline) and [testing guide](testing.md). The dated direct Workers/D1 verification used Void 1.1.11; Void 1.2.1 has local dev/preview coverage only. Production ISR and the managed Void platform remain outside the guarantee.
 

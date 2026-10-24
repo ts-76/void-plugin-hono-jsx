@@ -5,7 +5,7 @@ Use the [checklist](release-checklist.md) for each candidate.
 
 ## Prepare and review
 
-Use Node 24.21.0 and a clean, committed checkout:
+Use Node 24.22.1 and a clean, committed checkout:
 
 ```sh
 npm ci
