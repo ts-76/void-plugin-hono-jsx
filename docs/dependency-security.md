@@ -1,4 +1,25 @@
-# Known dependency advisory for the initial alpha
+# Dependency advisory acceptance
+
+## 0.7.0 owner acceptance — 2026-10-24
+
+The owner explicitly accepted the remaining Void/Cloudflare consumer risks for **void-plugin-hono-jsx 0.7.0 only** after reviewing the reachable undici process-termination case and the Zod allocation behavior. This accepts risk; it does not repair the affected dependencies or make the audit zero. The reviewed root and locked consumers report 16 propagated entries (High 6, Moderate 10), representing the historical esbuild advisory and these four additional advisories:
+
+| Affected consumer dependency | Advisory | Accepted risk and boundary |
+| --- | --- | --- |
+| undici 7.29.1, including Cloudflare/Miniflare copies | GHSA-4qv8-2p9j-2685 | EventSource parser memory exhaustion needs an affected EventSource connection. No such call was observed in the adapter path; this is not approval of arbitrary Node EventSource use. |
+| undici 7.29.1 | GHSA-f72v-6w45-q472 | Mixed-case SRI tokens can bypass integrity checks. Inspected upstream fetch callers do not set SRI. Applications relying on this mechanism must use a fixed implementation; lowercase tokens are the upstream workaround. |
+| undici 7.29.1, including distributed bundles | GHSA-xjj6-f33q-929c | **Reachable availability risk:** a malicious or malformed response from a contacted peer can terminate development/CLI tooling even after fetch rejection is caught. The owner accepts this residual risk for 0.7.0. A catch handler or local-only operation does not fix the dependency. |
+| Zod 4.6.5, including distributed bundles | GHSA-mrhx-c7xc-m3w5 | Validation of oversized invalid collections can allocate many issues. Reviewed toolchain input is project configuration. Do not feed unbounded external data to affected validation; reject size before validation or use a fixed version. No anonymous application endpoint was proven vulnerable. |
+
+Use trusted project configuration, keep development/preview interfaces private and avoid adding untrusted remote peers or affected validation/EventSource paths. These are usage limits, not code fixes or a claim that every upstream command is safe. Worker-native fetch, browser fetch and application-defined handlers require separate assessment. The adapter does not bundle undici/Zod implementations, but its required Void peer installs affected tooling.
+
+The machine-readable `consumerRiskAcceptance` in `release-policy.json` binds this decision to version 0.7.0, Node 24.22.1, the reviewed Void peer range and SHA256 of the root/plain-Vite/Vite-Plus locks. Registry tarball integrity in those locks also fixes upstream bundled copies. The four complete OSV records have pinned modified values and content hashes; plan and stage refresh them. Changed locks, peers, runtime or advisory contents, missing advisory data, a withdrawn record, any new advisory, or a later adapter version require reassessment. Fresh root and both ordinary/Markdown consumer audits remain mandatory and nonzero. The original esbuild no-serve restriction remains.
+
+Prefer upstream fixed releases (undici 7.30.1 and Zod >=4.6.6), then remove this release-specific exception after complete lock/bundle and consumer verification. Do not silently downgrade Void or insert transitive overrides. The separately fixed npm publisher retains its zero-finding gate, protected review, mandatory OIDC/provenance, same-byte validation and owner final approval. An interrupted or ambiguous stage submission must be reconciled with npm before retry; never automatically resubmit.
+
+The original reachability evidence and its limits are in [rc-security-assessment.md](rc-security-assessment.md). The earlier decisions below are historical.
+
+## Initial alpha acceptance
 
 Current RC/normal preparation boundaries and update triggers are in [known-limitations.md](known-limitations.md); the dated RC reassessment is in [rc-security-assessment.md](rc-security-assessment.md). The dated alpha investigation below used the original filenames; the current JSX transform is `src/plugins/jsx-transform.ts`, while `src/plugins/hono-jsx.ts` is the composition entry.
 

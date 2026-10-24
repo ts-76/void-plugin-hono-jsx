@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync, realpathSync, readdirSync } from 'node:fs';
 import { inspectSourceMaps } from './source-maps.mjs';
 import path from 'node:path';
+import { acceptedConsumerRisks } from './consumer-risk.mjs';
 export const registry = 'https://registry.npmjs.org/';
 export const json = file => JSON.parse(readFileSync(file, 'utf8'));
 export const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -84,7 +85,8 @@ export function createPlan(options) {
   const dependencyAudit = json(path.join(options.artifactRoot || path.join(options.root || process.cwd(), 'artifacts'), 'dependency-audit.json'));
   const consumerAudit = json(path.join(options.artifactRoot || path.join(options.root || process.cwd(), 'artifacts'), 'consumer-dependency-audit.json'));
   const advisories = [...new Set([dependencyAudit, consumerAudit].flatMap(report => Object.values(report.vulnerabilities || {}).flatMap(item => item.via.filter(via => typeof via === 'object').map(via => via.url))))];
-  if (advisories.some(url => !artifact.policy.approvedDependencyAdvisories?.includes(url))) blockers.push('dependency-advisories-unreviewed');
+  const accepted = [...(artifact.policy.approvedDependencyAdvisories || []), ...acceptedConsumerRisks({ root: options.root || process.cwd(), pkg: artifact.pkg, policy: artifact.policy })];
+  if (advisories.some(url => !accepted.includes(url))) blockers.push('dependency-advisories-unreviewed');
   return { status: blockers.length ? 'blocked' : 'ready', blockers, commit: options.commit, ref: options.ref,
     package: artifact.evidence.package, tarball: artifact.evidence.tarball, sha256: artifact.evidence.sha256,
     integrity: artifact.integrity, dependencyAudit: dependencyAudit.metadata.vulnerabilities, dependencyAdvisories: advisories,

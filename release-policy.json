@@ -26,5 +26,41 @@
   "approvedDependencyAdvisories": [
     "https://github.com/advisories/GHSA-67mh-4wv8-2f99"
   ],
-  "publisherVersion": "11.21.1"
+  "publisherVersion": "11.21.1",
+  "consumerRiskAcceptance": {
+    "schema": 1,
+    "packageVersion": "0.7.0",
+    "approvedBy": "ts-76",
+    "approvedOn": "2026-10-24",
+    "decision": "Owner explicitly accepts the reachable undici availability failure and remaining undici/Zod consumer risks for 0.7.0; see docs/dependency-security.md.",
+    "node": "24.22.1",
+    "voidPeer": ">=1.2.1 <1.3.0",
+    "lockfiles": {
+      "package-lock.json": "864966f16130af0e2f1921a8bd4f1149c3080ae2023e7bcda800dcf35be94419",
+      "fixtures/consumer-void-1-vite/package-lock.json": "06edf0ba9b2929448fd47301cd36cd6a4157a7b3c173024eb9e44528029f490d",
+      "fixtures/consumer-void-1-vp/package-lock.json": "09e9d1ad13f674ca740ca82c18f4224be6446b9906ffa9bf2fe9d555ee4944b2"
+    },
+    "advisories": [
+      {
+        "id": "GHSA-4qv8-2p9j-2685",
+        "modified": "2026-10-23T22:30:04.104974737Z",
+        "sha256": "97814c112cbe7fee30d04a819eaf53553bfa394f40d18ab37995b043b8018b4d"
+      },
+      {
+        "id": "GHSA-f72v-6w45-q472",
+        "modified": "2026-10-23T22:30:04.094314933Z",
+        "sha256": "9cf57d3f8e2c15b461994a84d5f4656334addbb97fc568fd011c3d55e2b1fc9a"
+      },
+      {
+        "id": "GHSA-xjj6-f33q-929c",
+        "modified": "2026-10-23T22:30:05.007687918Z",
+        "sha256": "7a38d608b34904dc6648687e0791ba88674b2a3a985659846707b29c4b76770f"
+      },
+      {
+        "id": "GHSA-mrhx-c7xc-m3w5",
+        "modified": "2026-10-23T18:30:09.376405885Z",
+        "sha256": "811dc160678e778ee8c8319ed6712ed051f7b3e2d28ad0f1e28d902b3188b228"
+      }
+    ]
+  }
 }

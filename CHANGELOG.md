@@ -16,6 +16,8 @@
 
 ### Bug Fixes
 
+* **release:** record the owner's 0.7.0-only consumer dependency risk acceptance with version, lock and advisory-content gates. The undici/Zod findings remain nonzero and include a reachable toolchain availability failure; see the dependency security guide.
+
 * align remaining Node baselines and consolidate 0.7.0 assessment ([#135](https://github.com/ts-76/void-plugin-hono-jsx/issues/135)) ([d8ca3b7](https://github.com/ts-76/void-plugin-hono-jsx/commit/d8ca3b7633408f3a7aab44a4155e0e14b20c867c))
 * **markdown:** honor shared copy requirements in Void adapter ([#132](https://github.com/ts-76/void-plugin-hono-jsx/issues/132)) ([18bab90](https://github.com/ts-76/void-plugin-hono-jsx/commit/18bab90782cd3441f6a5cec359632636f13903c4))
 * **release:** reconstruct npm publisher with fixed locked dependencies ([#136](https://github.com/ts-76/void-plugin-hono-jsx/issues/136)) ([b932119](https://github.com/ts-76/void-plugin-hono-jsx/commit/b9321197a56c963ac8b06208bd83de80ec25ca82))

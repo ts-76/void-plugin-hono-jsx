@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
-import { createPlan, inspectArtifact, requireEnvironmentReview, registry } from './gate.mjs';
+import { createPlan, inspectArtifact, requireEnvironmentReview, registry, json } from './gate.mjs';
+import { verifyConsumerRiskAdvisories } from './consumer-risk.mjs';
 import { auditPublisher, loadPublisherPolicy, submitWithPublisher, verifyPublisher } from './publisher.mjs';
 // All checks precede the sole remote mutation. Never approve or directly publish here.
 assert.equal(process.env.GITHUB_ACTIONS, 'true');
@@ -14,6 +15,7 @@ const commit = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).
 if (execFileSync('git', ['status', '--porcelain', '--untracked-files=all'], { encoding: 'utf8' }).trim()) throw new Error('Release source must remain clean');
 assert.equal(commit, process.env.GITHUB_SHA);
 const options = { commit, ref: process.env.GITHUB_REF, artifactRoot: process.env.RELEASE_ARTIFACT_ROOT };
+await verifyConsumerRiskAdvisories(json('release-policy.json'));
 const plan = createPlan(options);
 assert.equal(plan.status, 'ready', `Blocked: ${plan.blockers.join(', ')}`);
 const { policy, evidence } = inspectArtifact(options);
