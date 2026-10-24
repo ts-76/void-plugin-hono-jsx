@@ -1,6 +1,6 @@
 {
   "name": "@ts-76/hono-markdown",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "Host-independent Hono JSX Markdown compiler and islands",
   "license": "MIT",
