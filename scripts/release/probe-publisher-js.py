@@ -17,6 +17,7 @@ import urllib.parse
 # Run only inside a fresh Linux network namespace. No real npm/GitHub/Sigstore
 # service or credential is accessible to this probe.
 local = '--local' in sys.argv
+malformed_oidc = '--malformed-oidc' in sys.argv
 if not local:
     assert os.readlink('/proc/self/ns/net') != os.readlink('/proc/1/ns/net')
     subprocess.run(['ip', 'link', 'set', 'lo', 'up'], check=True)
@@ -38,6 +39,17 @@ class Registry(http.server.BaseHTTPRequestHandler):
     def respond(self):
         body = self.rfile.read(int(self.headers.get('Content-Length', 0)))
         records.append(dict(method=self.command, path=self.path, authorization=self.headers.get('Authorization'), body=json.loads(body) if body else None))
+        if case == 'malformed-oidc' and '/oidc/token/exchange/' in self.path:
+            # Bounded negative response: no actual compressed payload or OOM.
+            self.send_response(200)
+            self.send_header('Content-Encoding', 'gzip, gzip, gzip, gzip, gzip, gzip')
+            self.send_header('Content-Length', '100')
+            self.end_headers()
+            self.wfile.flush()
+            import time
+            time.sleep(0.03)
+            self.close_connection = True
+            return
         status, response = 200, {}
         if self.path.startswith('/identity'):
             audience = urllib.parse.parse_qs(urllib.parse.urlsplit(self.path).query)['audience'][0]
@@ -74,7 +86,7 @@ data = tarball.read_bytes()
 integrity = 'sha512-' + base64.b64encode(hashlib.sha512(data).digest()).decode()
 outcomes = []
 try:
-    for case in ['fixed-tarball', 'oidc-missing-token', 'signing-failure', 'stage-500', 'dry-run']:
+    for case in ['fixed-tarball', 'oidc-missing-token', 'signing-failure', 'stage-500', 'dry-run'] + (['malformed-oidc'] if malformed_oidc else []):
         records.clear()
         cwd = root / case; cwd.mkdir()
         auth = cwd / 'user.npmrc'; auth.write_text('')
@@ -103,6 +115,10 @@ try:
             assert any('audience=sigstore' in r['path'] for r in records), outcome
         elif case == 'stage-500':
             assert result.returncode != 0 and len(posts) == 1, outcome
+        elif case == 'malformed-oidc':
+            assert result.returncode != 0 and not posts, outcome
+            # Report vulnerable versus handled failure; neither is a stage success.
+            outcome['unhandledStreamError'] = "Unhandled 'error' event" in result.stderr
         else:
             assert result.returncode == 0 and not posts, outcome
         outcomes.append(outcome)
@@ -123,7 +139,7 @@ try:
     assert positive_result.returncode == 0, positive_result.stderr
     report_dir.joinpath('positive-control.json').write_text(positive_result.stdout)
     report_dir.joinpath('protocol.json').write_text(json.dumps(dict(isolation='Node socket guard' if local else 'Linux network namespace; loopback only; fake credentials only', signing='only failure before signing is exercised; successful Fulcio/Rekor/registry provenance is unverified', fixtureSha256=hashlib.sha256(data).hexdigest(), cases=outcomes), indent=2) + '\n')
-    print('pnpm JavaScript: 5 protocol cases and braces positive control passed; no brace calls during stage fixtures')
+    print(f'pnpm JavaScript: {len(outcomes)} protocol cases and braces positive control passed; no brace calls during stage fixtures')
 finally:
     server.shutdown()
     shutil.rmtree(root)

@@ -27,8 +27,8 @@ See the [dated results](cloudflare-rc1-verification.md). Re-test when Void, Mini
 
 ## Dependency and publisher boundaries
 
-- **Consumer dependencies:** the reviewed Void/Drizzle tree retains [GHSA-67mh-4wv8-2f99](https://github.com/advisories/GHSA-67mh-4wv8-2f99). The inspected path uses esbuild transforms, not the affected serve API. Consumers still install the dependency; avoid its serve feature. See the [reassessment](rc-security-assessment.md).
-- **Publisher only:** The braces advisory was withdrawn on 2026-10-23; the pinned pnpm 11.28.6 JavaScript inventory on Node 24.21.0 Linux x64 now requires zero findings for the fixed-tgz stage command. This does not approve arbitrary pnpm commands or other targets. See the [publisher assessment](pnpm-publisher-assessment.md).
+- **Consumer dependencies:** the existing esbuild no-serve acceptance remains narrow. The 2026-10-24 audit of the Void 1.2.1 root tree additionally reports three undici advisories and one Zod advisory (16 propagated entries, five distinct advisories including esbuild). The malformed-response fetch failure is reachable in the development/CLI toolchain; no new advisory acceptance was added. See the [current reassessment and release conditions](rc-security-assessment.md#2026-10-24-follow-up-void-121-consumer-and-runner-findings).
+- **Publisher and runner:** the pinned pnpm 11.28.6 inventory currently reports five package/version/advisory matches from three undici advisories. Its fixed-stage path executes affected undici 7.29.1 fetch. Node 24.21.0 built-in fetch is also affected; fixed Node 24.22.1 alone does not replace bundled undici. The unchanged zero-accepted-findings gate correctly blocks publication. The withdrawn braces advisory is separate. See the [publisher assessment and safe update direction](pnpm-publisher-assessment.md#2026-10-24-reassessment-new-undici-advisories-block-publication).
 - **Historical scaffold:** Vite Plus 0.1.24 has unaccepted Critical findings and is unsupported. See [scaffold history](scaffold-compatibility.md).
 
 Consumer audits remain nonzero. Report package-entry counts separately from distinct advisories.

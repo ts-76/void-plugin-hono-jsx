@@ -2,7 +2,37 @@
 
 2026-10-21時点の対象は **pnpm 11.28.6のJavaScript配布物、Node 24.21.0、Linux x64** です。固定した受入済みtgzを `stage publish` する処理だけに使用します。開発・ビルド・候補作成のパッケージマネージャーは変更しません。
 
-## 2026-10-24 follow-up: withdrawn braces advisory
+## 2026-10-24 reassessment: new undici advisories block publication
+
+**Decision: keep publication blocked; no new accepted findings.** The earlier zero-finding observation below predates the refreshed advisory data. The current complete OSV query over the same 370 package/version entries reports five package/version/advisory matches, representing three distinct advisories:
+
+| Package | Advisory | Current assessment |
+| --- | --- | --- |
+| undici 6.29.0 and 7.29.1 | [GHSA-4qv8-2p9j-2685](https://github.com/advisories/GHSA-4qv8-2p9j-2685), EventSource memory exhaustion | No EventSource function calls observed in the five fixed-stage protocol cases. Potential scoped acceptance only; not approval of arbitrary commands or EventSource users. |
+| undici 7.29.1 | [GHSA-f72v-6w45-q472](https://github.com/advisories/GHSA-f72v-6w45-q472), mixed-case SRI bypass | Requires fetch integrity metadata with a mixed/uppercase algorithm. The reviewed stage path does not use that feature; archive SHA512/SHA256 checks use Node crypto separately. Potential scoped acceptance only; no claim that SRI itself is safe. |
+| undici 6.29.0 and 7.29.1 | [GHSA-xjj6-f33q-929c](https://github.com/advisories/GHSA-xjj6-f33q-929c), unhandled response-stream error | **Reachable.** The bundled 7.29.1 fetch runs during fixed-tgz staging. A malformed fake OIDC exchange response terminates the unmodified CLI, even on patched Node 24.22.1. Do not accept this as an unused dependency. |
+
+All 454 pinned distribution files were rechecked against the committed SHA256 table. The CLI entry remains `5d2cac585f73db48e086a4391e817e09503cd9b6b5345b864ea52a70a2d3fffe`; no distribution code was patched. The five existing loopback protocol cases passed on Node 24.21.0. V8 coverage of the original CLI recorded two bundled undici 7 fetch calls and two `httpNetworkFetch` calls in each case; EventSource calls and separate undici 6 fetch calls were zero. These are macOS observations using the socket guard, not renewed Linux namespace validation or successful real signing.
+
+A separate negative case returned six content codings and closed the fake OIDC token-exchange response before its declared body. With Node 24.22.1, the CLI exited 1 with `UND_ERR_RES_CONTENT_LENGTH_MISMATCH` from the bundled undici parser and no stage POST. This establishes a reachable availability failure. It does not demonstrate credential disclosure, archive modification or a successful malicious publication. Fixed HTTPS authorities and TLS reduce the set of possible malicious peers, but do not make the affected parser unreachable. Any future acceptance would need to explicitly assess interrupted/ambiguous submissions, prohibit automatic resubmission and require registry reconciliation before retry or owner approval; that acceptance has **not** been granted here.
+
+The pnpm 11.28.8 candidate is not a fix: its separately verified 369-entry inventory contains undici 6.29.1 **and** 7.29.1, retaining all three advisories on the latter. It was not adopted. The official npm registry still labels 11.28.6 `latest-11` and 11.28.8 `next-11` at this check.
+
+The runner is also affected independently: Node 24.21.0 embeds undici 7.29.1. Local response tests reproduced both the unhandled-error exit and mixed-case SRI bypass with its built-in fetch. [Node 24.22.1](https://nodejs.org/en/blog/release/v24.22.1) embeds fixed undici 7.30.1; the identical tests caught the malformed response without a process crash and rejected both SRI case variants. The official macOS arm64 archive was checked against its published SHA256, `89c682593d76cd44233fa53b1563264e7de9cbb189cad169135c5b4fadfbc0a7`. Updating Node alone does not replace pnpm's bundled undici.
+
+### Safe publication direction
+
+1. Move the supported Node 24 baseline and all release/CI pins to a security-fixed version (24.22.1 is the verified candidate). Reassess the Linux x64 publisher under that exact runtime. This is required even if a publisher exception is later considered.
+2. Prefer an upstream publisher distribution containing undici >=6.29.1 and >=7.30.1 for the respective major lines. Verify its archive, source, every distributed file and complete inventory. Do not replace bundled files, add transitive overrides, disable provenance or reuse old finding acceptance.
+3. If that distribution is unavailable, retain the block. A different publisher is a separate candidate requiring full source/inventory/OIDC/stage/provenance review. The present review does not select or approve an alternative CLI.
+4. Resolve or narrowly reassess the separate [consumer findings](rc-security-assessment.md#2026-10-24-follow-up-void-121-consumer-and-runner-findings). Any accepted finding must pin package/version/advisory modified/content hashes and explicit execution conditions. Reappearing, changed or additional findings continue to fail closed.
+5. Repeat the five protocol cases, malformed-response check, positive controls and real-stage coverage on Linux; then repeat final-head/main CI and both consumers on identical accepted bytes. Carry the official HTTPS Ubuntu mirror setup into `npm-stage.yml` before staging. Preserve the protected environment, mandatory OIDC preflight, provenance and npm-owner final approval, followed by public byte/signature/provenance/consumer verification.
+
+The local diagnostic is `node scripts/release/probe-response-security.mjs [absolute-undici-entry ...]`. It uses only loopback responses, bounded child processes and small invalid arrays; run it with both old and candidate Node versions. It reports observations and deliberately does not modify the acceptance policy or turn a successful diagnostic run into publication approval.
+
+For the unmodified CLI itself, run `PNPM_RELEASE_NODE=<node> python3 scripts/release/probe-publisher-js.py <verified-cli> <report-directory> --local --malformed-oidc`. The sixth optional case records `unhandledStreamError` and requires that the malformed exchange never reaches stage POST. Both a caught rejection and an unhandled stream error stop submission; the report distinguishes them. This does not replace the real runner's mandatory preflight. Use the existing Linux namespace invocation without `--local` when renewing target-platform evidence.
+
+## Earlier 2026-10-24 observation: withdrawn braces advisory
 
 GitHub [withdrew GHSA-vfj7-8cjw-p6xm on 2026-10-23](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm), stating that it is not a practically exploitable vulnerability. The fresh OSV query for the pinned 370-package inventory returns no findings. The exact-set gate correctly stopped when its previous one-finding expectation disappeared.
 
