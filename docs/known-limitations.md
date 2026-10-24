@@ -28,7 +28,7 @@ See the [dated results](cloudflare-rc1-verification.md). Re-test when Void, Mini
 ## Dependency and publisher boundaries
 
 - **Consumer dependencies:** the reviewed Void/Drizzle tree retains [GHSA-67mh-4wv8-2f99](https://github.com/advisories/GHSA-67mh-4wv8-2f99). The inspected path uses esbuild transforms, not the affected serve API. Consumers still install the dependency; avoid its serve feature. See the [reassessment](rc-security-assessment.md).
-- **Publisher only:** The braces advisory was withdrawn on 2026-10-23; the pinned pnpm 11.28.6 JavaScript inventory on Node 24.21.0 Linux x64 now requires zero findings for the fixed-tgz stage command. This does not approve arbitrary pnpm commands or other targets. See the [publisher assessment](pnpm-publisher-assessment.md).
+- **Publisher only:** The private npm 11.21.1 runtime uses fixed dependencies resolved within upstream ranges and pinned by archive integrity, lock and complete runtime hashes. Node 24.22.1 and a fresh zero-finding inventory audit are required. Standard upstream npm/pnpm archives were not repaired in place. See the [publisher assessment](pnpm-publisher-assessment.md).
 - **Historical scaffold:** Vite Plus 0.1.24 has unaccepted Critical findings and is unsupported. See [scaffold history](scaffold-compatibility.md).
 
 Consumer audits remain nonzero. Report package-entry counts separately from distinct advisories.

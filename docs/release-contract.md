@@ -6,7 +6,7 @@ The adapter supports the documented Pages APIs on the following stable framework
 
 | Dependency | Supported range | Tested version |
 | --- | --- | --- |
-| Node.js | >=24.21.0 <25.0.0 | 24.21.0 |
+| Node.js | >=24.22.1 <25.0.0 | 24.22.1 |
 | Void | >=1.2.1 <1.3.0 | 1.2.1 |
 | Hono | >=4.13.13 <5.0.0 | 4.13.13 |
 | Vite | >=8.0.16 <9.0.0 | 8.3.4 |

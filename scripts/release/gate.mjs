@@ -29,7 +29,7 @@ export function metadataBlockers(pkg, policy, { ref, changelog, license }) {
   require(/^[a-z0-9][a-z0-9._-]*$/.test(policy.npmOwner), 'npm-owner');
   require((pkg.version.includes('-') ? policy.distTag === 'next' : ['next', 'latest'].includes(policy.distTag)), 'dist-tag');
   require(policy.provenance === true, 'provenance-required');
-  require(/^\d+\.\d+\.\d+$/.test(policy.pnpmVersion), 'publisher-version');
+  require(/^\d+\.\d+\.\d+$/.test(policy.publisherVersion), 'publisher-version');
   require(policy.historyDisclosureApproved === true, 'history-disclosure-unapproved');
   require(policy.dependencySecurityApproved === true, 'dependency-security-unapproved');
   require(Array.isArray(policy.reviewers) && policy.reviewers.length > 0 && policy.reviewers.every(r => ['User', 'Team'].includes(r.type) && /^[\w.-]+$/.test(r.login)), 'reviewers-unconfigured');
@@ -107,7 +107,7 @@ const compare = (a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b));
 export function stageArguments(plan, policy, tarball) {
   assert.equal(plan.status, 'ready', `Blocked: ${plan.blockers.join(', ')}`);
   return ['stage', 'publish', path.resolve(tarball), '--ignore-scripts', '--json', '--registry', registry,
-    '--access', 'public', '--tag', policy.distTag, '--provenance', '--reporter=silent', '--no-git-checks', '--ignore-workspace'];
+    '--access', 'public', '--tag', policy.distTag, '--provenance', '--workspaces=false'];
 }
 export function stageReceipt(stdout, plan) {
   const parsed = JSON.parse(stdout);

@@ -1,4 +1,22 @@
-# pnpm 公開ジョブの依存評価と採用条件
+# Fixed-dependency npm publisher
+
+## Current publisher — 2026-10-24
+
+The standard pnpm 11 and npm staging distributions still include affected dependencies. The current publisher is a **private reconstruction of official npm 11.21.1 code**, with runtime dependencies resolved inside its original manifest ranges and frozen in `scripts/release/npm-publisher-lock.json`. It is not the byte-identical standard npm distribution and is not published as another npm package.
+
+The CLI source archive is integrity-pinned. Reconstruction drops its affected bundled dependencies, development/workspace/lifecycle metadata, preserves every declared runtime range and sets `private: true`. A bounded downloader verifies every locked registry tarball before safe extraction; no package manager, lifecycle, git hook, build or arbitrary dependency update runs during reconstruction/staging. There are no transitive overrides or source patches. All installed paths/bytes, the complete package inventory and the lock have pinned digests.
+
+The selected runtime contains undici 6.29.1 and ip-address 10.7.4. Local npm audit and full OSV inventory audit returned zero findings across 145 distinct package/version entries. These are candidate observations; Linux CI must repeat reconstruction, digests, fresh full inventory audit and protocol/response regressions. Node 24.22.1 supplies fixed built-in undici 7.30.1 independently of the installed copy.
+
+The stage runner retains mandatory fresh OIDC exchange, scoped temporary auth, exact accepted tgz bytes, provenance, protected environment review and owner final 2FA. It does not accept directory publication, inherited auth/proxy/runtime injection, lifecycle scripts or automatic stage retries. Execution coverage must show the verified npm stage command ran. Failure after a possible remote submission still requires registry inspection before retry.
+
+Protocol fixtures use fake credentials and loopback only (a Linux network namespace in CI), cover fixed bytes/tag/access, missing auth, signature failure, stage HTTP failure and dry-run. Separate bounded malformed content-encoding and lowercase/uppercase wrong-SRI tests must reject without crashing for both Node fetch and the fixed installed undici. Real signing, owner authentication and public verification remain separate release checks.
+
+This publisher update does not approve newly reported Void/Cloudflare/Zod consumer findings. The normal-release artifact/consumer policy still blocks new unreviewed advisories.
+
+## Historical pnpm assessment
+
+### pnpm 公開ジョブの依存評価と採用条件
 
 2026-10-21時点の対象は **pnpm 11.28.6のJavaScript配布物、Node 24.21.0、Linux x64** です。固定した受入済みtgzを `stage publish` する処理だけに使用します。開発・ビルド・候補作成のパッケージマネージャーは変更しません。
 

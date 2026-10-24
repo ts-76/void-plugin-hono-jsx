@@ -6,7 +6,6 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { registry, sha256, stageArguments, stageReceipt } from './gate.mjs';
 import { publisherInventory } from './publisher-inventory.mjs';
-import { bracesCoverage, assertNoBracesCalls } from './publisher-coverage.mjs';
 import { pathToFileURL } from 'node:url';
 
 export const policyPath = fileURLToPath(new URL('./publisher-policy.json', import.meta.url));
@@ -44,8 +43,8 @@ export function checkPublisherFinding(policy, pkg, advisory) {
 }
 
 export async function auditPublisher({ policy = loadPublisherPolicy(), request = requestJson } = {}) {
-  assert.equal(policy.schema, 2);
-  assert.equal(policy.manager, 'pnpm');
+  assert.equal(policy.schema, 3);
+  assert.equal(policy.manager, 'npm');
   const inventoryBytes = readFileSync(inventoryPath);
   assert.equal(sha256(inventoryBytes), policy.inventorySha256, 'Publisher inventory changed');
   const inventory = JSON.parse(inventoryBytes);
@@ -69,38 +68,46 @@ export async function auditPublisher({ policy = loadPublisherPolicy(), request =
     auditedPackages: inventory.length, findings, status: 'accepted only within reviewed stage scope' };
 }
 
-export function verifyPublisher(cli, policy = loadPublisherPolicy()) {
-  assert.equal(process.platform, 'linux');
-  assert.equal(process.arch, 'x64');
-  assert.equal(process.version, `v${policy.node}`);
-  assert.ok(lstatSync(cli).isFile() && !lstatSync(cli).isSymbolicLink());
-  assert.equal(sha256(readFileSync(cli)), policy.distribution.entrySha256, 'Publisher CLI changed');
-  const tableBytes = readFileSync(new URL('./publisher-js-files.json', import.meta.url));
-  assert.equal(sha256(tableBytes), policy.filesSha256, 'Publisher file table changed');
-  const root = path.resolve(path.dirname(cli), '..');
-  const table = JSON.parse(tableBytes);
-  const actual = [];
+export function publisherSnapshot(root) {
+  const table = [];
+  const files = new Map();
   const visit = directory => { for (const entry of readdirSync(directory, { withFileTypes: true })) {
     const file = path.join(directory, entry.name);
     if (entry.isDirectory()) visit(file);
-    else { assert.ok(entry.isFile(), 'Publisher contains non-regular file'); actual.push(path.relative(root, file).replaceAll('\\', '/')); }
+    else {
+      assert.ok(entry.isFile(), 'Publisher contains non-regular file');
+      const name = path.relative(root, file).replaceAll('\\', '/');
+      const bytes = readFileSync(file);
+      table.push({ path: name, sha256: sha256(bytes) });
+      if (/\.(?:mjs|cjs|js)$/.test(name) || name.endsWith('package.json')) files.set(name, bytes.toString('utf8'));
+    }
   } };
   visit(root);
-  assert.deepEqual(actual.sort(), table.map(file => file.path).sort(), 'Publisher files changed');
-  const files = new Map();
-  for (const file of table) {
-    const content = readFileSync(path.join(root, file.path));
-    assert.equal(sha256(content), file.sha256, `Publisher file changed: ${file.path}`);
-    if (/\.(?:mjs|cjs|js)$/.test(file.path) || file.path.endsWith('package.json')) files.set(file.path, content.toString('utf8'));
-  }
-  assert.deepEqual(publisherInventory(files), JSON.parse(readFileSync(inventoryPath)), 'Publisher inventory differs from distributed files');
+  table.sort((a, b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
+  return { files, filesSha256: sha256(JSON.stringify(table, null, 2) + '\n'), inventory: publisherInventory(files) };
+}
+
+export function verifyPublisher(cli, policy = loadPublisherPolicy(), { local = false } = {}) {
+  if (local) assert.notEqual(process.env.GITHUB_ACTIONS, 'true');
+  else { assert.equal(process.platform, 'linux'); assert.equal(process.arch, 'x64'); }
+  assert.equal(process.version, `v${policy.node}`);
+  assert.ok(lstatSync(cli).isFile() && !lstatSync(cli).isSymbolicLink());
+  assert.equal(sha256(readFileSync(cli)), policy.distribution.entrySha256, 'Publisher CLI changed');
+  const root = path.resolve(path.dirname(cli), '..');
+  const { files, filesSha256, inventory } = publisherSnapshot(root);
+  assert.equal(filesSha256, policy.filesSha256, 'Publisher files changed');
+  assert.deepEqual(inventory, JSON.parse(readFileSync(inventoryPath)), 'Publisher inventory differs from distributed files');
   assert.equal(JSON.parse(files.get('package.json')).version, policy.version);
 }
 
 export function measurePublisherCoverage(cli, directory) {
-  const report = bracesCoverage(readFileSync(cli, 'utf8'), pathToFileURL(cli).href, directory);
-  assertNoBracesCalls(report);
-  return { modules: report.length, functionsCalled: 0, method: 'V8 coverage of unmodified stage CLI' };
+  const root = path.resolve(path.dirname(cli), '..');
+  const entries = readdirSync(directory).filter(file => file.endsWith('.json')).flatMap(file => JSON.parse(readFileSync(path.join(directory, file), 'utf8')).result);
+  for (const file of ['bin/npm-cli.js', 'lib/commands/stage/publish.js']) {
+    const entry = entries.find(item => item.url === pathToFileURL(path.join(root, file)).href);
+    assert.ok(entry?.functions.some(fn => fn.ranges[0].count > 0), `Missing publisher execution coverage: ${file}`);
+  }
+  return { stageCommandExecuted: true, method: 'V8 coverage of verified npm runtime' };
 }
 
 export async function exchangeOidc(env, request = requestJson) {
@@ -125,18 +132,17 @@ export function publisherEnvironment(env, root) {
     'GITHUB_REPOSITORY_OWNER_ID', 'RUNNER_ENVIRONMENT', 'ACTIONS_ID_TOKEN_REQUEST_URL', 'ACTIONS_ID_TOKEN_REQUEST_TOKEN'];
   return { ...Object.fromEntries(keep.filter(key => env[key] !== undefined).map(key => [key, env[key]])), HOME: root,
     XDG_CONFIG_HOME: path.join(root, 'config'), XDG_CACHE_HOME: path.join(root, 'cache'), XDG_DATA_HOME: path.join(root, 'data'),
-    PNPM_HOME: path.join(root, 'pnpm-home'), PNPM_CONFIG_STATE_DIR: path.join(root, 'state'),
-    PNPM_CONFIG_STORE_DIR: path.join(root, 'store'), PNPM_CONFIG_IGNORE_WORKSPACE: 'true' };
+    NPM_CONFIG_GLOBALCONFIG: path.join(root, 'global.npmrc'), NPM_CONFIG_CACHE: path.join(root, 'cache'), NODE_DISABLE_COMPILE_CACHE: '1' };
 }
 
 // The only upload runner. No long-lived token is inherited, and OIDC preflight
-// must succeed before pnpm is allowed to attempt staging. Its fallback may use
+// must succeed before the CLI is allowed to attempt staging. Its fallback may use
 // only this freshly exchanged OIDC token. Auth/state are removed on every exit.
 export async function submitWithPublisher({ binary, plan, policy, tarball, env = process.env, request = requestJson, run = execFileSync, measure = measurePublisherCoverage }) {
   assert.equal(plan.status, 'ready');
   assert.ok(env.RUNNER_TEMP);
   const token = await exchangeOidc({ ...env, PUBLISH_PACKAGE_NAME: plan.package.name }, request);
-  const root = mkdtempSync(path.join(env.RUNNER_TEMP, 'pnpm-stage-'));
+  const root = mkdtempSync(path.join(env.RUNNER_TEMP, 'npm-stage-'));
   try {
     const bytes = readFileSync(tarball);
     assert.equal(sha256(bytes), plan.sha256, 'Accepted tarball changed before upload');

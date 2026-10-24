@@ -5,15 +5,14 @@
   "defaultBranch": "main",
   "tagPrefix": "v",
   "nodeVersions": [
-    "24.21.0"
+    "24.22.1"
   ],
-  "releaseNode": "24.21.0",
+  "releaseNode": "24.22.1",
   "stageEnabled": true,
   "publicPackageEnabled": true,
   "npmOwner": "ts-76",
   "distTag": "next",
   "provenance": true,
-  "pnpmVersion": "11.28.6",
   "environment": "npm-stage",
   "reviewers": [
     {
@@ -26,5 +25,6 @@
   "dependencySecurityApproved": true,
   "approvedDependencyAdvisories": [
     "https://github.com/advisories/GHSA-67mh-4wv8-2f99"
-  ]
+  ],
+  "publisherVersion": "11.21.1"
 }
