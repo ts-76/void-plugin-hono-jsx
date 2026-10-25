@@ -148,3 +148,8 @@ test("Void delegates parser dependency ownership to the common package", () => {
     assert.equal(pkg.peerDependenciesMeta?.[name], undefined);
   }
 });
+
+test("adapter attribution matches the repository release notice", () => {
+  assert.equal(readFileSync(new URL("../THIRD_PARTY_NOTICES.md", import.meta.url), "utf8"),
+    readFileSync(new URL("../packages/hono-pages/THIRD_PARTY_NOTICES.md", import.meta.url), "utf8"));
+});
