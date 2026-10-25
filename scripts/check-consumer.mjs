@@ -210,8 +210,11 @@ try {
   });
   env.HONO_MARKDOWN_PACKAGE = commonPackage;
   npm(['install', '--no-save', '--package-lock=false', '--no-audit', '--no-fund', commonPackage, tarball], consumer);
-  assert.equal((await readdir(join(consumer, 'node_modules'))).includes('markdown-exit'), false, 'Ordinary consumers must not install the optional Markdown parser');
-  for (const name of ['shiki', 'markdown-it-container']) assert.equal((await readdir(join(consumer, 'node_modules'))).includes(name), false, `Ordinary consumers must not install ${name}`);
+  const consumerManifest = JSON.parse(await readFile(join(consumer, 'package.json'), 'utf8'));
+  for (const name of ['markdown-exit', 'markdown-it-container']) {
+    assert.equal(consumerManifest.dependencies?.[name] ?? consumerManifest.devDependencies?.[name], undefined);
+  }
+  assert.equal((await readdir(join(consumer, 'node_modules'))).includes('shiki'), false, 'Unused highlighter remains optional');
   await assert.rejects(access(join(consumer, 'node_modules/@shikijs/transformers')), { code: 'ENOENT' });
   if (env.RELEASE_CONSUMER_AUDIT) dependencyAudit({ npmCli, cwd: consumer, env, output: env.RELEASE_CONSUMER_AUDIT });
   const installedContents = new Map();

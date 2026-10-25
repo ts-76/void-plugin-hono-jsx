@@ -37,6 +37,10 @@ export async function checkMarkdownConsumer({ repo, consumer: original, browser,
     await assert.rejects(compileMarkdownModule(source, { sourcePath: process.cwd() + '/pages/docs/security.md', options: { highlight: false } }), /invalid or reserved component attribute onclick/);
     console.log('Installed common Markdown compiler rejects event-handler island attributes.');
   `], { cwd: consumer, env, stdio: 'inherit' });
+  const consumerManifest = JSON.parse(await readFile(join(consumer, 'package.json'), 'utf8'));
+  for (const name of ['markdown-exit', 'markdown-it-container']) {
+    assert.equal(consumerManifest.dependencies?.[name] ?? consumerManifest.devDependencies?.[name], undefined, 'Parser setup must be transitive');
+  }
   const optionalReport = dependencyAudit({ npmCli, cwd: consumer, env, output: join(consumer, 'markdown-audit.json') });
   for (const name of ['markdown-exit', 'yaml', 'shiki', '@shikijs/transformers', 'markdown-it-container', 'entities', 'linkify-it', 'mdurl', 'punycode.js', 'uc.micro']) assert.equal(optionalReport.vulnerabilities[name], undefined, `New parser advisory: ${name}`);
   if (originalEnv.RELEASE_CONSUMER_AUDIT) await cp(join(consumer, 'markdown-audit.json'), originalEnv.RELEASE_CONSUMER_AUDIT.replace(/\.json$/, '-markdown.json'));

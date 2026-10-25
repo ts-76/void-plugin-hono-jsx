@@ -85,14 +85,14 @@ test('release archives cannot retain a common Markdown range without the island 
   const f = fixture();
   try {
     const metadata = path.join(f.root, 'candidate/package/package.json');
-    for (const range of ['^0.1.0', '^0.1.1', '^0.1.2', '^0.2.0']) {
+    for (const range of ['^0.1.0', '^0.1.1', '^0.1.2', '^0.2.0', '^0.2.1']) {
       writeFileSync(metadata, JSON.stringify({ ...f.pkg, private: false, dependencies: { '@ts-76/hono-markdown': range } }));
       execFileSync('tar', ['-czf', f.tarball, '-C', path.join(f.root, 'candidate'), ...f.evidence.files.map(file => 'package/' + file)]);
-      if (range === '^0.2.0') inspectTarball(f.tarball);
+      if (range === '^0.2.1') inspectTarball(f.tarball);
       else assert.throws(() => inspectTarball(f.tarball), /fixed common Markdown runtime/);
     }
     const actual = JSON.parse(readFileSync(new URL('../packages/hono-pages/package.json', import.meta.url)));
-    assert.equal(actual.dependencies['@ts-76/hono-markdown'], '^0.2.0');
+    assert.equal(actual.dependencies['@ts-76/hono-markdown'], '^0.2.1');
   } finally { f.cleanup(); }
 });
 
@@ -138,4 +138,13 @@ test('theme CSS is accepted only at known paths and emitted bytes must match pac
     f.evidence.files.push('dist/theme/unexpected.css');writeFileSync(path.join(f.root,'candidate/package/dist/theme/unexpected.css'),'body{}');
     repack();assert.throws(()=>inspectArtifact(f.options),/Unexpected packed file/);
   } finally { f.cleanup(); }
+});
+
+test("Void delegates parser dependency ownership to the common package", () => {
+  const pkg = JSON.parse(readFileSync(new URL("../packages/hono-pages/package.json", import.meta.url)));
+  for (const name of ["markdown-exit", "markdown-it-container"]) {
+    assert.equal(pkg.dependencies?.[name], undefined);
+    assert.equal(pkg.peerDependencies?.[name], undefined);
+    assert.equal(pkg.peerDependenciesMeta?.[name], undefined);
+  }
 });
