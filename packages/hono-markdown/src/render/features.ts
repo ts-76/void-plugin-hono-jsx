@@ -6,7 +6,7 @@ export type MarkdownFeatureConfigurer = (md: MarkdownExit, options: HonoMarkdown
 export type HighlightCode = (code: string, language: string, info: string) => Promise<string>;
 
 export function configureMarkdownFeatures(md: MarkdownExit, options: HonoMarkdownOptions, highlightCode?: HighlightCode) {
-  if (options.highlight !== false && !highlightCode) throw new Error('Hono Markdown: built-in highlighting is Node/build-time only. In Workers, omit highlight or set highlight: false and use renderCodeBlock for application-owned highlighting.');
+  if (options.highlight !== false && !highlightCode) throw new Error('Hono Markdown: module highlighting requires a build-time highlighter. Use renderCodeBlock for article highlighting.');
   for (const [kind, title] of [['tip', 'TIP'], ['info', 'INFO'], ['warning', 'WARNING'], ['danger', 'DANGER'], ['details', 'Details']]) {
     md.use(container, kind, { render(tokens: Parameters<NonNullable<typeof md.renderer.rules.fence>>[0], index: number, _options: unknown, env: Parameters<NonNullable<typeof md.renderer.rules.fence>>[3]) {
       if (tokens[index].nesting !== 1) return kind === 'details' ? '</details>\n' : '</div>\n';

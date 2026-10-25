@@ -1,12 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, writeFileSync, existsSync, realpathSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, realpathSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { parse } from 'yaml';
 import { releaseFixture } from './release-fixture.mjs';
 import { consumerStack, consumerStacks } from '../scripts/consumer-launcher.mjs';
 import { verifyConsumerCandidate } from '../scripts/release/verify-consumer.mjs';
-import { inspectArtifact } from '../scripts/release/gate.mjs';
+import { inspectArtifact, inspectPreparedArtifact, createPlan } from '../scripts/release/gate.mjs';
 
 function fixture() {
   const f = releaseFixture();
@@ -59,24 +59,69 @@ test('candidate mutation, a missing fresh audit or a failed consumer never yield
   }
 });
 
-test('workflow prepares once, covers both supported stacks and leaves stage acceptance in its own run', () => {
+test('workflow prepares once, verifies both stacks in parallel and preserves fresh stage acceptance', () => {
   const workflow = parse(readFileSync(new URL('../.github/workflows/package.yml', import.meta.url), 'utf8'));
-  assert.deepEqual(workflow.on.push.branches, ['main', 'release/**']); assert.ok(Object.hasOwn(workflow.on, 'pull_request')); assert.ok(Object.hasOwn(workflow.on, 'workflow_dispatch'));
+  assert.deepEqual(workflow.on.push.branches, ['main', 'release/**']);
   const jobs = workflow.jobs;
-  assert.equal(jobs.baseline.steps.filter(step => step.run === 'npm run release:prepare').length, 1);
-  assert.ok(!jobs.consumer.steps.some(step => step.run === 'npm run release:prepare'));
-  assert.equal(jobs.consumer.needs, 'baseline');
-  assert.deepEqual(['baseline', ...jobs.consumer.strategy.matrix.stack].sort(), Object.keys(consumerStacks).sort());
+  assert.ok(jobs.prepare.steps.some(step => step.run === 'npm run release:prepare -- --defer-consumer'));
+  assert.equal(jobs.consumer.needs, 'prepare');
+  assert.deepEqual(jobs.consumer.strategy.matrix.stack.sort(), Object.keys(consumerStacks).sort());
+  assert.equal(jobs.consumer.strategy['fail-fast'], false);
   const download = jobs.consumer.steps.find(step => step.uses?.startsWith('actions/download-artifact@'));
-  const upload = jobs.baseline.steps.find(step => step.uses?.startsWith('actions/upload-artifact@'));
+  const upload = jobs.prepare.steps.find(step => step.uses?.startsWith('actions/upload-artifact@'));
   assert.equal(download.with.name, upload.with.name); assert.match(download.with.name, /github\.run_attempt/);
   assert.equal(jobs['required-baseline'].name, 'Pinned framework baseline on Node 24.22.1');
-  assert.deepEqual(jobs['required-baseline'].needs, ['baseline', 'consumer']);
-  assert.match(jobs['required-baseline'].steps[0].run, /needs\.baseline\.result.*needs\.consumer\.result/);
+  assert.deepEqual(jobs['required-baseline'].needs, ['changes', 'prepare', 'consumer']);
   const stage = parse(readFileSync(new URL('../.github/workflows/npm-stage.yml', import.meta.url), 'utf8'));
   assert.ok(stage.jobs.prepare.steps.some(step => step.run === 'npm run release:prepare'));
-  assert.ok(!stage.jobs.prepare.steps.some(step => step.run === 'npm run release:verify-consumer'));
-  assert.match(stage.jobs.stage.steps.find(step => step.uses?.startsWith('actions/download-artifact@')).with.name, /^accepted-node-.*github\.run_attempt/);
+  assert.ok(!stage.jobs.prepare.steps.some(step => /defer-consumer/.test(step.run || '')));
+});
+
+function pendingFixture() {
+  const f = fixture();
+  f.evidence.validation.externalConsumer = false;
+  f.evidence.consumerStack = null;
+  f.evidence.consumerDependencyReportSha256 = null;
+  rmSync(path.join(f.artifactRoot, 'consumer-dependency-audit.json'));
+  writeFileSync(path.join(f.artifactRoot, 'evidence.json'), JSON.stringify(f.evidence));
+  return f;
+}
+
+test('pending source evidence cannot pass release inspection or planning, even with a caller flag', () => {
+  const f = pendingFixture();
+  try {
+    inspectPreparedArtifact(f.options);
+    assert.throws(() => inspectArtifact({ ...f.options, allowPending: true }));
+    assert.throws(() => createPlan({ ...f.options, allowPending: true }));
+  } finally { f.cleanup(); }
+});
+
+test('both parallel stacks accept the same pending bytes only after their own full consumer', () => {
+  for (const stack of Object.keys(consumerStacks)) {
+    const f = pendingFixture();
+    try {
+      const verified = f.verify(({ env }) => writeFileSync(env.RELEASE_CONSUMER_AUDIT, report), { RELEASE_CONSUMER_STACK: stack });
+      assert.equal(verified.sha256, f.evidence.sha256);
+      assert.equal(verified.validation.externalConsumer, true);
+      assert.equal(verified.consumerStack.name, stack);
+      inspectArtifact(f.options);
+    } finally { f.cleanup(); }
+  }
+});
+
+test('a failed parallel consumer leaves pending evidence unaccepted', () => {
+  for (const failure of ['consumer', 'missing-audit', 'bytes']) {
+    const f = pendingFixture();
+    try {
+      assert.throws(() => f.verify(({ env }) => {
+        if (failure === 'consumer') throw new Error('consumer failed');
+        if (failure === 'missing-audit') return;
+        writeFileSync(env.RELEASE_CONSUMER_AUDIT, report);
+        writeFileSync(f.tarball, 'changed');
+      }, { RELEASE_CONSUMER_STACK: 'baseline' }));
+      assert.throws(() => inspectArtifact(f.options));
+    } finally { f.cleanup(); }
+  }
 });
 
 test('release preparation cannot select historical unsupported frameworks', () => {

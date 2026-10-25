@@ -1,10 +1,10 @@
 import { createContentParser, parseContent, stripByteOrderMark } from './content.ts';
 import type { MarkdownFeatureConfigurer } from './features.ts';
-import type { HonoMarkdownOptions } from './types.ts';
+import type { MarkdownRenderOptions } from './types.ts';
 
 /** Article content only: no YAML, script prelude, component imports or generated modules. */
-export function createArticleRenderer(options: HonoMarkdownOptions, configureFeatures: MarkdownFeatureConfigurer) {
-  const renderOptions = { ...options, highlight: options.highlight ?? false };
+export function createArticleRenderer(options: MarkdownRenderOptions, configureFeatures: MarkdownFeatureConfigurer) {
+  const renderOptions = { ...options, highlight: false };
   const parser = createContentParser(renderOptions, false, configureFeatures);
   return {
     async render(source: string) {

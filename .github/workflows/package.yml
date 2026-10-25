@@ -7,15 +7,35 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref_name }}
   cancel-in-progress: true
 env:
   WRANGLER_SEND_METRICS: 'false'
   VOID_INSPECTOR_PORT: 'false'
   CLOUDFLARE_CF_FETCH_ENABLED: 'false'
 jobs:
-  baseline:
-    name: baseline consumer on Node 24.22.1
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      full: ${{ steps.scope.outputs.full }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.22.1'
+          package-manager-cache: false
+      - id: scope
+        env:
+          CI_EVENT: ${{ github.event_name }}
+          CI_DIFF_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: node scripts/ci-scope.mjs
+  prepare:
+    name: Source checks and one candidate
+    needs: changes
+    if: needs.changes.outputs.full == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -32,30 +52,25 @@ jobs:
         run: npm ci
       - name: Install browser runtime
         run: |
-          # The Azure apt mirror stalled dependency downloads until the job timed out.
           if [ -f /etc/apt/apt-mirrors.txt ]; then
             sudo sed -i 's|http://azure.archive.ubuntu.com/ubuntu|https://archive.ubuntu.com/ubuntu|g' /etc/apt/apt-mirrors.txt
           fi
           npx playwright install --with-deps chromium
-      - name: Validate common source and prepare the baseline-accepted candidate once
-        env:
-          RELEASE_CONSUMER_STACK: baseline
-        run: npm run release:prepare
-      - name: Report disabled publication gates
-        run: npm run release:plan
+      - name: Validate source and pack once; consumer acceptance remains pending
+        run: npm run release:prepare -- --defer-consumer
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: npm-candidate-${{ github.sha }}-baseline-attempt-${{ github.run_attempt }}
+          name: npm-prepared-${{ github.sha }}-attempt-${{ github.run_attempt }}
           path: artifacts/
           retention-days: 7
           if-no-files-found: error
   consumer:
-    name: ${{ matrix.stack }} consumer on Node ${{ matrix.node }}
-    needs: baseline
+    name: ${{ matrix.stack }} consumer on Node 24.22.1
+    needs: prepare
     strategy:
+      fail-fast: false
       matrix:
-        node: ['24.22.1']
-        stack: ['void-1-vp']
+        stack: ['baseline', 'void-1-vp']
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
@@ -68,22 +83,21 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node }}
+          node-version: '24.22.1'
           cache: npm
       - name: Install locked dependencies
         run: npm ci
       - name: Install browser runtime
         run: |
-          # Use the same official Ubuntu mirror as the baseline job.
           if [ -f /etc/apt/apt-mirrors.txt ]; then
             sudo sed -i 's|http://azure.archive.ubuntu.com/ubuntu|https://archive.ubuntu.com/ubuntu|g' /etc/apt/apt-mirrors.txt
           fi
           npx playwright install --with-deps chromium
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
-          name: npm-candidate-${{ github.sha }}-baseline-attempt-${{ github.run_attempt }}
+          name: npm-prepared-${{ github.sha }}-attempt-${{ github.run_attempt }}
           path: artifacts
-      - name: Verify these accepted bytes with this locked consumer
+      - name: Verify the exact prepared bytes and accept only after a fresh consumer audit
         run: npm run release:verify-consumer
       - name: Report disabled publication gates
         run: npm run release:plan
@@ -95,10 +109,21 @@ jobs:
           if-no-files-found: error
   required-baseline:
     name: Pinned framework baseline on Node 24.22.1
-    needs: [baseline, consumer]
+    needs: [changes, prepare, consumer]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - name: Require all reviewed consumer stack results
-        run: test "${{ needs.baseline.result }}" = success && test "${{ needs.consumer.result }}" = success
+        env:
+          SCOPE_RESULT: ${{ needs.changes.result }}
+          FULL: ${{ needs.changes.outputs.full }}
+          PREPARE_RESULT: ${{ needs.prepare.result }}
+          CONSUMER_RESULT: ${{ needs.consumer.result }}
+        run: |
+          test "$SCOPE_RESULT" = success
+          if [ "$FULL" = false ]; then
+            test "$PREPARE_RESULT" = skipped && test "$CONSUMER_RESULT" = skipped
+          else
+            test "$FULL" = true && test "$PREPARE_RESULT" = success && test "$CONSUMER_RESULT" = success
+          fi

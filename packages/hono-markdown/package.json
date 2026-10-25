@@ -28,16 +28,8 @@
       "default": "./dist/compiler/markdown-compiler.js"
     },
     "./render": {
-      "workerd": {
-        "types": "./dist/render/worker.d.ts",
-        "default": "./dist/render/worker.js"
-      },
-      "worker": {
-        "types": "./dist/render/worker.d.ts",
-        "default": "./dist/render/worker.js"
-      },
-      "types": "./dist/compiler/render-markdown.d.ts",
-      "default": "./dist/compiler/render-markdown.js"
+      "types": "./dist/render/index.d.ts",
+      "default": "./dist/render/index.js"
     },
     "./features": {
       "types": "./dist/compiler/markdown-features.d.ts",
@@ -64,11 +56,7 @@
       "default": "./dist/runtime/style-host.js"
     },
     "./theme-content.css": "./dist/theme/content.css",
-    "./theme.css": "./dist/theme/index.css",
-    "./render/worker": {
-      "types": "./dist/render/worker.d.ts",
-      "default": "./dist/render/worker.js"
-    }
+    "./theme.css": "./dist/theme/index.css"
   },
   "dependencies": {
     "@babel/parser": "^7.29.3"

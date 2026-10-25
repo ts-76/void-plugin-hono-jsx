@@ -1,13 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { renderMarkdown as renderNode } from '@ts-76/hono-markdown/render';
-import { createMarkdownRenderer, renderMarkdown } from '@ts-76/hono-markdown/render/worker';
+import { createMarkdownRenderer, renderMarkdown } from '@ts-76/hono-markdown/render';
 
-test('Worker and Node article entries keep the same safe rendering contract', async () => {
+test('the single portable article entry keeps the safe rendering contract', async () => {
   const source = '# **Article**\n\nOne\nTwo\n\n::: tip <img src=x onerror="bad()">\n[bad](javascript:alert%281%29)\n:::\n\n```html\n<script>bad()</script>\n```';
   const options = { breaks: true, headingId: ({ index }) => `post-section-${index + 1}`, renderCodeBlock: async ({ html }) => `<figure class="article-code">${html}</figure>` };
   const worker = await renderMarkdown(source, options);
-  assert.deepEqual(worker, await renderNode(source, options));
   assert.match(worker.html, /One<br>\nTwo/);
   assert.match(worker.html, /<figure class="article-code"><pre><code/);
   assert.doesNotMatch(worker.html, /<script>|<img|href="javascript:/);
@@ -23,19 +21,14 @@ test('Worker renderer resets heading IDs and references across concurrent asynch
   });
 });
 
-test('an undefined optional highlight value retains plain article defaults in both entries', async () => {
-  const options = { highlight: undefined, shiki: { themes: { light: 'not-installed', dark: 'not-installed' } } };
-  const source = '```js\nconst answer = 42;\n```';
-  const worker = await renderMarkdown(source, options);
-  assert.deepEqual(worker, await renderNode(source, options));
-  assert.match(worker.html, /^<pre><code class="language-js">/);
-  assert.doesNotMatch(worker.html, /class="copy"|shiki/);
-  assert.equal(worker.needsCodeCopy, false);
+test('removed Node-only and module options fail explicitly for JavaScript callers', async () => {
+  for (const options of [{ highlight: true }, { highlight: false }, { highlight: undefined }, { shiki: {} }, { clientFrontmatter: false }]) {
+    assert.throws(() => createMarkdownRenderer(options), /not an article option/);
+    await assert.rejects(() => renderMarkdown('# Article', options), /not an article option/);
+  }
 });
 
-test('Worker HTML opt-in remains explicit and built-in highlighting fails with actionable guidance', async () => {
+test('article HTML opt-in remains explicit', async () => {
   assert.match((await renderMarkdown('<b>Trusted</b>')).html, /&lt;b&gt;Trusted/);
   assert.match((await renderMarkdown('<b>Trusted</b>', { html: true })).html, /<b>Trusted<\/b>/);
-  assert.throws(() => createMarkdownRenderer({ highlight: true }), /Node\/build-time only.*renderCodeBlock/);
-  await assert.rejects(() => renderMarkdown('# Article', { highlight: true }), /Node\/build-time only/);
 });

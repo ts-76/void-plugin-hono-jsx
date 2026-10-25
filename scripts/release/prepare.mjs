@@ -9,6 +9,8 @@ import { json, sha256, inside, inspectTarball } from './gate.mjs';
 import { publishDryRun } from './dry-run.mjs';
 import { dependencyAudit } from './dependency-audit.mjs';
 
+assert.ok(process.argv.length === 2 || (process.argv.length === 3 && process.argv[2] === '--defer-consumer'), 'Use --defer-consumer only for parallel package CI');
+const deferConsumer = process.argv[2] === '--defer-consumer';
 const root = process.cwd();
 const policy = json('release-policy.json');
 const pkgRoot = inside(root, policy.packagePath);
@@ -45,7 +47,7 @@ try {
   const files = inspectTarball(tarball);
   const acceptedSha256 = sha256(readFileSync(tarball));
   env.RELEASE_CONSUMER_AUDIT = path.join(output, 'consumer-dependency-audit.json');
-  npm(['run', 'check:consumer', '--', '--tarball', tarball]);
+  if (!deferConsumer) npm(['run', 'check:consumer', '--', '--tarball', tarball]);
   const dryRun = publishDryRun({ npmCli, tarball, distTag: policy.distTag, cwd: root, env });
   writeFileSync(path.join(output, 'dry-run.json'), JSON.stringify(dryRun, null, 2) + '\n');
   assert.equal(sha256(readFileSync(tarball)), acceptedSha256, 'Candidate bytes changed');
@@ -56,12 +58,12 @@ try {
   const evidence = { schema: 2, commit, node: process.version, package: { name: pkg.name, version: pkg.version }, packagePath: policy.packagePath,
     sourceMetadataSha256, candidateMetadataChange: { private: false }, tarball: packed[0].filename, files, sha256: acceptedSha256,
     integrity: 'sha512-' + createHash('sha512').update(bytes).digest('base64'), size: bytes.length,
-    validation: { typecheck: true, build: true, test: true, source: true, history: true, secrets: true, dryRun: true, externalConsumer: true },
+    validation: { typecheck: true, build: true, test: true, source: true, history: true, secrets: true, dryRun: true, externalConsumer: !deferConsumer },
     historyReportSha256: sha256(readFileSync(path.join(output, 'history-audit.json'))),
     dependencyReportSha256: sha256(readFileSync(path.join(output, 'dependency-audit.json'))),
-    consumerDependencyReportSha256: sha256(readFileSync(path.join(output, 'consumer-dependency-audit.json'))),
-    consumerStack: consumerStack(),
+    consumerDependencyReportSha256: deferConsumer ? null : sha256(readFileSync(path.join(output, 'consumer-dependency-audit.json'))),
+    consumerStack: deferConsumer ? null : consumerStack(),
     workflow: process.env.GITHUB_WORKFLOW_REF || null, runId: process.env.GITHUB_RUN_ID || null, runAttempt: process.env.GITHUB_RUN_ATTEMPT || null };
   writeFileSync(path.join(output, 'evidence.json'), JSON.stringify(evidence, null, 2) + '\n');
-  console.log(`Prepared ${pkg.name}@${pkg.version}: ${files.length} files; SHA256 ${evidence.sha256}. No registry upload or approval performed.`);
+  console.log(`${deferConsumer ? "Prepared (consumer verification pending)" : "Accepted"} ${pkg.name}@${pkg.version}: ${files.length} files; SHA256 ${evidence.sha256}. No registry upload or approval performed.`);
 } finally { rmSync(temporary, { recursive: true, force: true }); }

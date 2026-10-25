@@ -70,7 +70,7 @@ test('heading IDs are unique, escaped, validated and avoid authored IDs', async 
 
 test('plain code and custom code output preserve escaping without requiring Shiki initialization', async () => {
   const source = '```html\n<script>bad()</script>\n```\n\n    <img src=x onerror=bad()>\n';
-  const options = { highlight: false, shiki: { themes: { light: 'missing', dark: 'missing' } } };
+  const options = {};
   const plain = await renderMarkdown(source, options);
   assert.match(plain.html, /<pre><code class="language-html">&lt;script&gt;/);
   assert.doesNotMatch(plain.html, /shiki|class="copy"|<script>|<img/);
@@ -83,8 +83,11 @@ test('plain code and custom code output preserve escaping without requiring Shik
   assert.doesNotMatch(custom.html, /<script>|<img/);
 });
 
-test('custom highlighted output uses Shiki without imposing the default wrapper or copy UI', async () => {
-  const result = await renderMarkdown('```js\nconst answer = 42\n```', { highlight: true, renderCodeBlock: ({ html }) => `<section class="article-code">${html}</section>` });
+test('custom article highlighting belongs to the application without default copy UI', async () => {
+  const result = await renderMarkdown('```js\nconst answer = 42\n```', { renderCodeBlock: async ({ code, language }) => {
+    const { codeToHtml } = await import('shiki');
+    return `<section class="article-code">${await codeToHtml(code, { lang: language, theme: 'github-light' })}</section>`;
+  } });
   assert.match(result.html, /<section class="article-code"><pre class="shiki/);
   assert.doesNotMatch(result.html, /class="copy"|<div class="language/);
   assert.equal(result.needsCodeCopy, false);
@@ -95,7 +98,7 @@ test('plain article code needs no scripts, and module options omit unused copy c
   const article = await renderMarkdown(source);
   assert.match(article.html, /^<pre><code class="language-js">/);
   assert.equal(article.needsCodeCopy, false);
-  const highlighted = await renderMarkdown(source, { highlight: true });
+  const highlighted = await compileMarkdown(source);
   assert.match(highlighted.html, /class="copy"/);
   assert.equal(highlighted.needsCodeCopy, true);
   for (const options of [{ highlight: false }, { renderCodeBlock: ({ html }) => html }]) {
