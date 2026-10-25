@@ -102,6 +102,6 @@
     }
   },
   "dependencies": {
-    "@ts-76/hono-markdown": "^0.1.2"
+    "@ts-76/hono-markdown": "^0.2.0"
   }
 }

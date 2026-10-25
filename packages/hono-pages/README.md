@@ -14,7 +14,7 @@ npm install --save-dev void@1.2.1 vite@8.3.4 typescript@7.0.2
 
 The default install uses `latest`. Use `@next` to test a release candidate, or an explicit version for reproducible installs.
 
-Version 0.8.0 accepts known risks in the required Void/Cloudflare tooling: affected undici can terminate a Node development/CLI process on a malformed peer response, and affected Zod can allocate excessive validation issues. Keep dev/preview private, use trusted project configuration and avoid unbounded external inputs. These dependencies remain unfixed; the audit is nonzero. See the [0.8.0 acceptance, exact scope and usage limits](https://github.com/ts-76/void-plugin-hono-jsx/blob/v0.8.0/docs/dependency-security.md).
+Version 0.9.0 accepts known risks in the required Void/Cloudflare tooling: affected undici can terminate a Node development/CLI process on a malformed peer response, and affected Zod can allocate excessive validation issues. Keep dev/preview private, use trusted project configuration and avoid unbounded external inputs. These dependencies remain unfixed; the audit is nonzero. See the [0.9.0 acceptance, exact scope and usage limits](https://github.com/ts-76/void-plugin-hono-jsx/blob/v0.9.0/docs/dependency-security.md).
 
 ## Configure
 
@@ -163,7 +163,7 @@ See the [security policy](https://github.com/ts-76/void-plugin-hono-jsx/blob/mai
 compiler, literal component parsing, metadata context/hooks, CSS and DOM island
 scheduling. It has no Void or Vite dependency. Accepted release checks install the published common dependency; local
 development checks may select a candidate tarball alongside the adapter.
-The adapter requires `@ts-76/hono-markdown@^0.1.2` so installations cannot retain
+The adapter requires `@ts-76/hono-markdown@^0.2.0` so installations cannot retain
 older compilers without the fence-range and island-attribute security fixes.
 
 The Void plugin owns page discovery, layouts, head, loaders, virtual modules and

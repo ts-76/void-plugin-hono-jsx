@@ -91,7 +91,7 @@ Report vulnerabilities [privately](https://github.com/ts-76/void-plugin-hono-jsx
 compiler, literal component parsing, metadata context/hooks, CSS and DOM island
 scheduling. It has no Void or Vite dependency. Accepted release checks install the published common dependency; local
 development checks may select a candidate tarball alongside the adapter.
-The adapter requires `@ts-76/hono-markdown@^0.1.2` so installations cannot retain
+The adapter requires `@ts-76/hono-markdown@^0.2.0` so installations cannot retain
 older compilers without the fence-range and island-attribute security fixes.
 
 The Void plugin owns page discovery, layouts, head, loaders, virtual modules and
