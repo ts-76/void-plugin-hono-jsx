@@ -30,3 +30,11 @@ test('article API has one portable export, without environment-specific aliases'
   assert.equal(manifest.exports['./render/worker'], undefined);
   await assert.rejects(import('@ts-76/hono-markdown/render/worker'), { code: 'ERR_PACKAGE_PATH_NOT_EXPORTED' });
 });
+
+test("Markdown parsers are internal dependencies, not optional consumer peers", async () => {
+  for (const name of ["markdown-exit", "markdown-it-container"]) {
+    assert.ok(manifest.dependencies[name]);
+    assert.equal(manifest.peerDependencies[name], undefined);
+    assert.equal(manifest.peerDependenciesMeta[name], undefined);
+  }
+});
