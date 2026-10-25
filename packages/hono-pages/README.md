@@ -118,8 +118,10 @@ See [static output](https://github.com/ts-76/void-plugin-hono-jsx/blob/main/docs
 Install these peers only when using Markdown:
 
 ```sh
-npm install markdown-exit@1.3.0 yaml@2.9.1 markdown-it-container@4.0.0 shiki@4.5.0 @shikijs/transformers@4.5.0
+npm install yaml@2.9.1 shiki@4.5.0 @shikijs/transformers@4.5.0
 ```
+
+The common package 0.2.1 or newer installs `markdown-exit` and `markdown-it-container` automatically. They do not need app-owned dependency declarations.
 
 Add `voidHonoMarkdown()` from `void-plugin-hono-jsx/markdown/plugin` after `voidHonoJsx()`.
 It supports frontmatter, layouts, loaders, islands, Shiki highlighting, copy buttons and five container types.
@@ -163,8 +165,8 @@ See the [security policy](https://github.com/ts-76/void-plugin-hono-jsx/blob/mai
 compiler, literal component parsing, metadata context/hooks, CSS and DOM island
 scheduling. It has no Void or Vite dependency. Accepted release checks install the published common dependency; local
 development checks may select a candidate tarball alongside the adapter.
-The adapter requires `@ts-76/hono-markdown@^0.2.0` so installations cannot retain
-older compilers without the fence-range and island-attribute security fixes.
+The adapter requires `@ts-76/hono-markdown@^0.2.1` so installations include the internal parser dependencies as well as the
+fence-range and island-attribute security fixes.
 
 The Void plugin owns page discovery, layouts, head, loaders, virtual modules and
 Void's scheduler. Existing `/markdown`, `/markdown/compiler`, `/markdown/client`
