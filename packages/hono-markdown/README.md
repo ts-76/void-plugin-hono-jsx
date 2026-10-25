@@ -44,7 +44,7 @@ Article headings use a `user-content-` prefix by default to reduce collisions
 with application DOM names. A custom `headingId` owns its prefix; use the returned
 `headings[].slug` when building a table of contents.
 
-Install `markdown-exit` and `markdown-it-container` for this entry; YAML is not
+The Markdown parser and containers are installed automatically; YAML is not
 needed for article rendering. Fences use escaped `<pre><code>` by default and
 do not load Shiki or add copy controls. For syntax highlighting, provide
 `renderCodeBlock` and choose a highlighter supported by your runtime. The callback
@@ -95,8 +95,8 @@ uppercase letter, and known HTML event attributes in any case. Other keys, such 
 the same HTML/URL defaults, heading metadata, containers, line-break options and
 async `renderCodeBlock` callback. It does not require Node compatibility and
 does not bundle Node APIs, the module compiler, Babel, YAML, Shiki, Void or Vite.
-Install only `@ts-76/hono-markdown`, `hono`, `markdown-exit` and
-`markdown-it-container` for this use case.
+Install only `@ts-76/hono-markdown` and `hono` for this use case.
+`markdown-exit` and `markdown-it-container` are installed automatically as internal dependencies.
 `@babel/parser` is still installed as a regular dependency because the module
 compiler needs it and the Void adapter ships `@ts-76/hono-markdown` as its only
 dependency; article and browser entries never import or bundle it. Only the CSS

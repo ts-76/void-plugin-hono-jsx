@@ -8,7 +8,7 @@ import { Miniflare, convertV4MiniflareOptions } from 'miniflare';
 
 const repo = resolve(import.meta.dirname, '..');
 
-// Test tools stay in the repository; the packed consumer installs only article peers.
+// Test tools stay in the repository; the packed consumer installs only the common package and Hono.
 export async function verifyMarkdownWorkerConsumer(root) {
   const require = createRequire(join(root, 'package.json'));
   for (const name of ['yaml', 'shiki', '@shikijs/transformers', 'void', 'vite', 'miniflare', 'esbuild']) {

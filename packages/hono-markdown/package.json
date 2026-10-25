@@ -1,6 +1,6 @@
 {
   "name": "@ts-76/hono-markdown",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "type": "module",
   "sideEffects": [
     "*.css"
@@ -59,24 +59,18 @@
     "./theme.css": "./dist/theme/index.css"
   },
   "dependencies": {
-    "@babel/parser": "^7.29.3"
+    "@babel/parser": "^7.29.3",
+    "markdown-exit": "^1.3.0",
+    "markdown-it-container": "^4.0.0"
   },
   "peerDependencies": {
     "hono": ">=4.13.13 <5.0.0",
-    "markdown-exit": ">=1.3.0 <2.0.0",
     "yaml": ">=2.9.1 <3.0.0",
-    "markdown-it-container": ">=4.0.0 <5.0.0",
     "shiki": ">=4.5.0 <5.0.0",
     "@shikijs/transformers": ">=4.5.0 <5.0.0"
   },
   "peerDependenciesMeta": {
-    "markdown-exit": {
-      "optional": true
-    },
     "yaml": {
-      "optional": true
-    },
-    "markdown-it-container": {
       "optional": true
     },
     "shiki": {
