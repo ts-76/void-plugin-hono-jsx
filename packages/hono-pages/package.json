@@ -1,6 +1,6 @@
 {
   "name": "void-plugin-hono-jsx",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "private": true,
   "description": "Hono JSX Pages adapter for Void",
   "type": "module",

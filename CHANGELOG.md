@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.9.0](https://github.com/ts-76/void-plugin-hono-jsx/compare/v0.8.0...v0.9.0) (2026-10-25)
+
+
+### ⚠ BREAKING CHANGES
+
+* unify portable article rendering and streamline CI ([#156](https://github.com/ts-76/void-plugin-hono-jsx/issues/156))
+
+### Refactoring
+
+* unify portable article rendering and streamline CI ([#156](https://github.com/ts-76/void-plugin-hono-jsx/issues/156)) ([515fc86](https://github.com/ts-76/void-plugin-hono-jsx/commit/515fc862f1438bd62f3236a0e244a1977ad6a339))
+
 ## [0.8.0](https://github.com/ts-76/void-plugin-hono-jsx/compare/v0.7.0...v0.8.0) (2026-10-24)
 
 
