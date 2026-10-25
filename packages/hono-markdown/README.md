@@ -2,7 +2,7 @@
 
 Markdown module compiler, request-time article renderer and browser island runtime, independent of Void and deck/document route conventions. The Void adapter and deck host consume this package through their own adapters.
 
-Use `/compiler` for readMarkdownModule / compileMarkdownModule (or the strict static API), the root export for the shared MarkdownContext and hooks, and `/client` for hydrateMarkdownIslands. The Markdown parser and container peers are used by article rendering and compilation; YAML and Shiki are needed only for the corresponding module/highlighting features. No Void or Vite peer is required.
+Use `/compiler` for readMarkdownModule / compileMarkdownModule (or the strict static API), the root export for the shared MarkdownContext and hooks, and `/client` for hydrateMarkdownIslands. The Markdown parser and container are regular dependencies used by article rendering and compilation; YAML and Shiki are needed only for the corresponding module/highlighting features. No Void or Vite peer is required.
 
 Module compilation reuses one parser and lazy Shiki highlighter per `options` object. Pass the same object for every document in a build, and do not mutate it after the first call.
 
