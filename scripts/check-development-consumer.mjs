@@ -38,7 +38,7 @@ export async function checkDevelopmentConsumer({ page, origin, consumer, assertR
     await page.waitForFunction(() => document.querySelector('#count')?.textContent === '13');
     // Requests may arrive while the module runner is replacing a page/loader.
     // Every response must retain the matching JSX and Pages provider identity.
-    for (let revision = 0; revision < 6; revision++) {
+    for (let revision = 0; revision < 12; revision++) {
       const heading = `Reload revision ${revision}`;
       await Promise.all([
         writeFile(source, originalSource.replace('Clean package consumer', heading)),
