@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.2](https://github.com/ts-76/void-plugin-hono-jsx/compare/v0.9.1...v0.9.2) (2026-10-25)
+
+
+### Release Automation
+
+* pin remaining GitHub Actions to commit SHAs ([#162](https://github.com/ts-76/void-plugin-hono-jsx/issues/162)) ([c7689d2](https://github.com/ts-76/void-plugin-hono-jsx/commit/c7689d212299d4baa8a08e8b72aaec696f60761a))
+
 ## [0.9.1](https://github.com/ts-76/void-plugin-hono-jsx/compare/v0.9.0...v0.9.1) (2026-10-25)
 
 
