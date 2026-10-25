@@ -59,9 +59,21 @@ Automated checks allocate temporary directories and stop their own servers.
 `KEEP_CONSUMER_FIXTURE=1` retains the consumer for debugging; remove it afterward.
 Keep logs, screenshots, caches and tarballs out of Git. Include concise sanitized results and CI links in PRs.
 
-The [package workflow](../.github/workflows/package.yml) prepares one baseline-accepted archive.
-The Vite Plus job downloads it, verifies source/run/attempt/digests, runs its own full consumer and fresh audit, then rechecks the bytes.
-Both jobs are required.
+The [package workflow](../.github/workflows/package.yml) runs source checks and prepares one archive with consumer acceptance pending.
+Plain Vite and Vite Plus jobs download the same bytes and run in parallel. Each
+checks source/run/attempt/digests, runs its own full consumer and fresh audit,
+then marks its own evidence accepted. Pending evidence cannot pass release
+inspection or planning. Both stacks are required before the stable required
+status succeeds.
+
+Only PRs changing prose `.md` files exclusively under `docs/` skip packed browser
+consumers. Dependency-security and release-procedure docs still require full
+checks; packaged README, changelogs, fixtures, code and unknown paths do too.
+Main pushes and manual runs always use full validation. A failed scope check or
+missing/cancelled consumer result fails the required status.
+Publisher checks run on PRs and main rather than also duplicating feature pushes;
+stale validation runs on the same branch are cancelled. The independent common
+package workflow retains its package and workerd checks.
 
 Artifacts use `npm-candidate-<sha>-<stack>-attempt-<attempt>` names.
 `evidence.json.consumerStack` identifies the fixture, launcher and expected host.

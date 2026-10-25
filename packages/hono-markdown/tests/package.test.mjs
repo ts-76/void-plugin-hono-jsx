@@ -8,7 +8,7 @@ const manifest = JSON.parse(await readFile(new URL('../package.json', import.met
 test('only CSS exports are side effects, so unused JavaScript entries are tree-shaken', async () => {
   assert.deepEqual(manifest.sideEffects, ['*.css']);
   const result = await build({
-    stdin: { contents: "import '@ts-76/hono-markdown/theme.css';\nimport { renderMarkdown } from '@ts-76/hono-markdown/render/worker';\nimport { hydrateMarkdownIslands } from '@ts-76/hono-markdown/client';\nexport const kept = 1;", resolveDir: import.meta.dirname, sourcefile: 'entry.mjs' },
+    stdin: { contents: "import '@ts-76/hono-markdown/theme.css';\nimport { renderMarkdown } from '@ts-76/hono-markdown/render';\nimport { hydrateMarkdownIslands } from '@ts-76/hono-markdown/client';\nexport const kept = 1;", resolveDir: import.meta.dirname, sourcefile: 'entry.mjs' },
     bundle: true, format: 'esm', platform: 'browser', write: false, outdir: 'out', metafile: true, logLevel: 'silent',
     external: ['hono', 'hono/*', 'markdown-exit', 'markdown-it-container'],
   });
@@ -23,4 +23,10 @@ test('every subpath export exposes types and a default condition', () => {
     if (typeof target === 'string') { assert.match(subpath, /\.css$/); continue; }
     assert.ok(target.types && target.default, subpath);
   }
+});
+
+test('article API has one portable export, without environment-specific aliases', async () => {
+  assert.deepEqual(manifest.exports['./render'], { types: './dist/render/index.d.ts', default: './dist/render/index.js' });
+  assert.equal(manifest.exports['./render/worker'], undefined);
+  await assert.rejects(import('@ts-76/hono-markdown/render/worker'), { code: 'ERR_PACKAGE_PATH_NOT_EXPORTED' });
 });

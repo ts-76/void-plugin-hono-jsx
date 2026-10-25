@@ -39,7 +39,12 @@ export function metadataBlockers(pkg, policy, { ref, changelog, license }) {
   require(pkg.publishConfig?.registry === registry && pkg.publishConfig?.access === 'public' && pkg.publishConfig?.tag === policy.distTag && Object.keys(pkg.publishConfig).length === 3, 'publish-config');
   return blockers;
 }
-export function inspectArtifact({ root = process.cwd(), artifactRoot = path.join(root, 'artifacts'), commit }) {
+export function inspectArtifact(options) { return inspectCandidate(options, false); }
+
+// Pending evidence is usable only to start a consumer check, never a release plan.
+export function inspectPreparedArtifact(options) { return inspectCandidate(options, true); }
+
+function inspectCandidate({ root = process.cwd(), artifactRoot = path.join(root, 'artifacts'), commit }, allowPending) {
   const policy = json(path.join(root, 'release-policy.json'));
   const pkgRoot = inside(root, policy.packagePath);
   const pkg = json(path.join(pkgRoot, 'package.json'));
@@ -55,10 +60,16 @@ export function inspectArtifact({ root = process.cwd(), artifactRoot = path.join
   const bytes = readFileSync(tarball);
   assert.equal(sha256(bytes), evidence.sha256, 'Tarball changed');
   assert.equal(evidence.integrity, `sha512-${createHash('sha512').update(bytes).digest('base64')}`, 'Tarball integrity changed');
-  for (const [file, digest] of [['history-audit.json', evidence.historyReportSha256], ['dependency-audit.json', evidence.dependencyReportSha256], ['consumer-dependency-audit.json', evidence.consumerDependencyReportSha256]]) {
+  const pending = allowPending && evidence.validation?.externalConsumer === false;
+  const reports = [['history-audit.json', evidence.historyReportSha256], ['dependency-audit.json', evidence.dependencyReportSha256]];
+  if (pending) {
+    assert.equal(evidence.consumerDependencyReportSha256, null, 'Pending candidates cannot claim a consumer audit');
+    assert.equal(evidence.consumerStack, null, 'Pending candidates cannot claim a consumer stack');
+  } else reports.push(['consumer-dependency-audit.json', evidence.consumerDependencyReportSha256]);
+  for (const [file, digest] of reports) {
     assert.equal(sha256(readFileSync(path.join(artifactRoot, file))), digest, `Audit report changed: ${file}`);
   }
-  assert.deepEqual(evidence.validation, { typecheck: true, build: true, test: true, source: true, history: true, secrets: true, dryRun: true, externalConsumer: true });
+  assert.deepEqual(evidence.validation, { typecheck: true, build: true, test: true, source: true, history: true, secrets: true, dryRun: true, externalConsumer: !pending });
   const { files, contents } = inspectArchive(bytes, evidence.files);
   const packed = JSON.parse(contents.get('package.json'));
   assert.deepEqual(packed, { ...pkg, private: false }, 'Packed metadata changed');

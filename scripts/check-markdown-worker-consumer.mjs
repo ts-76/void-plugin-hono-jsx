@@ -14,11 +14,15 @@ export async function verifyMarkdownWorkerConsumer(root) {
   for (const name of ['yaml', 'shiki', '@shikijs/transformers', 'void', 'vite', 'miniflare', 'esbuild']) {
     assert.throws(() => require.resolve(name), `${name} must not be installed in the article consumer`);
   }
-  const workerEntry = '@ts-76/hono-markdown/render/worker';
+  const workerEntry = '@ts-76/hono-markdown/render';
   const typeSource = `import { createMarkdownRenderer } from '${workerEntry}';
 const renderer = createMarkdownRenderer({ breaks: true, headingId: ({ index }) => 'post-section-' + (index + 1) });
-// @ts-expect-error The Worker entry intentionally excludes built-in Node highlighting.
+// @ts-expect-error The portable article entry excludes built-in highlighting.
 createMarkdownRenderer({ highlight: true });
+// @ts-expect-error Module options are excluded from article rendering.
+createMarkdownRenderer({ clientFrontmatter: false });
+// @ts-expect-error Shiki is application-owned for article rendering.
+createMarkdownRenderer({ shiki: {} });
 export default { async fetch(request: Request) { return new Response((await renderer.render(await request.text())).html); } };
 `;
 
@@ -32,7 +36,7 @@ const renderer = createMarkdownRenderer({
 const app = new Hono();
 app.get('/environment', c => c.json({ process: typeof process, Buffer: typeof Buffer }));
 app.post('/default', async c => c.json(await renderMarkdown(await c.req.text())));
-app.post('/optional', async c => c.json(await renderMarkdown(await c.req.text(), { highlight: undefined, shiki: { themes: { light: 'not-installed', dark: 'not-installed' } } })));
+app.post('/optional', async c => c.json(await renderMarkdown(await c.req.text())));
 app.post('/trusted', async c => c.json(await renderMarkdown(await c.req.text(), { html: true })));
 app.post('/cms/article', async c => {
   const response = await c.env.CMS.fetch('https://cms.invalid/article', { method: 'POST', body: await c.req.text() });
@@ -58,8 +62,6 @@ export default app;
   ];
   const entries = [
     { entry: workerEntry, conditions: [] },
-    { entry: '@ts-76/hono-markdown/render', conditions: ['workerd'] },
-    { entry: '@ts-76/hono-markdown/render', conditions: ['worker'] },
   ];
   for (const { entry, conditions } of entries) {
     await writeFile(join(root, 'worker-types.ts'), typeSource.replace(workerEntry, entry));
@@ -73,7 +75,7 @@ export default app;
       absWorkingDir: root, bundle: true, platform: 'browser', format: 'esm', conditions,
       write: false, metafile: true, logLevel: 'silent',
     });
-    assert.ok(Object.keys(bundle.metafile.inputs).some(path => path.endsWith('hono-markdown/dist/render/worker.js')));
+    assert.ok(Object.keys(bundle.metafile.inputs).some(path => path.endsWith('hono-markdown/dist/render/index.js')));
     const forbidden = Object.keys(bundle.metafile.inputs).filter(path => /(?:node:|\/dist\/compiler\/|\/node_modules\/(?:@babel\/|shiki\/|@shikijs\/|yaml\/|void\/|vite\/|void-plugin-hono-jsx\/))/.test('/' + path));
     assert.deepEqual(forbidden, [], 'The Worker graph must exclude Node/build-only dependencies');
     for (const output of Object.values(bundle.metafile.outputs)) assert.deepEqual(output.imports, [], 'The Worker must be self-contained');
@@ -117,7 +119,7 @@ export default app;
       assert.match((await render('/trusted', '<b>Trusted</b>')).html, /<b>Trusted<\/b>/);
       const unsupported = await mf.dispatchFetch('https://article.invalid/highlight');
       assert.equal(unsupported.status, 400);
-      assert.match(await unsupported.text(), /Node\/build-time only.*renderCodeBlock/);
+      assert.match(await unsupported.text(), /not an article option.*renderCodeBlock/);
       console.log(JSON.stringify({ workerArticleConsumer: true, entry, conditions, nodeCompat: false, cmsServiceBinding: true, concurrentRequests: 12, attackCases: attackCases.length, workerTypesWithoutNode: true, forbiddenBundleInputs: forbidden, bundleBytes: bundle.outputFiles[0].contents.length }));
     } finally {
       await mf.dispose();

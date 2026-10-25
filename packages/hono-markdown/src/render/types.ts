@@ -5,7 +5,7 @@ export type MarkdownCodeBlock = {
   code: string;
   language: string;
   info: string;
-  /** Escaped <pre><code> output, highlighted unless highlight is false. */
+  /** Article: escaped <pre><code>. Trusted compiler: highlighted unless disabled. */
   html: string;
 };
 
@@ -29,3 +29,7 @@ export type HonoMarkdownOptions = {
    */
   clientFrontmatter?: boolean | readonly string[];
 };
+
+/** Portable article options. Module/highlighter configuration belongs to /compiler. */
+export type MarkdownRenderOptions = Pick<HonoMarkdownOptions,
+  'html' | 'breaks' | 'linkify' | 'headingId' | 'renderCodeBlock'>;

@@ -15,8 +15,9 @@ Module compilation serializes one island context per document on its `.void-md` 
 ## Article content
 
 Use `@ts-76/hono-markdown/render` for CMS article text or other content that must
-not become an executable module. For Cloudflare Workers, use the explicit
-`@ts-76/hono-markdown/render/worker` entry described below. Neither article entry extracts YAML frontmatter,
+not become an executable module. This single entry runs in Cloudflare Workers
+and Node with the same implementation and options, without special bundler
+conditions or Node compatibility flags. It does not extract YAML frontmatter,
 interpret a leading `<script>`, resolve component imports, or emit client code.
 Raw HTML is escaped by default, including HTML in container titles. Markdown
 links and images allow relative/fragment URLs and `http`, `https`, `mailto` and
@@ -36,8 +37,7 @@ const { html, headings } = await articles.render(articleBody);
 ```
 
 `renderMarkdown(source, options)` provides the same behavior for a single call.
-Reuse `createMarkdownRenderer()` for repeated rendering; the Node entry also shares a lazy Shiki
-instance. Heading numbering and duplicate detection reset for every document,
+Reuse `createMarkdownRenderer()` for repeated rendering. Heading numbering and duplicate detection reset for every document,
 including concurrent calls. Custom heading IDs are escaped, validated and given
 suffixes when they collide with another heading or an authored HTML ID.
 Article headings use a `user-content-` prefix by default to reduce collisions
@@ -46,14 +46,13 @@ with application DOM names. A custom `headingId` owns its prefix; use the return
 
 Install `markdown-exit` and `markdown-it-container` for this entry; YAML is not
 needed for article rendering. Fences use escaped `<pre><code>` by default and
-do not load Shiki or add copy controls. Set `highlight: true` and install the
-optional `shiki` / `@shikijs/transformers` peers for highlighted output. The
-default highlighted markup uses the existing theme and copy controls:
-`needsCodeCopy` indicates whether the host should include `markdownCopyCode`
-from `/copy` in its client entry. A custom `renderCodeBlock` owns its markup and
-client behavior; it receives escaped HTML, the original code, language and info
-string, and can return a string or Promise. Indented code also reaches this
-callback, as unhighlighted text.
+do not load Shiki or add copy controls. For syntax highlighting, provide
+`renderCodeBlock` and choose a highlighter supported by your runtime. The callback
+receives escaped HTML, the original code, language and info string, and can return
+a string or Promise. Indented code also reaches it as language `text`.
+`needsCodeCopy` is always `false` for articles; the application owns custom markup,
+CSS and any copy behavior. Built-in Shiki and copy controls remain available for
+trusted modules through `/compiler`.
 
 ## Options and trust boundaries
 
@@ -63,9 +62,9 @@ callback, as unhighlighted text.
 | `breaks` | `false` | `false` |
 | `linkify` | `true` | `true` |
 | `headingId` | Text-based unique IDs with `user-content-` prefix | Text-based unique IDs |
-| `highlight` | `false` | `true` |
+| `highlight` | Not an article option | `true` |
 | `renderCodeBlock` | Ordinary escaped code | Theme markup and copy controls |
-| `shiki.themes` | Used with `highlight: true` | `github-light` / `github-dark` |
+| `shiki.themes` | Not an article option | `github-light` / `github-dark` |
 
 `html: true` is an explicit opt-in for trusted HTML. It does **not** sanitize
 scripts, event attributes or URLs inside that HTML. An application that needs
@@ -92,7 +91,7 @@ uppercase letter, and known HTML event attributes in any case. Other keys, such 
 
 ## Cloudflare Workers and CMS bodies
 
-`@ts-76/hono-markdown/render/worker` converts article text at request time with
+`@ts-76/hono-markdown/render` converts article text at request time with
 the same HTML/URL defaults, heading metadata, containers, line-break options and
 async `renderCodeBlock` callback. It does not require Node compatibility and
 does not bundle Node APIs, the module compiler, Babel, YAML, Shiki, Void or Vite.
@@ -106,7 +105,7 @@ exports are marked as side effects.
 ```ts
 import { Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
-import { createMarkdownRenderer } from '@ts-76/hono-markdown/render/worker';
+import { createMarkdownRenderer } from '@ts-76/hono-markdown/render';
 
 const articles = createMarkdownRenderer({
   breaks: true,
@@ -128,18 +127,10 @@ CMS authentication, fetch errors, body/response size limits and article CSS.
 The renderer can be shared across requests: per-article heading IDs and link
 references are isolated, including concurrent asynchronous rendering.
 
-Bundlers using the `workerd` or `worker` export condition also select this
-implementation for the existing `/render` import. Use `/render/worker` when the
-bundler's export conditions are unknown; it always selects the portable entry.
-Node's default `/render` export keeps its existing optional Shiki behavior.
-
-The Worker entry defaults to escaped plain code. Built-in `highlight: true` is
-Node/build-time only and is rejected explicitly by the Worker entry. For
-request-time highlighting, provide an application-owned `renderCodeBlock`
-callback and choose a Worker-compatible highlighter with the languages/themes
-your application needs. The library does not pull the full optional Shiki
-dependency graph into the Worker. `/parser`, `/compiler`, `/features`,
-`/components` and `/resolve-component` remain build-time APIs.
+The `/render` export always uses the portable renderer. No conditional export or
+Node-only implementation is selected. Use `renderCodeBlock` for application-owned
+highlighting and select only the languages/themes your Worker needs. `/parser`,
+`/compiler`, `/features`, `/components` and `/resolve-component` remain build-time APIs.
 
 CI tests a packed, minimal consumer in workerd with both [Node compatibility](https://developers.cloudflare.com/workers/runtime-apis/nodejs/)
 flags disabled, a local CMS service binding, parallel requests and hostile
@@ -152,6 +143,16 @@ does not implement Marked's tokenizer/extension ecosystem or promise identical
 HTML for every Markdown input. Validate the site's existing article fixtures
 and CSS before replacing its renderer.
 
-## 0.1.2 compatibility notes
+## Migrating from 0.1.2
 
-This release adds request-time article rendering in Cloudflare Workers through `/render/worker`. Bundlers using the `workerd` or `worker` export condition also select that implementation for `/render`. Built-in `highlight: true` is Node/build-time only; Worker applications can use escaped plain code or an application-owned `renderCodeBlock` callback. Node imports retain optional Shiki support. An explicit `highlight: undefined` now keeps the documented plain-code default in both environments. Existing compiler, client islands and adapter APIs remain compatible.
+Article rendering now has one portable API. Change imports from `/render/worker`
+to `/render`; the former entry is removed. Remove `highlight` and `shiki` from
+article options, including `highlight: false` or `undefined`. For highlighted
+articles, move the highlighter into `renderCodeBlock`; it receives escaped plain
+code in `html`, rather than pre-highlighted markup. These removed options fail
+explicitly for JavaScript callers as well as in TypeScript. Use
+`MarkdownRenderOptions` for article option types. Module-only `clientFrontmatter`
+is also rejected by article rendering.
+
+Trusted `/compiler` options and Shiki output, client islands and host adapter
+configuration are unchanged.
