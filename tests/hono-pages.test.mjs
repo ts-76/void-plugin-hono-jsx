@@ -26,6 +26,37 @@ async function withPages(files, check, options) {
 
 const page = 'export default function Page() { return <p>Example</p>; }';
 
+for (const consumer of ['server', 'client']) {
+  test(`${consumer} page edits keep Vite server dispatch and browser document resets separate`, async () => {
+    await withPages({ 'index.tsx': page }, async (plugin) => {
+      await plugin.buildStart();
+      const file = join(process.cwd(), 'pages/index.tsx');
+      const changed = { id: file };
+      const renderer = { id: plugin.resolveId('virtual:void-pages-renderer') };
+      const client = { id: plugin.resolveId('virtual:void-pages-client') };
+      const invalidated = [];
+      const sent = [];
+      plugin.environment = {
+        mode: 'dev', config: { consumer },
+        moduleGraph: {
+          getModuleById: id => [renderer, client].find(module => module.id === id),
+          invalidateModule: module => invalidated.push(module),
+        },
+        hot: { send: message => sent.push(message) },
+      };
+      const result = await plugin.hotUpdate({ file, type: 'update', modules: [changed], timestamp: 123 });
+      assert.deepEqual(invalidated, [changed, renderer, client]);
+      if (consumer === 'server') {
+        assert.equal(result, undefined, 'Vite must dispatch the normal server update');
+        assert.deepEqual(sent, [], 'No premature Worker cache reset');
+      } else {
+        assert.deepEqual(result, []);
+        assert.deepEqual(sent, [{ type: 'full-reload' }]);
+      }
+    });
+  });
+}
+
 test('development SSR captures page/layout modules with providers and excludes browser-only components', async () => {
   await withPages({
     'index.tsx': page,

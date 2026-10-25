@@ -112,8 +112,13 @@ export function voidHonoJsx(options: HonoJsxOptions = {}): Plugin[] {
         const module = this.environment.moduleGraph.getModuleById(`\0${id}`);
         if (module) this.environment.moduleGraph.invalidateModule(module, invalidated, timestamp, true);
       }
-      this.environment.hot.send({ type: 'full-reload' });
-      return [];
+      if (this.environment.config.consumer === 'client') {
+        this.environment.hot.send({ type: 'full-reload' });
+        return [];
+      }
+      // Let Vite dispatch server updates after all hooks finish. A manual
+      // full-reload here clears the Worker runner while related page/loader
+      // imports are still updating, mixing Hono request/helper generations.
     },
     resolveId(id) {
       if (id === rendererId || id === clientId) return `\0${id}`;

@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.9.0](https://github.com/ts-76/void-plugin-hono-jsx/compare/v0.8.0...v0.9.0) (2026-10-25)
+
+
+### ⚠ BREAKING CHANGES
+
+* unify portable article rendering and streamline CI ([#156](https://github.com/ts-76/void-plugin-hono-jsx/issues/156))
+
+### Markdown dependency and release conditions
+
+* Fix concurrent development SSR during page/loader edits by keeping server HMR dispatch under Vite. Browser edits still reload the document. Expand the packed consumer regression to twelve concurrent-update revisions.
+* Require @ts-76/hono-markdown ^0.2.0: article rendering now uses one portable /render entry. Remove /render/worker imports and Node-only highlight/shiki article options; use renderCodeBlock for custom highlighting. Trusted compiler and adapter APIs retain Shiki support.
+* Record owner acceptance of the existing Void/Cloudflare undici and Zod risks for 0.9.0 only, with trusted configuration, private dev/preview, bounded input and exact dependency/advisory checks. These dependencies remain unfixed and consumer audits are nonzero.
+
+### Refactoring
+
+* unify portable article rendering and streamline CI ([#156](https://github.com/ts-76/void-plugin-hono-jsx/issues/156)) ([515fc86](https://github.com/ts-76/void-plugin-hono-jsx/commit/515fc862f1438bd62f3236a0e244a1977ad6a339))
+
 ## [0.8.0](https://github.com/ts-76/void-plugin-hono-jsx/compare/v0.7.0...v0.8.0) (2026-10-24)
 
 
