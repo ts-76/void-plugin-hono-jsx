@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.9.1](https://github.com/ts-76/void-plugin-hono-jsx/compare/v0.9.0...v0.9.1) (2026-10-25)
+
+
+### Bug Fixes
+
+* delegate Markdown parser installation to common dependencies ([#160](https://github.com/ts-76/void-plugin-hono-jsx/issues/160)) ([d144d30](https://github.com/ts-76/void-plugin-hono-jsx/commit/d144d300755d1786794e1d827d67bb2292ea318a))
+* **markdown:** install parser dependencies automatically ([#159](https://github.com/ts-76/void-plugin-hono-jsx/issues/159)) ([0e30db7](https://github.com/ts-76/void-plugin-hono-jsx/commit/0e30db73a50fb98e1eee82609c064d6b65488b82))
+
 ## [0.9.0](https://github.com/ts-76/void-plugin-hono-jsx/compare/v0.8.0...v0.9.0) (2026-10-25)
 
 
