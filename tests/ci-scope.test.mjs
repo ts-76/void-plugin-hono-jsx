@@ -20,6 +20,7 @@ test('publisher avoids duplicate feature pushes while preserving required PR and
   assert.ok(Object.hasOwn(workflow.on, 'workflow_dispatch'));
   assert.ok(workflow.jobs.rust);
   assert.equal(workflow.concurrency['cancel-in-progress'], true);
+  assert.match(workflow.concurrency.group, /head\.repo\.full_name/);
 });
 
 test('the required aggregate rejects failed, cancelled and missing checks', () => {

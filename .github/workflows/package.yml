@@ -7,7 +7,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref_name }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.head.repo.full_name || github.repository }}-${{ github.event.pull_request.head.ref || github.ref_name }}
   cancel-in-progress: true
 env:
   WRANGLER_SEND_METRICS: 'false'
@@ -26,7 +26,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24.22.1'
-          package-manager-cache: false
       - id: scope
         env:
           CI_EVENT: ${{ github.event_name }}
