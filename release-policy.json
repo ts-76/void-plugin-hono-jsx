@@ -29,14 +29,14 @@
   "publisherVersion": "11.21.1",
   "consumerRiskAcceptance": {
     "schema": 1,
-    "packageVersion": "0.9.0",
+    "packageVersion": "0.9.1",
     "approvedBy": "ts-76",
     "approvedOn": "2026-10-25",
-    "decision": "Owner explicitly accepts the reachable undici availability failure and remaining undici/Zod consumer risks for 0.9.0 only; see docs/dependency-security.md.",
+    "decision": "Owner explicitly accepts the unchanged reachable undici availability failure and remaining undici/Zod consumer risks for 0.9.1 only; trusted configuration, private dev/preview, bounded input and exact dependency/advisory checks remain mandatory.",
     "node": "24.22.1",
     "voidPeer": ">=1.2.1 <1.3.0",
     "lockfiles": {
-      "package-lock.json": "e2f9cf3528a725d02c625174009bcc7dad6cb54be13c9f48c4a3594b83d99d8d",
+      "package-lock.json": "c153ee8ae1a62838055551516a90800db3dc12fc86894ff9a67cad1afa073904",
       "fixtures/consumer-void-1-vite/package-lock.json": "06edf0ba9b2929448fd47301cd36cd6a4157a7b3c173024eb9e44528029f490d",
       "fixtures/consumer-void-1-vp/package-lock.json": "09e9d1ad13f674ca740ca82c18f4224be6446b9906ffa9bf2fe9d555ee4944b2"
     },

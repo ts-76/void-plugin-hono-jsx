@@ -3,6 +3,11 @@
 ## [0.9.1](https://github.com/ts-76/void-plugin-hono-jsx/compare/v0.9.0...v0.9.1) (2026-10-25)
 
 
+### Dependency ownership and release conditions
+
+* Require common Markdown ^0.2.1. It automatically installs markdown-exit and markdown-it-container; applications no longer need to add either parser directly. YAML and highlighting remain optional peers.
+* Record the owner's acceptance of the unchanged Void/Cloudflare undici and Zod risks for 0.9.1 only, under trusted configuration, private dev/preview, bounded inputs and exact lock/advisory checks. Consumer audits remain nonzero; the fixed publisher retains its zero-finding gate.
+
 ### Bug Fixes
 
 * delegate Markdown parser installation to common dependencies ([#160](https://github.com/ts-76/void-plugin-hono-jsx/issues/160)) ([d144d30](https://github.com/ts-76/void-plugin-hono-jsx/commit/d144d300755d1786794e1d827d67bb2292ea318a))
