@@ -154,5 +154,11 @@ explicitly for JavaScript callers as well as in TypeScript. Use
 `MarkdownRenderOptions` for article option types. Module-only `clientFrontmatter`
 is also rejected by article rendering.
 
+When using Void, upgrade `void-plugin-hono-jsx` to 0.9.0 or newer together with
+this package. Adapter 0.8.x requires the 0.1.x common runtime; installing 0.2.x
+alongside it can create two runtime/context instances. All Markdown hosts in one
+app must resolve the same common runtime. Hono＋Vite and HonoX deck adapters can
+use 0.2.x directly.
+
 Trusted `/compiler` options and Shiki output, client islands and host adapter
 configuration are unchanged.
