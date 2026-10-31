@@ -12,26 +12,74 @@ export function extractMarkdown(source: string) {
   const body = match ? source.slice(match[0].length) : source;
   const imports = findIslandImports(script, 'markdown-script.ts');
   const parsed = parseSync('markdown-script.ts', script);
-  if (parsed.errors.length) throw new Error('Hono Markdown: invalid script: ' + parsed.errors.map(error => error.message).join('; '));
-  const declarations = parsed.program.body.filter(node => node.type === 'ImportDeclaration');
-  const key = (attribute: NonNullable<(typeof declarations)[number]['attributes']>[number]) => 'name' in attribute.key ? attribute.key.name : attribute.key.value;
-  const attributed = declarations.filter(node => node.attributes?.some(attribute => key(attribute) === 'island'));
-  if (attributed.length !== imports.length) throw new Error('Hono Markdown: use one default component import with exactly one island attribute.');
-  const staticImports = declarations.filter(node => node.attributes?.some(attribute => key(attribute) === 'component')).map(node => {
-    if (node.attributes!.length !== 1 || node.attributes![0].value.value !== 'static' || node.specifiers.length !== 1 || node.specifiers[0].type !== 'ImportDefaultSpecifier' || node.importKind === 'type' || !/^[A-Z]\w*$/.test(node.specifiers[0].local.name)) throw new Error('Hono Markdown: use one default component import with { component: "static" }.');
-    return { start: node.start!, end: node.end!, specifier: node.source.value, importName: node.specifiers[0].local.name };
-  });
-  const graphSource = [...imports.map(entry => script.slice(entry.start, entry.end)), ...staticImports.map(entry => `import ${entry.importName} from ${JSON.stringify(entry.specifier)};`)].join('\n');
-  const clientCode = editIslandSource(script, [...imports, ...staticImports].map(entry => ({ start: entry.start, end: entry.end, text: '' }))).code.trim();
+  if (parsed.errors.length)
+    throw new Error(
+      'Hono Markdown: invalid script: ' + parsed.errors.map((error) => error.message).join('; '),
+    );
+  const declarations = parsed.program.body.filter((node) => node.type === 'ImportDeclaration');
+  const key = (attribute: NonNullable<(typeof declarations)[number]['attributes']>[number]) =>
+    'name' in attribute.key ? attribute.key.name : attribute.key.value;
+  const attributed = declarations.filter((node) =>
+    node.attributes?.some((attribute) => key(attribute) === 'island'),
+  );
+  if (attributed.length !== imports.length)
+    throw new Error(
+      'Hono Markdown: use one default component import with exactly one island attribute.',
+    );
+  const staticImports = declarations
+    .filter((node) => node.attributes?.some((attribute) => key(attribute) === 'component'))
+    .map((node) => {
+      if (
+        node.attributes!.length !== 1 ||
+        node.attributes![0].value.value !== 'static' ||
+        node.specifiers.length !== 1 ||
+        node.specifiers[0].type !== 'ImportDefaultSpecifier' ||
+        node.importKind === 'type' ||
+        !/^[A-Z]\w*$/.test(node.specifiers[0].local.name)
+      )
+        throw new Error(
+          'Hono Markdown: use one default component import with { component: "static" }.',
+        );
+      return {
+        start: node.start!,
+        end: node.end!,
+        specifier: node.source.value,
+        importName: node.specifiers[0].local.name,
+      };
+    });
+  const graphSource = [
+    ...imports.map((entry) => script.slice(entry.start, entry.end)),
+    ...staticImports.map(
+      (entry) => `import ${entry.importName} from ${JSON.stringify(entry.specifier)};`,
+    ),
+  ].join('\n');
+  const clientCode = editIslandSource(
+    script,
+    [...imports, ...staticImports].map((entry) => ({
+      start: entry.start,
+      end: entry.end,
+      text: '',
+    })),
+  ).code.trim();
   return { body, script, imports, staticImports, graphSource, clientCode };
 }
 
 /** The frontmatter subset that may appear in HTML for browser islands. */
-export function selectClientFrontmatter(frontmatter: Record<string, unknown>, selection: HonoMarkdownOptions['clientFrontmatter'] = true) {
+export function selectClientFrontmatter(
+  frontmatter: Record<string, unknown>,
+  selection: HonoMarkdownOptions['clientFrontmatter'] = true,
+) {
   if (selection === true) return frontmatter;
   if (selection === false) return {};
-  if (!Array.isArray(selection) || selection.some(key => typeof key !== 'string')) throw new Error('Hono Markdown: clientFrontmatter must be a boolean or an array of frontmatter keys.');
-  return Object.fromEntries(selection.filter(key => Object.hasOwn(frontmatter, key)).map(key => [key, frontmatter[key]]));
+  if (!Array.isArray(selection) || selection.some((key) => typeof key !== 'string'))
+    throw new Error(
+      'Hono Markdown: clientFrontmatter must be a boolean or an array of frontmatter keys.',
+    );
+  return Object.fromEntries(
+    selection
+      .filter((key) => Object.hasOwn(frontmatter, key))
+      .map((key) => [key, frontmatter[key]]),
+  );
 }
 
 export function createMarkdownCompiler(options: HonoMarkdownOptions = {}) {
@@ -43,15 +91,33 @@ export function createMarkdownCompiler(options: HonoMarkdownOptions = {}) {
     let frontmatter: Record<string, unknown> = {};
     if (match) {
       const yaml = parseDocument(match[1], { uniqueKeys: true });
-      if (yaml.errors.length) throw new Error('Hono Markdown: invalid frontmatter: ' + yaml.errors.map(error => error.message).join('; '));
+      if (yaml.errors.length)
+        throw new Error(
+          'Hono Markdown: invalid frontmatter: ' +
+            yaml.errors.map((error) => error.message).join('; '),
+        );
       const value: unknown = yaml.toJS({ maxAliasCount: 50 });
-      if (value !== null && (typeof value !== 'object' || Array.isArray(value))) throw new Error('Hono Markdown: frontmatter must be a mapping.');
+      if (value !== null && (typeof value !== 'object' || Array.isArray(value)))
+        throw new Error('Hono Markdown: frontmatter must be a mapping.');
       frontmatter = (value ?? {}) as Record<string, unknown>;
-      try { JSON.stringify(frontmatter); } catch { throw new Error('Hono Markdown: frontmatter must be JSON serializable.'); }
+      try {
+        JSON.stringify(frontmatter);
+      } catch {
+        throw new Error('Hono Markdown: frontmatter must be JSON serializable.');
+      }
     }
     const content = match ? extracted.body.slice(match[0].length) : extracted.body;
-    const env: Record<string, unknown> = { components: new Set(extracted.staticImports.map(entry => entry.importName)) };
-    return { ...extracted, source, content, frontmatter, clientFrontmatter: selectClientFrontmatter(frontmatter, options.clientFrontmatter), ...parseContent(compiler, content, options, env) };
+    const env: Record<string, unknown> = {
+      components: new Set(extracted.staticImports.map((entry) => entry.importName)),
+    };
+    return {
+      ...extracted,
+      source,
+      content,
+      frontmatter,
+      clientFrontmatter: selectClientFrontmatter(frontmatter, options.clientFrontmatter),
+      ...parseContent(compiler, content, options, env),
+    };
   }
 
   async function render(parsed: ReturnType<typeof parse>) {

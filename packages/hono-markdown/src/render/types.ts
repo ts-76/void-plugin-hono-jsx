@@ -31,5 +31,7 @@ export type HonoMarkdownOptions = {
 };
 
 /** Portable article options. Module/highlighter configuration belongs to /compiler. */
-export type MarkdownRenderOptions = Pick<HonoMarkdownOptions,
-  'html' | 'breaks' | 'linkify' | 'headingId' | 'renderCodeBlock'>;
+export type MarkdownRenderOptions = Pick<
+  HonoMarkdownOptions,
+  'html' | 'breaks' | 'linkify' | 'headingId' | 'renderCodeBlock'
+>;

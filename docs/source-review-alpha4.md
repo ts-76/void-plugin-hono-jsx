@@ -21,7 +21,7 @@
 
 ## SR-1: FormDataの型と送信内容を一致させる
 
-[form.ts](../packages/hono-pages/src/runtime/form.ts)の14〜16行はFormData引数を受け付ける。一方、76〜84行ではstring以外のtargetをURLとして使わず、送信dataを`current.current`から作っている。[form-view.tsx](../packages/hono-pages/src/runtime/form-view.tsx)の18行は、urlを指定しないと毎回`new FormData(formElement)`を生成するが、この内容は送信に使われない。
+[form.ts](../packages/void-plugin-hono-jsx/src/runtime/pages/form.ts)の14〜16行はFormData引数を受け付ける。一方、76〜84行ではstring以外のtargetをURLとして使わず、送信dataを`current.current`から作っている。[form-view.tsx](../packages/void-plugin-hono-jsx/src/runtime/pages/form-view.tsx)の18行は、urlを指定しないと毎回`new FormData(formElement)`を生成するが、この内容は送信に使われない。
 
 実際のruntimeをHonoのSSR provider下で呼び、routerだけを記録用のstubにした再現結果:
 
@@ -39,7 +39,7 @@ await form.post(submitted);
 
 ## SR-2: Markdownの一覧取得を走査から分離する
 
-[hono-markdown.ts](../packages/hono-pages/src/plugins/hono-markdown.ts)の19〜30行で、`getClientScripts()`が毎回ディレクトリ全体を走査し、Markdownを読み直して解析する。[hono-islands.ts](../packages/hono-pages/src/plugins/hono-islands.ts)の101〜106行は、それをisland pageごとに呼ぶ。Markdownはstatic island pageとして検出されるため、ページ数に応じて全走査も増える。
+[hono-markdown.ts](../packages/void-plugin-hono-jsx/src/plugins/markdown/plugin.ts)の19〜30行で、`getClientScripts()`が毎回ディレクトリ全体を走査し、Markdownを読み直して解析する。[hono-islands.ts](../packages/void-plugin-hono-jsx/src/plugins/islands/plugin.ts)の101〜106行は、それをisland pageごとに呼ぶ。Markdownはstatic island pageとして検出されるため、ページ数に応じて全走査も増える。
 
 実pluginの`buildStart()`を、同じ構成の合成Markdownページで実行した。fsの同期readとtree walkだけを一時的に数え、他processや実projectは変更していない。
 
@@ -55,7 +55,7 @@ await form.post(submitted);
 
 ## SR-3: graphの解析結果を一つの世代で再利用する
 
-[hono-islands.ts](../packages/hono-pages/src/plugins/hono-islands.ts)の57〜94行には、static graphの探索とinteractive graphの検証がある。後者の`seen`は呼び出しごとに新しくなり、各pageとlayoutの共通依存を再度読む。`islandImports`と通常import探索でも同じsourceを複数回parseしている。
+[hono-islands.ts](../packages/void-plugin-hono-jsx/src/plugins/islands/plugin.ts)の57〜94行には、static graphの探索とinteractive graphの検証がある。後者の`seen`は呼び出しごとに新しくなり、各pageとlayoutの共通依存を再度読む。`islandImports`と通常import探索でも同じsourceを複数回parseしている。
 
 全pageとroot layoutが同じ1個のcomponentをimportする合成fixtureでは、100pageの`buildStart()`で共通componentを200回、root layoutを100回同期readした。10pageでは20回/10回、50pageでは100回/50回だった。
 
@@ -83,7 +83,7 @@ stageは、同じrun/attemptの受理済みartifactを再検証する現在の�
 
 ## SR-6: 小さな整理は追加計測と対応範囲の判断後に行う
 
-[document-head.ts](../packages/hono-pages/src/runtime/document-head.ts)の24〜26、43〜45、54〜56行では、findIndex中に属性のserialize/sortを繰り返す。signatureを先に計算する余地はあるが、通常pageのhead件数で支配的だとは測定していない。headの変更順序とinert scriptの保証を優先し、低い優先度に置く。
+[document-head.ts](../packages/void-plugin-hono-jsx/src/runtime/pages/document-head.ts)の24〜26、43〜45、54〜56行では、findIndex中に属性のserialize/sortを繰り返す。signatureを先に計算する余地はあるが、通常pageのhead件数で支配的だとは測定していない。headの変更順序とinert scriptの保証を優先し、低い優先度に置く。
 
 Pages/islandsはfactory呼び出し時の`process.cwd()`、Markdownは`configResolved`のrootを使う。現行の「project rootから実行」という条件内では不具合を再現していない。rootを共有contextにまとめるのは、別rootやmonorepoを正式にサポートするときの整理候補とする。
 

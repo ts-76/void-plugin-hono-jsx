@@ -5,7 +5,11 @@ const unescapeAttribute = new MarkdownExit().utils.unescapeAll;
 
 // HTML event handler attributes (case-insensitive in HTML). Island props reach
 // components as strings, so a spread onto an element must not become inline script.
-const eventHandlers = new Set(('abort afterprint animationcancel animationend animationiteration animationstart auxclick beforecopy beforecut beforeinput beforematch beforepaste beforeprint beforetoggle beforeunload beforexrselect blur cancel canplay canplaythrough change click close command contentvisibilityautostatechange contextlost contextmenu contextrestored copy cuechange cut dblclick drag dragend dragenter dragexit dragleave dragover dragstart drop durationchange emptied ended error focus focusin focusout formdata fullscreenchange fullscreenerror gotpointercapture hashchange input invalid keydown keypress keyup languagechange load loadeddata loadedmetadata loadend loadstart lostpointercapture message messageerror mousedown mouseenter mouseleave mousemove mouseout mouseover mouseup mousewheel offline online pagehide pagereveal pageshow pageswap paste pause play playing pointercancel pointerdown pointerenter pointerleave pointermove pointerout pointerover pointerrawupdate pointerup popstate progress ratechange readystatechange rejectionhandled reset resize scroll scrollend scrollsnapchange scrollsnapchanging search securitypolicyviolation seeked seeking select selectionchange selectstart slotchange stalled storage submit suspend timeupdate toggle touchcancel touchend touchmove touchstart transitioncancel transitionend transitionrun transitionstart unhandledrejection unload visibilitychange volumechange waiting webkitanimationend webkitanimationiteration webkitanimationstart webkittransitionend wheel').split(' ').map(name => 'on' + name));
+const eventHandlers = new Set(
+  'abort afterprint animationcancel animationend animationiteration animationstart auxclick beforecopy beforecut beforeinput beforematch beforepaste beforeprint beforetoggle beforeunload beforexrselect blur cancel canplay canplaythrough change click close command contentvisibilityautostatechange contextlost contextmenu contextrestored copy cuechange cut dblclick drag dragend dragenter dragexit dragleave dragover dragstart drop durationchange emptied ended error focus focusin focusout formdata fullscreenchange fullscreenerror gotpointercapture hashchange input invalid keydown keypress keyup languagechange load loadeddata loadedmetadata loadend loadstart lostpointercapture message messageerror mousedown mouseenter mouseleave mousemove mouseout mouseover mouseup mousewheel offline online pagehide pagereveal pageshow pageswap paste pause play playing pointercancel pointerdown pointerenter pointerleave pointermove pointerout pointerover pointerrawupdate pointerup popstate progress ratechange readystatechange rejectionhandled reset resize scroll scrollend scrollsnapchange scrollsnapchanging search securitypolicyviolation seeked seeking select selectionchange selectstart slotchange stalled storage submit suspend timeupdate toggle touchcancel touchend touchmove touchstart transitioncancel transitionend transitionrun transitionstart unhandledrejection unload visibilitychange volumechange waiting webkitanimationend webkitanimationiteration webkitanimationstart webkittransitionend wheel'
+    .split(' ')
+    .map((name) => 'on' + name),
+);
 const rendererProps = /^(?:children|key|ref|dangerouslySetInnerHTML)$/i;
 
 /** Data only: never evaluate JSX expressions or allow renderer-owned props or event handlers. Static components are stricter than island data. */
@@ -16,13 +20,20 @@ export function componentAttributes(source: string, restricted = true) {
   while (source.slice(cursor).trim()) {
     attribute.lastIndex = cursor;
     const match = attribute.exec(source);
-    if (!match) throw new Error('Hono Markdown: use literal component attributes; JSX expressions are unsupported.');
+    if (!match)
+      throw new Error(
+        'Hono Markdown: use literal component attributes; JSX expressions are unsupported.',
+      );
     const key = match[1];
     const value = match[2] ?? match[3] ?? match[4];
     const reserved = restricted
-      ? !/^[A-Za-z]/.test(key) || rendererProps.test(key) || /^(?:__proto__|prototype|constructor)$/i.test(key) || /^on/i.test(key)
+      ? !/^[A-Za-z]/.test(key) ||
+        rendererProps.test(key) ||
+        /^(?:__proto__|prototype|constructor)$/i.test(key) ||
+        /^on/i.test(key)
       : rendererProps.test(key) || /^on[A-Z]/.test(key) || eventHandlers.has(key.toLowerCase());
-    if (Object.hasOwn(props, key) || match[4]?.startsWith('{') || reserved) throw new Error(`Hono Markdown: invalid or reserved component attribute ${key}.`);
+    if (Object.hasOwn(props, key) || match[4]?.startsWith('{') || reserved)
+      throw new Error(`Hono Markdown: invalid or reserved component attribute ${key}.`);
     props[key] = value === undefined ? true : unescapeAttribute(value);
     cursor = attribute.lastIndex;
   }
@@ -35,18 +46,25 @@ export function configureComponentContainers(md: MarkdownExit) {
     render(tokens: Parameters<NonNullable<typeof md.renderer.rules.fence>>[0], index: number) {
       const token = tokens[index];
       if (token.nesting !== 1) return `</${token.meta.name}>\n`;
-      const attributes = Object.entries(token.meta.props).map(([key, value]) => value === true ? ` ${key}` : ` ${key}="${md.utils.escapeHtml(String(value))}"`).join('');
+      const attributes = Object.entries(token.meta.props)
+        .map(([key, value]) =>
+          value === true ? ` ${key}` : ` ${key}="${md.utils.escapeHtml(String(value))}"`,
+        )
+        .join('');
       return `<${token.meta.name}${attributes}>\n`;
     },
   });
   // Validate once while constructing the complete scan snapshot. Pairing here
   // also avoids walking backward through every nested subtree during emission.
-  md.core.ruler.after('block', 'hono_component_metadata', state => {
+  md.core.ruler.after('block', 'hono_component_metadata', (state) => {
     const stack: Array<{ name: string; props: Record<string, string | boolean> }> = [];
     for (const token of state.tokens) {
       if (token.type === 'container_component_open') {
         const match = /^component\s+([A-Z]\w*)([\s\S]*)$/.exec(token.info.trim());
-        if (!match || !state.env.components.has(match[1])) throw new Error('Hono Markdown: component containers require a declared static component import.');
+        if (!match || !state.env.components.has(match[1]))
+          throw new Error(
+            'Hono Markdown: component containers require a declared static component import.',
+          );
         token.meta = { name: match[1], props: componentAttributes(match[2]) };
         stack.push(token.meta);
       } else if (token.type === 'container_component_close') token.meta = stack.pop();
@@ -54,27 +72,42 @@ export function configureComponentContainers(md: MarkdownExit) {
   });
 }
 
-export type MarkdownChunk = { html: string } | { name: string; props: Record<string, string | boolean>; children?: MarkdownChunk[] };
+export type MarkdownChunk =
+  | { html: string }
+  | { name: string; props: Record<string, string | boolean>; children?: MarkdownChunk[] };
 
-export function renderComponentChunks(html: string, names: Set<string>, staticNames = new Set<string>()) {
+export function renderComponentChunks(
+  html: string,
+  names: Set<string>,
+  staticNames = new Set<string>(),
+) {
   const root: MarkdownChunk[] = [];
   const stack: Array<{ name: string; children: MarkdownChunk[] }> = [];
   let chunks = root;
   let cursor = 0;
   // Raw-text elements and comments are authored HTML, never component syntax.
-  const tags = /<!--[\s\S]*?-->|<(script|style|textarea|pre)\b[^>]*>[\s\S]*?<\/\1\s*>|<(\/?)([A-Z]\w*)\b((?:[^>"']|"[^"]*"|'[^']*')*)>/gi;
+  const tags =
+    /<!--[\s\S]*?-->|<(script|style|textarea|pre)\b[^>]*>[\s\S]*?<\/\1\s*>|<(\/?)([A-Z]\w*)\b((?:[^>"']|"[^"]*"|'[^']*')*)>/gi;
   for (const match of html.matchAll(tags)) {
     const name = match[3];
     if (!names.has(name)) continue;
     if (match.index > cursor) chunks.push({ html: html.slice(cursor, match.index) });
     if (match[2]) {
-      if (stack.at(-1)?.name !== name) throw new Error(`Hono Markdown: mismatched component closing tag ${name}.`);
-      if (!staticNames.has(name) && chunks.some(chunk => !('html' in chunk) || chunk.html.trim())) throw new Error('Hono Markdown: island tag children are unsupported; use a TSX wrapper.');
+      if (stack.at(-1)?.name !== name)
+        throw new Error(`Hono Markdown: mismatched component closing tag ${name}.`);
+      if (!staticNames.has(name) && chunks.some((chunk) => !('html' in chunk) || chunk.html.trim()))
+        throw new Error('Hono Markdown: island tag children are unsupported; use a TSX wrapper.');
       stack.pop();
       chunks = stack.at(-1)?.children ?? root;
     } else {
       const selfClosing = /\/\s*$/.test(match[4]);
-      const child: MarkdownChunk & { name: string } = { name, props: componentAttributes(selfClosing ? match[4].replace(/\/\s*$/, '') : match[4], staticNames.has(name)) };
+      const child: MarkdownChunk & { name: string } = {
+        name,
+        props: componentAttributes(
+          selfClosing ? match[4].replace(/\/\s*$/, '') : match[4],
+          staticNames.has(name),
+        ),
+      };
       chunks.push(child);
       if (!selfClosing) {
         child.children = [];

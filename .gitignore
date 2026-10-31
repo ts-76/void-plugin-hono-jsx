@@ -17,4 +17,4 @@ artifacts/
 stage-receipt.json
 
 # Generated from the root release-please changelog during package build.
-/packages/hono-pages/CHANGELOG.md
+/packages/void-plugin-hono-jsx/CHANGELOG.md

@@ -18,25 +18,25 @@
   ],
   "exports": {
     "./plugin": {
-      "types": "./dist/plugins/hono-jsx.d.ts",
-      "import": "./dist/plugins/hono-jsx.js"
+      "types": "./dist/plugins/pages/plugin.d.ts",
+      "import": "./dist/plugins/pages/plugin.js"
     },
     "./pages": {
-      "types": "./dist/server/pages.d.ts",
-      "default": "./dist/server/pages.js"
+      "types": "./dist/server/pages/api.d.ts",
+      "default": "./dist/server/pages/api.js"
     },
     "./form": {
-      "types": "./dist/server/form.d.ts",
-      "default": "./dist/server/form.js"
+      "types": "./dist/server/pages/form.d.ts",
+      "default": "./dist/server/pages/form.js"
     },
     "./markdown/plugin": {
-      "types": "./dist/plugins/hono-markdown.d.ts",
-      "import": "./dist/plugins/hono-markdown.js"
+      "types": "./dist/plugins/markdown/plugin.d.ts",
+      "import": "./dist/plugins/markdown/plugin.js"
     },
     "./markdown": {
-      "types": "./dist/server/markdown.d.ts",
-      "browser": "./dist/browser/markdown.js",
-      "default": "./dist/server/markdown.js"
+      "types": "./dist/server/markdown/context.d.ts",
+      "browser": "./dist/browser/markdown/context.js",
+      "default": "./dist/server/markdown/context.js"
     },
     "./theme.css": {
       "default": "./dist/theme/index.css"
@@ -45,12 +45,12 @@
       "default": "./dist/theme/content.css"
     },
     "./markdown/compiler": {
-      "types": "./dist/plugins/static-markdown.d.ts",
-      "default": "./dist/plugins/static-markdown.js"
+      "types": "./dist/plugins/markdown/static.d.ts",
+      "default": "./dist/plugins/markdown/static.js"
     },
     "./markdown/client": {
-      "types": "./dist/browser/markdown-islands.d.ts",
-      "import": "./dist/browser/markdown-islands.js"
+      "types": "./dist/browser/markdown/client.d.ts",
+      "import": "./dist/browser/markdown/client.js"
     }
   },
   "peerDependencies": {
@@ -64,7 +64,7 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/ts-76/void-plugin-hono-jsx.git",
-    "directory": "packages/hono-pages"
+    "directory": "packages/void-plugin-hono-jsx"
   },
   "publishConfig": {
     "access": "public",

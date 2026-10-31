@@ -7,7 +7,7 @@ import { mkdtemp, mkdir, writeFile, symlink, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { voidHonoMarkdown } from '../packages/hono-pages/src/plugins/hono-markdown.ts';
+import { voidHonoMarkdown } from '../packages/void-plugin-hono-jsx/src/plugins/markdown/plugin.ts';
 
 test('Void forwards article display options and omits copy scripts for plain/custom code markup', async () => {
   const root = await mkdtemp(join(tmpdir(), 'hono-markdown-display-'));
@@ -17,8 +17,16 @@ test('Void forwards article display options and omits copy scripts for plain/cus
     const file = join(root, 'pages/index.md');
     const source = '# Title\n\nOne\nTwo\n\n<b>Text</b>\n\n```html\n<script>text</script>\n```';
     await writeFile(file, source);
-    for (const [index, codeOptions] of [{ highlight: false }, { renderCodeBlock: ({ html }) => `<figure>${html}</figure>` }].entries()) {
-      const plugin = voidHonoMarkdown({ ...codeOptions, html: false, breaks: true, headingId: ({ index }) => `post-section-${index + 1}` });
+    for (const [index, codeOptions] of [
+      { highlight: false },
+      { renderCodeBlock: ({ html }) => `<figure>${html}</figure>` },
+    ].entries()) {
+      const plugin = voidHonoMarkdown({
+        ...codeOptions,
+        html: false,
+        breaks: true,
+        headingId: ({ index }) => `post-section-${index + 1}`,
+      });
       plugin.configResolved({ root, plugins: [{ name: 'void-hono:pages' }] });
       assert.equal(plugin.api.getClientScripts().size, 0);
       const output = await plugin.transform.handler(source, file);
@@ -32,5 +40,7 @@ test('Void forwards article display options and omits copy scripts for plain/cus
       assert.doesNotMatch(html, /<script>|class="copy"/);
       assert.equal(page.headings[0].slug, 'post-section-1');
     }
-  } finally { await rm(root, { recursive: true, force: true }); }
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
 });

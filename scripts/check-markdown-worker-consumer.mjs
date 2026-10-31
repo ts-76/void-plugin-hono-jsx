@@ -11,8 +11,19 @@ const repo = resolve(import.meta.dirname, '..');
 // Test tools stay in the repository; the packed consumer installs only the common package and Hono.
 export async function verifyMarkdownWorkerConsumer(root) {
   const require = createRequire(join(root, 'package.json'));
-  for (const name of ['yaml', 'shiki', '@shikijs/transformers', 'void', 'vite', 'miniflare', 'esbuild']) {
-    assert.throws(() => require.resolve(name), `${name} must not be installed in the article consumer`);
+  for (const name of [
+    'yaml',
+    'shiki',
+    '@shikijs/transformers',
+    'void',
+    'vite',
+    'miniflare',
+    'esbuild',
+  ]) {
+    assert.throws(
+      () => require.resolve(name),
+      `${name} must not be installed in the article consumer`,
+    );
   }
   const workerEntry = '@ts-76/hono-markdown/render';
   const typeSource = `import { createMarkdownRenderer } from '${workerEntry}';
@@ -26,7 +37,7 @@ createMarkdownRenderer({ shiki: {} });
 export default { async fetch(request: Request) { return new Response((await renderer.render(await request.text())).html); } };
 `;
 
-  const source = entry => `import { Hono } from 'hono';
+  const source = (entry) => `import { Hono } from 'hono';
 import { createMarkdownRenderer, renderMarkdown } from '${entry}';
 const renderer = createMarkdownRenderer({
   breaks: true,
@@ -60,51 +71,123 @@ export default app;
     '<script>import Counter from "./missing" with { island: "load" };</script>\n\n<Counter />',
     '```html\n</code></pre><script>globalThis.pwned=1</script>\n```',
   ];
-  const entries = [
-    { entry: workerEntry, conditions: [] },
-  ];
+  const entries = [{ entry: workerEntry, conditions: [] }];
   for (const { entry, conditions } of entries) {
     await writeFile(join(root, 'worker-types.ts'), typeSource.replace(workerEntry, entry));
-    await writeFile(join(root, 'tsconfig.worker.json'), JSON.stringify({
-      compilerOptions: { target: 'ES2022', module: 'ESNext', moduleResolution: 'Bundler', customConditions: conditions, strict: true, noEmit: true, types: [], lib: ['ES2022', 'WebWorker'] },
-      files: ['worker-types.ts'],
-    }));
-    execFileSync(process.execPath, [join(repo, 'node_modules/typescript/bin/tsc'), '-p', join(root, 'tsconfig.worker.json')], { encoding: 'utf8', stdio: 'pipe' });
+    await writeFile(
+      join(root, 'tsconfig.worker.json'),
+      JSON.stringify({
+        compilerOptions: {
+          target: 'ES2022',
+          module: 'ESNext',
+          moduleResolution: 'Bundler',
+          customConditions: conditions,
+          strict: true,
+          noEmit: true,
+          types: [],
+          lib: ['ES2022', 'WebWorker'],
+        },
+        files: ['worker-types.ts'],
+      }),
+    );
+    execFileSync(
+      process.execPath,
+      [join(repo, 'node_modules/typescript/bin/tsc'), '-p', join(root, 'tsconfig.worker.json')],
+      { encoding: 'utf8', stdio: 'pipe' },
+    );
     const bundle = await build({
       stdin: { contents: source(entry), sourcefile: 'cms-worker.mjs', resolveDir: root },
-      absWorkingDir: root, bundle: true, platform: 'browser', format: 'esm', conditions,
-      write: false, metafile: true, logLevel: 'silent',
+      absWorkingDir: root,
+      bundle: true,
+      platform: 'browser',
+      format: 'esm',
+      conditions,
+      write: false,
+      metafile: true,
+      logLevel: 'silent',
     });
-    assert.ok(Object.keys(bundle.metafile.inputs).some(path => path.endsWith('hono-markdown/dist/render/index.js')));
-    const forbidden = Object.keys(bundle.metafile.inputs).filter(path => /(?:node:|\/dist\/compiler\/|\/node_modules\/(?:@babel\/|shiki\/|@shikijs\/|yaml\/|void\/|vite\/|void-plugin-hono-jsx\/))/.test('/' + path));
+    assert.ok(
+      Object.keys(bundle.metafile.inputs).some((path) =>
+        path.endsWith('hono-markdown/dist/render/index.js'),
+      ),
+    );
+    const forbidden = Object.keys(bundle.metafile.inputs).filter((path) =>
+      /(?:node:|\/dist\/compiler\/|\/node_modules\/(?:@babel\/|shiki\/|@shikijs\/|yaml\/|void\/|vite\/|void-plugin-hono-jsx\/))/.test(
+        '/' + path,
+      ),
+    );
     assert.deepEqual(forbidden, [], 'The Worker graph must exclude Node/build-only dependencies');
-    for (const output of Object.values(bundle.metafile.outputs)) assert.deepEqual(output.imports, [], 'The Worker must be self-contained');
+    for (const output of Object.values(bundle.metafile.outputs))
+      assert.deepEqual(output.imports, [], 'The Worker must be self-contained');
     // Match the locked workerd release; disable Node compatibility explicitly (dates after August enable it by default).
-    const runtime = { modules: true, compatibilityDate: '2026-10-12', compatibilityFlags: ['no_nodejs_compat', 'no_nodejs_compat_v2'] };
-    const mf = new Miniflare({ ...convertV4MiniflareOptions({ cf: false, workers: [
-      { ...runtime, name: 'article', script: bundle.outputFiles[0].text, serviceBindings: { CMS: 'cms' } },
-      { ...runtime, name: 'cms', script: 'export default { async fetch(request) { return Response.json({body: await request.text()}); } };' },
-    ] }), telemetry: { enabled: false } });
+    const runtime = {
+      modules: true,
+      compatibilityDate: '2026-10-12',
+      compatibilityFlags: ['no_nodejs_compat', 'no_nodejs_compat_v2'],
+    };
+    const mf = new Miniflare({
+      ...convertV4MiniflareOptions({
+        cf: false,
+        workers: [
+          {
+            ...runtime,
+            name: 'article',
+            script: bundle.outputFiles[0].text,
+            serviceBindings: { CMS: 'cms' },
+          },
+          {
+            ...runtime,
+            name: 'cms',
+            script:
+              'export default { async fetch(request) { return Response.json({body: await request.text()}); } };',
+          },
+        ],
+      }),
+      telemetry: { enabled: false },
+    });
     const render = async (path, body) => {
-      const response = await mf.dispatchFetch('https://article.invalid' + path, { method: 'POST', body });
+      const response = await mf.dispatchFetch('https://article.invalid' + path, {
+        method: 'POST',
+        body,
+      });
       assert.equal(response.status, 200);
       return response.json();
     };
     try {
-      assert.deepEqual(await (await mf.dispatchFetch('https://article.invalid/environment')).json(), { process: 'undefined', Buffer: 'undefined' });
-      const article = await render('/cms/article', '# **CMS article**\n\nOne\nTwo\n\n```html\n<script>bad()</script>\n```');
-      assert.deepEqual(article.headings, [{ depth: 1, slug: 'post-section-1', text: 'CMS article' }]);
+      assert.deepEqual(
+        await (await mf.dispatchFetch('https://article.invalid/environment')).json(),
+        { process: 'undefined', Buffer: 'undefined' },
+      );
+      const article = await render(
+        '/cms/article',
+        '# **CMS article**\n\nOne\nTwo\n\n```html\n<script>bad()</script>\n```',
+      );
+      assert.deepEqual(article.headings, [
+        { depth: 1, slug: 'post-section-1', text: 'CMS article' },
+      ]);
       assert.match(article.html, /One<br>\nTwo/);
       assert.match(article.html, /<figure class="article-code"><pre><code/);
       assert.equal(article.needsCodeCopy, false);
       assert.equal(article.frontmatter, undefined);
-      const results = await Promise.all(Array.from({ length: 12 }, (_, index) => render('/cms/article', `# Article ${index}\n\n[ref][url]\n\n[url]: /article-${index}\n\n\`\`\`txt\n${index}\n\`\`\``)));
+      const results = await Promise.all(
+        Array.from({ length: 12 }, (_, index) =>
+          render(
+            '/cms/article',
+            `# Article ${index}\n\n[ref][url]\n\n[url]: /article-${index}\n\n\`\`\`txt\n${index}\n\`\`\``,
+          ),
+        ),
+      );
       results.forEach((result, index) => {
-        assert.deepEqual(result.headings, [{ depth: 1, slug: 'post-section-1', text: `Article ${index}` }]);
+        assert.deepEqual(result.headings, [
+          { depth: 1, slug: 'post-section-1', text: `Article ${index}` },
+        ]);
         assert.match(result.html, new RegExp(`href="/article-${index}"`));
       });
       const defaults = await render('/default', '# location\n\n# location\n\nhttps://example.com');
-      assert.deepEqual(defaults.headings.map(heading => heading.slug), ['user-content-location', 'user-content-location-1']);
+      assert.deepEqual(
+        defaults.headings.map((heading) => heading.slug),
+        ['user-content-location', 'user-content-location-1'],
+      );
       assert.match(defaults.html, /href="https:\/\/example.com"/);
       const optional = await render('/optional', '```js\nconst answer = 42;\n```');
       assert.match(optional.html, /^<pre><code class="language-js">/);
@@ -120,7 +203,20 @@ export default app;
       const unsupported = await mf.dispatchFetch('https://article.invalid/highlight');
       assert.equal(unsupported.status, 400);
       assert.match(await unsupported.text(), /not an article option.*renderCodeBlock/);
-      console.log(JSON.stringify({ workerArticleConsumer: true, entry, conditions, nodeCompat: false, cmsServiceBinding: true, concurrentRequests: 12, attackCases: attackCases.length, workerTypesWithoutNode: true, forbiddenBundleInputs: forbidden, bundleBytes: bundle.outputFiles[0].contents.length }));
+      console.log(
+        JSON.stringify({
+          workerArticleConsumer: true,
+          entry,
+          conditions,
+          nodeCompat: false,
+          cmsServiceBinding: true,
+          concurrentRequests: 12,
+          attackCases: attackCases.length,
+          workerTypesWithoutNode: true,
+          forbiddenBundleInputs: forbidden,
+          bundleBytes: bundle.outputFiles[0].contents.length,
+        }),
+      );
     } finally {
       await mf.dispose();
     }

@@ -7,7 +7,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { publisherSnapshot } from '../scripts/release/publisher.mjs';
 
-const extractor = fileURLToPath(new URL('../scripts/release/extract-publisher.py', import.meta.url));
+const extractor = fileURLToPath(
+  new URL('../scripts/release/extract-publisher.py', import.meta.url),
+);
 const archiveScript = `import tarfile,io,json,sys
 with tarfile.open(sys.argv[1],'w:gz') as tar:
  for entry in json.loads(sys.argv[2]):
@@ -23,22 +25,36 @@ function extract(entries) {
   try {
     execFileSync('python3', [extractor, archive, path.join(root, 'output')], { stdio: 'pipe' });
     return readFileSync(path.join(root, 'output/file.js'), 'utf8');
-  } finally { rmSync(root, { recursive: true, force: true }); }
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 }
 test('publisher extraction accepts identical canonical bytes and rejects ambiguous or escaping content', () => {
-  assert.equal(extract([{ path: 'package/./file.js', content: 'verified' }, { path: 'package/file.js', content: 'verified' }]), 'verified');
+  assert.equal(
+    extract([
+      { path: 'package/./file.js', content: 'verified' },
+      { path: 'package/file.js', content: 'verified' },
+    ]),
+    'verified',
+  );
   for (const entries of [
-    [{ path: 'package/../escape.js' }], [{ path: '/package/file.js' }],
+    [{ path: 'package/../escape.js' }],
+    [{ path: '/package/file.js' }],
     [{ path: 'package/file.js', link: '../../outside' }],
-    [{ path: 'package/file.js', content: 'first' }, { path: 'package/./file.js', content: 'different' }],
+    [
+      { path: 'package/file.js', content: 'first' },
+      { path: 'package/./file.js', content: 'different' },
+    ],
     [{ path: 'package/file.js' }, { path: 'another/file.js' }],
-  ]) assert.throws(() => extract(entries));
+  ])
+    assert.throws(() => extract(entries));
 });
 test('the full publisher snapshot detects changed/additional bytes and rejects filesystem links', () => {
   const root = mkdtempSync(path.join(tmpdir(), 'publisher-snapshot-'));
   try {
     writeFileSync(path.join(root, 'package.json'), '{"name":"npm","version":"11.21.1"}');
-    mkdirSync(path.join(root, 'lib'));writeFileSync(path.join(root, 'lib/code.js'), 'original');
+    mkdirSync(path.join(root, 'lib'));
+    writeFileSync(path.join(root, 'lib/code.js'), 'original');
     const original = publisherSnapshot(root);
     writeFileSync(path.join(root, 'lib/code.js'), 'changed');
     assert.notEqual(publisherSnapshot(root).filesSha256, original.filesSha256);
@@ -46,5 +62,7 @@ test('the full publisher snapshot detects changed/additional bytes and rejects f
     assert.notEqual(publisherSnapshot(root).filesSha256, original.filesSha256);
     symlinkSync(path.join(root, 'lib/code.js'), path.join(root, 'link.js'));
     assert.throws(() => publisherSnapshot(root), /non-regular/);
-  } finally { rmSync(root, { recursive: true, force: true }); }
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });

@@ -197,6 +197,15 @@
 
 /* Keep the official theme usable with a keyboard and touch input. */
 .void-md div[class*='language-'] .copy:focus-visible,
-.void-md div[class*='language-'] .copy.copy-error { opacity: 1; }
-.void-md div[class*='language-'] .copy:focus-visible { outline: 2px solid var(--vmd-link, #2563eb); outline-offset: 2px; }
-@media (hover: none) { .void-md div[class*='language-'] .copy { opacity: 1; } }
+.void-md div[class*='language-'] .copy.copy-error {
+  opacity: 1;
+}
+.void-md div[class*='language-'] .copy:focus-visible {
+  outline: 2px solid var(--vmd-link, #2563eb);
+  outline-offset: 2px;
+}
+@media (hover: none) {
+  .void-md div[class*='language-'] .copy {
+    opacity: 1;
+  }
+}

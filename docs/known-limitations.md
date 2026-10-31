@@ -40,7 +40,7 @@ Each candidate needs fresh audits, regardless of earlier release results.
 
 1. Inspect the upstream release, scaffold defaults, public APIs and dependency graph. New Void minors, Node majors and Hono/Vite majors need an explicit support decision.
 2. Refresh root and both active consumer locks. Keep Vite Plus/core aligned. Historical fixtures remain comparison inputs.
-3. Check the running Vite hook, helper version and resolved paths using [launcher diagnostics](../packages/hono-pages/README.md#running-vite-and-launcher-diagnostics).
+3. Check the running Vite hook, helper version and resolved paths using [launcher diagnostics](../packages/void-plugin-hono-jsx/README.md#running-vite-and-launcher-diagnostics).
 4. Run source/type/unit/browser checks and both complete packed consumers on identical bytes. Check ordinary Pages before installing optional Markdown peers.
 5. Review fresh consumer and Linux publisher audits against their exact approved scope.
 6. Repeat a dedicated Workers exercise if deployment, migrations, authentication or rejection handling changed. Verify cleanup; never deploy fixture control APIs or placeholder bindings.
