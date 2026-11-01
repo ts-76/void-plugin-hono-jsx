@@ -133,10 +133,15 @@ test('Void route conventions and a client-only page are accepted without a secon
   }, async (plugin) => {
     await plugin.buildStart();
     const client = await plugin.load(plugin.resolveId('virtual:void-pages-client'));
-    assert.match(client, /"nested\/one": \["layout","nested\/layout"\]/);
-    assert.match(client, /"nested\/named": \["layout","_layouts\/shell"\]/);
-    assert.match(client, /"nested\/exclusive": \["_layouts\/shell"\]/);
-    assert.doesNotMatch(client, /"nested\/bare": \[/);
+    // Void 1.4 shares layout chains across compact route entries. Check the
+    // resulting manifest rather than the generated source representation.
+    const manifest = new Function(client
+      .replace(/^import .*;$/gm, '')
+      .replace(/^await startHonoPages\(.*$/m, 'return layoutTree;'))();
+    assert.deepEqual(manifest['nested/one'], ['layout', 'nested/layout']);
+    assert.deepEqual(manifest['nested/named'], ['layout', '_layouts/shell']);
+    assert.deepEqual(manifest['nested/exclusive'], ['_layouts/shell']);
+    assert.equal(manifest['nested/bare'], undefined);
   });
 });
 

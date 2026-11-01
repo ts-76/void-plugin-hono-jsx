@@ -1,5 +1,22 @@
 # Dependency advisory acceptance
 
+## Local Void 1.4.0 update — 2026-11-01
+
+The local baseline now pins Void 1.4.0, with peer support limited to `>=1.4.0 <1.5.0`. The owner explicitly requested this version before its normal three-day release age; that exception covers Void and its required same-release `@void/*` packages only. Dependency installation disabled lifecycle scripts. This update is not a security fix or a new advisory acceptance.
+
+Fresh npm audits of the root and both active locked consumers each report **17 propagated package entries (High 6, Moderate 11, Critical 0)**. These are 11 distinct advisory records: the existing esbuild and Zod advisories, eight undici advisories, and the newly reported minimatch advisory `GHSA-g3hv-75wg-m249`. The additional undici records are `GHSA-4w7w-5xrc-9h26`, `GHSA-2m5v-pch6-74hx`, `GHSA-qrxm-fqhp-jwvm`, `GHSA-9fm3-97px-rjf6`, and `GHSA-55wc-3pg8-jfw6`; the three previously recorded undici records remain. Counts describe these dependency inventories, not demonstrated exploitability in every application.
+
+Void 1.4.0 still brings these upstream constraints:
+
+- `@cloudflare/config@0.27.0` pins Zod 4.6.5.
+- `@cloudflare/workers-auth@0.14.1`, its workers-utils dependency and Miniflare beta packages pin undici 7.29.1. The required `cf@1.0.0-beta.18` distribution also embeds an undici 7.29.1 implementation in `dist/wrangler-migration-R9TQ_4Qd.mjs`; changing a top-level undici installation would not replace it.
+- Drizzle Kit 0.31.11 retains esbuild 0.18.20 through `@esbuild-kit/esm-loader` and `@esbuild-kit/core-utils`.
+- Void's minimatch 10.x constraint does not admit the advisory's fixed 11.0.1 release.
+
+A trial update within the compatible Cloudflare ranges did not remove the findings, so those unrelated transitive changes were discarded. No overrides, forced transitive versions or unsupported downgrade were retained. The historical usage limits below still apply while these dependencies remain affected.
+
+`release-policy.json` retains the historical acceptance verbatim. Its exact peer/lock/advisory bindings do not match this updated baseline, so release preparation must fail closed. Neither that acceptance nor `dependencySecurityApproved` authorizes this changed dependency graph. A fresh assessment and explicit release decision are required before publication; no publication or deployment was performed for this local update.
+
 ## 0.9.1 owner acceptance — 2026-10-25
 
 The owner explicitly accepted the remaining Void/Cloudflare tooling risks for **void-plugin-hono-jsx 0.9.1 only** after reassessment. This is a new, version-specific decision; it does not extend the earlier 0.9.0 approval to arbitrary releases. The latest root, ordinary-consumer and Markdown-consumer audits retain 16 propagated entries (High 6, Moderate 10, Critical 0), representing the existing esbuild advisory and the same four undici/Zod advisories described below. Upstream Void's latest release remains 1.2.1. These dependencies are not repaired by this acceptance.

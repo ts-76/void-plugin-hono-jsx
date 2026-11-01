@@ -3,18 +3,20 @@
 A community Hono JSX adapter for [Void](https://void.cloud), licensed under [MIT](LICENSE).
 It supports SSR pages, navigation, forms, islands, static output and optional Markdown.
 
+The local Void 1.4.0 baseline retains 17 propagated dependency findings (6 High, 11 Moderate) across undici, Zod, esbuild and minimatch. Earlier release-specific acceptance does not cover the changed peer/lock/advisory set; release preparation remains blocked pending reassessment. Keep development/preview private, use trusted configuration and bounded input, and avoid affected esbuild serve and undici EventSource/SRI paths. See the repository dependency-security documentation for the current assessment.
+
 ## Install
 
 Use Node.js 24.22.1 or newer within Node 24.
 
 ```sh
 npm install void-plugin-hono-jsx hono@4.13.13
-npm install --save-dev void@1.2.1 vite@8.3.4 typescript@7.0.2
+npm install --save-dev void@1.4.0 vite@8.3.4 typescript@7.0.2
 ```
 
 The default install uses `latest`. Use `@next` to test a release candidate, or an explicit version for reproducible installs.
 
-Version 0.9.1 accepts known risks in the required Void/Cloudflare tooling: affected undici can terminate a Node development/CLI process on a malformed peer response, and affected Zod can allocate excessive validation issues. Keep dev/preview private, use trusted project configuration and avoid unbounded external inputs. These dependencies remain unfixed; the audit is nonzero. See the [0.9.1 acceptance, exact scope and usage limits](https://github.com/ts-76/void-plugin-hono-jsx/blob/v0.9.1/docs/dependency-security.md).
+Published 0.9.1 on Void 1.2.1 had a version-specific acceptance that does not cover this local Void 1.4.0 baseline. Its recorded risks remain: affected undici can terminate a Node development/CLI process on a malformed peer response, and affected Zod can allocate excessive validation issues. Keep dev/preview private, use trusted project configuration and avoid unbounded external inputs. These dependencies remain unfixed; the audit is nonzero. See the [0.9.1 acceptance, exact scope and usage limits](https://github.com/ts-76/void-plugin-hono-jsx/blob/v0.9.1/docs/dependency-security.md).
 
 ## Configure
 
@@ -37,7 +39,7 @@ The adapter includes JSX transformation. Run Vite from the project root and keep
 | Dependency | Supported stable range | Tested version |
 | --- | --- | --- |
 | Node.js | >=24.22.1 <25.0.0 | 24.22.1 |
-| Void | >=1.2.1 <1.3.0 | 1.2.1 |
+| Void | >=1.4.0 <1.5.0 | 1.4.0 |
 | Hono | >=4.13.13 <5.0.0 | 4.13.13 |
 | Vite | >=8.0.16 <9.0.0 | 8.3.4 |
 
@@ -110,7 +112,7 @@ Follow the [island examples and restrictions](https://github.com/ts-76/void-plug
 
 Set `output: 'static'` in `void.config.ts` and build with Vite.
 Serve the generated HTML, assets and `/_void/pages` JSON from `dist/client`.
-Actions require a server. Check the generated files: failed prerender paths may be omitted with a warning.
+Actions require a server. Void 1.4.0 fails the build when a page cannot be prerendered; deferred props are rejected for static output.
 See [static output](https://github.com/ts-76/void-plugin-hono-jsx/blob/main/docs/pages.md#static-output-and-prerendering).
 
 ## Optional Markdown
