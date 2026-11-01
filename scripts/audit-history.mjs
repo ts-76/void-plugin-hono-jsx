@@ -1,8 +1,9 @@
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 
-const git = args => execFileSync('git', args, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
-if (git(['rev-parse', '--is-shallow-repository']).trim() !== 'false') throw new Error('Fetch full history before auditing');
+const git = (args) => execFileSync('git', args, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+if (git(['rev-parse', '--is-shallow-repository']).trim() !== 'false')
+  throw new Error('Fetch full history before auditing');
 const commits = git(['rev-list', '--all']).trim().split('\n').filter(Boolean);
 const blobs = new Map();
 for (const commit of commits) {
@@ -19,7 +20,10 @@ const patterns = [
   ['aws-key', /(?:AKIA|ASIA)[A-Z0-9]{16}/],
   ['credential-url', /https?:\/\/[^/\s:@]+:[^/\s@]+@/],
 ];
-const output = execFileSync('git', ['cat-file', '--batch'], { input: [...blobs.keys()].join('\n') + '\n', maxBuffer: 64 * 1024 * 1024 });
+const output = execFileSync('git', ['cat-file', '--batch'], {
+  input: [...blobs.keys()].join('\n') + '\n',
+  maxBuffer: 64 * 1024 * 1024,
+});
 const findings = [];
 let offset = 0;
 while (offset < output.length) {
@@ -28,14 +32,34 @@ while (offset < output.length) {
   if (type !== 'blob') throw new Error('Unexpected history object');
   const start = end + 1;
   const content = output.subarray(start, start + Number(size)).toString('utf8');
-  for (const [category, pattern] of patterns) if (pattern.test(content)) findings.push({ category, file: blobs.get(id), blob: id });
+  for (const [category, pattern] of patterns)
+    if (pattern.test(content)) findings.push({ category, file: blobs.get(id), blob: id });
   offset = start + Number(size) + 1;
 }
-const report = { schema: 1, commits: commits.length, blobs: blobs.size, findings,
-  historicalArtifacts: [...new Set([...blobs.values()].filter(file => /(^|\/)(evidence|dist|node_modules)\/|\.(log|tgz)$/.test(file)))],
-  limitation: 'Configured patterns only. Findings omit matched values. Gitleaks and maintainer disclosure review are separate checks.' };
+const report = {
+  schema: 1,
+  commits: commits.length,
+  blobs: blobs.size,
+  findings,
+  historicalArtifacts: [
+    ...new Set(
+      [...blobs.values()].filter((file) =>
+        /(^|\/)(evidence|dist|node_modules)\/|\.(log|tgz)$/.test(file),
+      ),
+    ),
+  ],
+  limitation:
+    'Configured patterns only. Findings omit matched values. Gitleaks and maintainer disclosure review are separate checks.',
+};
 mkdirSync('artifacts', { recursive: true });
 writeFileSync('artifacts/history-audit.json', JSON.stringify(report, null, 2) + '\n');
-console.log(`History audit: ${report.commits} commits, ${report.blobs} unique blobs, ${findings.filter(f => f.category === 'personal-path').length} personal-path findings, ${report.historicalArtifacts.length} historical artifact paths.`);
-if (findings.some(f => f.category !== 'personal-path')) throw new Error('Credential patterns found in history; inspect the redacted report before release');
-console.log('No configured credential patterns found. Personal paths and old artifacts require review before repository disclosure.');
+console.log(
+  `History audit: ${report.commits} commits, ${report.blobs} unique blobs, ${findings.filter((f) => f.category === 'personal-path').length} personal-path findings, ${report.historicalArtifacts.length} historical artifact paths.`,
+);
+if (findings.some((f) => f.category !== 'personal-path'))
+  throw new Error(
+    'Credential patterns found in history; inspect the redacted report before release',
+  );
+console.log(
+  'No configured credential patterns found. Personal paths and old artifacts require review before repository disclosure.',
+);

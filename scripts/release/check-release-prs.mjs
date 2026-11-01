@@ -15,11 +15,20 @@ export async function dispatchReleaseChecks(prs, { repository, defaultBranch, pa
   assert.equal(pr.base?.repo?.full_name, repository, 'Unexpected base repository');
   assert.equal(pr.base?.ref, defaultBranch, 'Unexpected base branch');
   assert.equal(pr.head?.repo?.full_name, repository, 'Fork release PR is not allowed');
-  assert.equal(pr.head?.ref, `release-please--branches--${defaultBranch}--components--${packageName}`, 'Unexpected release branch');
-  assert.ok(pr.labels?.some(label => label.name === 'autorelease: pending'), 'Release label missing');
+  assert.equal(
+    pr.head?.ref,
+    `release-please--branches--${defaultBranch}--components--${packageName}`,
+    'Unexpected release branch',
+  );
+  assert.ok(
+    pr.labels?.some((label) => label.name === 'autorelease: pending'),
+    'Release label missing',
+  );
   assert.match(pr.head?.sha ?? '', /^[0-9a-f]{40}$/, 'Release PR head SHA missing');
   for (const workflow of ['package.yml', 'publisher.yml']) {
-    await api('POST', `repos/${repository}/actions/workflows/${workflow}/dispatches`, { ref: pr.head.ref });
+    await api('POST', `repos/${repository}/actions/workflows/${workflow}/dispatches`, {
+      ref: pr.head.ref,
+    });
   }
   return { number, ref: pr.head.ref, sha: pr.head.sha };
 }
@@ -35,9 +44,16 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     api(method, endpoint, body) {
       const args = ['api', '--method', method, endpoint];
       if (body) args.push('--input', '-');
-      const output = execFileSync('gh', args, { input: body ? JSON.stringify(body) : undefined, encoding: 'utf8', timeout: 30_000, maxBuffer: 1024 * 1024 });
+      const output = execFileSync('gh', args, {
+        input: body ? JSON.stringify(body) : undefined,
+        encoding: 'utf8',
+        timeout: 30_000,
+        maxBuffer: 1024 * 1024,
+      });
       return output.trim() ? JSON.parse(output) : null;
     },
   });
-  console.log(`Dispatched required validation for release PR #${result.number} at ${result.sha}. No npm stage or approval performed.`);
+  console.log(
+    `Dispatched required validation for release PR #${result.number} at ${result.sha}. No npm stage or approval performed.`,
+  );
 }

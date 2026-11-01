@@ -2,7 +2,10 @@ import { renderHeadToString } from 'void/pages-head';
 import type { HeadDescriptor } from 'void';
 
 function scriptSignature(script: HTMLScriptElement) {
-  return JSON.stringify([Array.from(script.attributes, ({ name, value }) => [name, value]).sort(), script.textContent]);
+  return JSON.stringify([
+    Array.from(script.attributes, ({ name, value }) => [name, value]).sort(),
+    script.textContent,
+  ]);
 }
 
 function scriptElements(head: HeadDescriptor | undefined) {
@@ -12,7 +15,12 @@ function scriptElements(head: HeadDescriptor | undefined) {
 }
 
 function metadataSignature(element: Element) {
-  return JSON.stringify([element.tagName, Array.from(element.attributes, ({ name, value }) => [name, value]).filter(([name]) => name !== 'data-void-head').sort()]);
+  return JSON.stringify([
+    element.tagName,
+    Array.from(element.attributes, ({ name, value }) => [name, value])
+      .filter(([name]) => name !== 'data-void-head')
+      .sort(),
+  ]);
 }
 
 /** Synchronizes the snapshot before Void's idempotent post-render head commit. */
@@ -22,7 +30,9 @@ export function createDocumentHead(initial: HeadDescriptor | undefined) {
   let scripts: HTMLScriptElement[] = [];
   const existing = Array.from(document.head.querySelectorAll('script'));
   for (const desired of scriptElements(initial)) {
-    const index = existing.findIndex((script) => scriptSignature(script) === scriptSignature(desired));
+    const index = existing.findIndex(
+      (script) => scriptSignature(script) === scriptSignature(desired),
+    );
     if (index >= 0) scripts.push(...existing.splice(index, 1));
   }
 
@@ -38,10 +48,16 @@ export function createDocumentHead(initial: HeadDescriptor | undefined) {
     // commit reuses these nodes instead of inserting duplicate meta/link tags.
     const template = document.createElement('template');
     template.innerHTML = renderHeadToString({ meta: head?.meta, link: head?.link });
-    const metadata = Array.from(document.head.querySelectorAll('meta[data-void-head],link[data-void-head]'));
-    let cursor = document.head.querySelector('meta[data-void-head],link[data-void-head]') as Node | null;
+    const metadata = Array.from(
+      document.head.querySelectorAll('meta[data-void-head],link[data-void-head]'),
+    );
+    let cursor = document.head.querySelector(
+      'meta[data-void-head],link[data-void-head]',
+    ) as Node | null;
     for (const desired of Array.from(template.content.querySelectorAll('meta,link'))) {
-      const index = metadata.findIndex(element => metadataSignature(element) === metadataSignature(desired));
+      const index = metadata.findIndex(
+        (element) => metadataSignature(element) === metadataSignature(desired),
+      );
       const element = index >= 0 ? metadata.splice(index, 1)[0] : desired;
       element.setAttribute('data-void-head', '');
       if (element !== cursor) document.head.insertBefore(element, cursor);
@@ -52,7 +68,9 @@ export function createDocumentHead(initial: HeadDescriptor | undefined) {
     bodyKeys = attributes(document.body, bodyKeys, head?.bodyAttrs);
     const remaining = [...scripts];
     scripts = scriptElements(head).map((desired) => {
-      const index = remaining.findIndex((script) => scriptSignature(script) === scriptSignature(desired));
+      const index = remaining.findIndex(
+        (script) => scriptSignature(script) === scriptSignature(desired),
+      );
       if (index >= 0) return remaining.splice(index, 1)[0];
       // Template-parsed scripts remain inert when inserted. Head changes are metadata, not script execution.
       document.head.appendChild(desired);

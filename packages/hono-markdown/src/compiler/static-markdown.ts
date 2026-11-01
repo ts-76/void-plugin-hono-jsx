@@ -7,7 +7,11 @@ import type { HonoMarkdownOptions } from './markdown-features.ts';
 
 export type { HonoMarkdownOptions } from './markdown-features.ts';
 
-export interface MarkdownIsland { id: string; modulePath: string; hydrate: string }
+export interface MarkdownIsland {
+  id: string;
+  modulePath: string;
+  hydrate: string;
+}
 export interface MarkdownModuleInput {
   sourcePath: string;
   options?: HonoMarkdownOptions;
@@ -22,18 +26,24 @@ type ParsedMarkdown = ReturnType<MarkdownCompiler['parse']>;
 let defaultCompiler: MarkdownCompiler | undefined;
 const compilers = new WeakMap<HonoMarkdownOptions, MarkdownCompiler>();
 function compilerFor(options?: HonoMarkdownOptions) {
-  if (!options) return defaultCompiler ??= createMarkdownCompiler();
+  if (!options) return (defaultCompiler ??= createMarkdownCompiler());
   let compiler = compilers.get(options);
-  if (!compiler) compilers.set(options, compiler = createMarkdownCompiler(options));
+  if (!compiler) compilers.set(options, (compiler = createMarkdownCompiler(options)));
   return compiler;
 }
 
 function assertModulePrelude({ clientCode }: ParsedMarkdown) {
-  if (clientCode) throw new Error('Hono Markdown: standalone modules accept component imports only; arbitrary scripts require a host-specific page compiler.');
+  if (clientCode)
+    throw new Error(
+      'Hono Markdown: standalone modules accept component imports only; arbitrary scripts require a host-specific page compiler.',
+    );
 }
 
 function assertStaticPrelude({ imports, clientCode }: ParsedMarkdown) {
-  if (imports.length || clientCode) throw new Error('Hono Markdown: standalone slides support static components only; page islands and scripts require a host-specific page compiler.');
+  if (imports.length || clientCode)
+    throw new Error(
+      'Hono Markdown: standalone slides support static components only; page islands and scripts require a host-specific page compiler.',
+    );
 }
 
 /** Read the shared prelude without accepting arbitrary browser scripts. */
@@ -68,47 +78,84 @@ export async function compileMarkdownModule(source: string, input: MarkdownModul
   return emitMarkdownModule(compiler, parsed, input);
 }
 
-async function emitMarkdownModule(compiler: MarkdownCompiler, parsed: ParsedMarkdown, input: MarkdownModuleInput) {
+async function emitMarkdownModule(
+  compiler: MarkdownCompiler,
+  parsed: ParsedMarkdown,
+  input: MarkdownModuleInput,
+) {
   const result = await compiler.render(parsed);
-  const imports = [...result.staticImports.map(entry => ({ ...entry, kind: 'static' as const, hydrate: '' })), ...result.imports.map(entry => ({ ...entry, kind: 'island' as const }))].map((entry, index) => {
-    const target = entry.specifier.startsWith('.') && resolveComponent(entry.specifier, dirname(input.sourcePath), ['.tsx', '.jsx']);
-    if (!target) throw new Error(`Hono Markdown: cannot resolve relative TSX/JSX component ${entry.specifier} in ${input.sourcePath}.`);
+  const imports = [
+    ...result.staticImports.map((entry) => ({ ...entry, kind: 'static' as const, hydrate: '' })),
+    ...result.imports.map((entry) => ({ ...entry, kind: 'island' as const })),
+  ].map((entry, index) => {
+    const target =
+      entry.specifier.startsWith('.') &&
+      resolveComponent(entry.specifier, dirname(input.sourcePath), ['.tsx', '.jsx']);
+    if (!target)
+      throw new Error(
+        `Hono Markdown: cannot resolve relative TSX/JSX component ${entry.specifier} in ${input.sourcePath}.`,
+      );
     if (entry.kind === 'island' && !['load', 'visible', 'idle'].includes(entry.hydrate)) {
       const query = entry.hydrate.startsWith('media:') ? entry.hydrate.slice(6).trim() : '';
       let balance = 0;
       let invalid = false;
-      for (const character of query) { if (character === '(') balance++; if (character === ')') balance--; if (balance < 0) invalid = true; }
-      if (!query || balance || invalid || /[{};]/.test(query)) throw new Error(`Hono Markdown: invalid island hydration policy ${entry.hydrate}.`);
+      for (const character of query) {
+        if (character === '(') balance++;
+        if (character === ')') balance--;
+        if (balance < 0) invalid = true;
+      }
+      if (!query || balance || invalid || /[{};]/.test(query))
+        throw new Error(`Hono Markdown: invalid island hydration policy ${entry.hydrate}.`);
     }
-    return { ...entry, alias: `__component${index}`, modulePath: target, id: 'md-' + createHash('sha256').update(target).digest('hex').slice(0, 16) };
+    return {
+      ...entry,
+      alias: `__component${index}`,
+      modulePath: target,
+      id: 'md-' + createHash('sha256').update(target).digest('hex').slice(0, 16),
+    };
   });
-  const names = new Set(imports.map(entry => entry.importName));
-  const chunks = renderChunks(result.html, names, new Set(result.staticImports.map(entry => entry.importName)));
+  const names = new Set(imports.map((entry) => entry.importName));
+  const chunks = renderChunks(
+    result.html,
+    names,
+    new Set(result.staticImports.map((entry) => entry.importName)),
+  );
   const literal = (value: unknown) => `JSON.parse(${JSON.stringify(JSON.stringify(value))})`;
-  const hasIslands = imports.some(entry => entry.kind === 'island');
+  const hasIslands = imports.some((entry) => entry.kind === 'island');
   const limitedFrontmatter = result.clientFrontmatter !== result.frontmatter;
   const emit = (chunk: (typeof chunks)[number]): string => {
     if ('html' in chunk) return `raw(${JSON.stringify(chunk.html)})`;
-    const entry = imports.find(entry => entry.importName === chunk.name)!;
+    const entry = imports.find((entry) => entry.importName === chunk.name)!;
     // Islands render with the browser context during SSR too, so hydration sees the same frontmatter.
     const island = `jsx(${entry.alias}, ${literal(chunk.props)})`;
-    if (entry.kind === 'island') return `jsx('div', { 'data-hono-md-island': ${JSON.stringify(entry.id)}, 'data-hono-md-hydrate': ${JSON.stringify(entry.hydrate)}, 'data-hono-md-props': JSON.stringify(${literal(chunk.props)}), children: ${limitedFrontmatter ? `jsx(MarkdownContext.Provider, { value: islandContext, children: ${island} })` : island} })`;
+    if (entry.kind === 'island')
+      return `jsx('div', { 'data-hono-md-island': ${JSON.stringify(entry.id)}, 'data-hono-md-hydrate': ${JSON.stringify(entry.hydrate)}, 'data-hono-md-props': JSON.stringify(${literal(chunk.props)}), children: ${limitedFrontmatter ? `jsx(MarkdownContext.Provider, { value: islandContext, children: ${island} })` : island} })`;
     return `jsx(${entry.alias}, { ...${literal(chunk.props)}${chunk.children ? `, children: [${chunk.children.map(emit).join(',')}]` : ''} })`;
   };
   return {
-    islands: imports.filter(entry => entry.kind === 'island').map(({ id, modulePath, hydrate }) => ({ id, modulePath, hydrate })) satisfies MarkdownIsland[],
+    islands: imports
+      .filter((entry) => entry.kind === 'island')
+      .map(({ id, modulePath, hydrate }) => ({
+        id,
+        modulePath,
+        hydrate,
+      })) satisfies MarkdownIsland[],
     frontmatter: result.frontmatter,
     headings: result.headings,
     clientCode: result.needsCodeCopy ? markdownCopyCode : '',
     code: `import { jsx, Fragment } from 'hono/jsx/jsx-runtime';
 import { raw } from 'hono/html';
 import { MarkdownContext } from ${JSON.stringify(input.contextModule ?? '@ts-76/hono-markdown')};
-${imports.map(entry => `import ${entry.alias} from ${JSON.stringify(entry.specifier)};`).join('\n')}
+${imports.map((entry) => `import ${entry.alias} from ${JSON.stringify(entry.specifier)};`).join('\n')}
 export const frontmatter = ${literal(result.frontmatter)};
 export const headings = ${literal(result.headings)};
-${hasIslands ? `// Serialized once per document for every island it contains.
+${
+  hasIslands
+    ? `// Serialized once per document for every island it contains.
 const islandContext = { frontmatter: ${limitedFrontmatter ? literal(result.clientFrontmatter) : 'frontmatter'}, headings, props: {} };
-` : ''}export default function MarkdownSlide() {
+`
+    : ''
+}export default function MarkdownSlide() {
   return jsx(MarkdownContext.Provider, { value: { frontmatter, headings, props: {} }, children: jsx('div', { class: 'void-md', ${hasIslands ? `'data-hono-md-context': JSON.stringify(islandContext), ` : ''}children: jsx(Fragment, { children: [${chunks.map(emit).join(',')}] }) }) });
 }`,
   };

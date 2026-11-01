@@ -74,7 +74,7 @@ The original reachability evidence and its limits are in [rc-security-assessment
 
 ## Initial alpha acceptance
 
-Current RC/normal preparation boundaries and update triggers are in [known-limitations.md](known-limitations.md); the dated RC reassessment is in [rc-security-assessment.md](rc-security-assessment.md). The dated alpha investigation below used the original filenames; the current JSX transform is `src/plugins/jsx-transform.ts`, while `src/plugins/hono-jsx.ts` is the composition entry.
+Current RC/normal preparation boundaries and update triggers are in [known-limitations.md](known-limitations.md); the dated RC reassessment is in [rc-security-assessment.md](rc-security-assessment.md). The dated alpha investigation below used the original filenames; the current JSX transform is `src/plugins/shared/jsx-transform.ts`, while `src/plugins/pages/plugin.ts` is the composition entry.
 
 On 2026-10-11, the maintainer accepted the remaining upstream esbuild advisory as a known limitation for preparing `void-plugin-hono-jsx@0.1.0-alpha.0` on `next`, without adding dependency overrides. This records acceptance of one advisory on the pinned peer baseline, not approval to upload, publish, disclose Git history or change repository visibility.
 
@@ -96,7 +96,7 @@ The adapter archive ships no dependency implementation and has no direct esbuild
 
 ## Observed use and limits of the assessment
 
-- `packages/hono-pages/src/plugins/hono-jsx.ts` uses Vite's `transformWithOxc` for JSX. `scripts/build-package.mjs` uses TypeScript's `tsc` to generate the package output.
+- `packages/void-plugin-hono-jsx/src/plugins/pages/plugin.ts` uses Vite's `transformWithOxc` for JSX. `scripts/build-package.mjs` uses TypeScript's `tsc` to generate the package output.
 - The installed `@esbuild-kit/core-utils/dist/index.js` uses esbuild's `transform` and `transformSync`; its ESM loader supplies TypeScript module loading. No esbuild `serve` invocation was found in the adapter or these loader modules.
 - Void's installed DB/init/deploy tooling resolves Drizzle's CLI. That dependency belongs to the upstream framework; this adapter does not control its installation or every execution path.
 - The advisory concerns esbuild's own development server allowing other websites to read responses through permissive CORS. The observed transform calls do not start that server. This is limited source inspection, not proof that every Void command or every consumer configuration is unreachable or safe.

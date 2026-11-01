@@ -9,7 +9,7 @@ Release PleaseはConventional CommitsからリリースPRを更新します。
 | --- | --- |
 | `.release-please-manifest.json` | リリースバージョン |
 | `package.json` / `package-lock.json` | 開発用rootのバージョン |
-| `packages/hono-pages/package.json` | 公開パッケージのバージョン |
+| `packages/void-plugin-hono-jsx/package.json` | 公開パッケージのバージョン |
 | `CHANGELOG.md` | 変更履歴の正本。ビルド時にパッケージへコピー |
 
 バージョンと変更履歴はbotに更新させます。破壊的変更には `!` と移行案内を付けてください。

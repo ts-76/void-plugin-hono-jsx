@@ -7,7 +7,13 @@ import { consumerStack } from '../consumer-launcher.mjs';
 import { inspectArtifact, inspectPreparedArtifact, sha256 } from './gate.mjs';
 
 /** Verify a prepared candidate only within its originating CI run; acceptance requires a fresh full consumer. */
-export function verifyConsumerCandidate({ root = process.cwd(), artifactRoot = path.join(root, 'artifacts'), commit, env = process.env, runConsumer }) {
+export function verifyConsumerCandidate({
+  root = process.cwd(),
+  artifactRoot = path.join(root, 'artifacts'),
+  commit,
+  env = process.env,
+  runConsumer,
+}) {
   assert.equal(env.GITHUB_ACTIONS, 'true', 'Shared candidates require a GitHub Actions run');
   assert.match(env.GITHUB_RUN_ID ?? '', /^[1-9]\d*$/, 'Missing workflow run ID');
   assert.match(env.GITHUB_RUN_ATTEMPT ?? '', /^[1-9]\d*$/, 'Missing workflow attempt');
@@ -17,14 +23,23 @@ export function verifyConsumerCandidate({ root = process.cwd(), artifactRoot = p
   assert.equal(process.version, `v${policy.releaseNode}`, 'Use the configured release Node');
   assert.equal(env.GITHUB_SHA, commit, 'Workflow source changed');
   assert.equal(env.GITHUB_REPOSITORY, policy.repository);
-  assert.equal(env.GITHUB_WORKFLOW_REF, `${policy.repository}/.github/workflows/package.yml@${env.GITHUB_REF}`);
+  assert.equal(
+    env.GITHUB_WORKFLOW_REF,
+    `${policy.repository}/.github/workflows/package.yml@${env.GITHUB_REF}`,
+  );
   assert.equal(evidence.workflow, env.GITHUB_WORKFLOW_REF, 'Candidate workflow changed');
   assert.equal(evidence.runId, env.GITHUB_RUN_ID, 'Candidate belongs to another run');
   assert.equal(evidence.runAttempt, env.GITHUB_RUN_ATTEMPT, 'Candidate belongs to another attempt');
   const pending = evidence.validation.externalConsumer === false;
-  if (!pending) assert.deepEqual(evidence.consumerStack, consumerStack({ RELEASE_CONSUMER_STACK: 'baseline' }), 'Input must be prepared or baseline-accepted');
+  if (!pending)
+    assert.deepEqual(
+      evidence.consumerStack,
+      consumerStack({ RELEASE_CONSUMER_STACK: 'baseline' }),
+      'Input must be prepared or baseline-accepted',
+    );
   const stack = consumerStack(env);
-  if (!pending) assert.notEqual(stack.name, 'baseline', 'Baseline was already verified by preparation');
+  if (!pending)
+    assert.notEqual(stack.name, 'baseline', 'Baseline was already verified by preparation');
   const report = path.join(artifactRoot, 'consumer-dependency-audit.json');
   // A successful command must generate its own reports, never reuse the baseline audit.
   rmSync(report, { force: true });
@@ -33,21 +48,40 @@ export function verifyConsumerCandidate({ root = process.cwd(), artifactRoot = p
   if (runConsumer) runConsumer({ tarball, env: consumerEnv });
   else {
     assert.ok(env.npm_execpath, 'Run with npm run release:verify-consumer');
-    execFileSync(process.execPath, ['scripts/check-consumer.mjs', '--tarball', tarball], { cwd: root, env: consumerEnv, stdio: 'inherit', timeout: 10 * 60 * 1000 });
+    execFileSync(process.execPath, ['scripts/check-consumer.mjs', '--tarball', tarball], {
+      cwd: root,
+      env: consumerEnv,
+      stdio: 'inherit',
+      timeout: 10 * 60 * 1000,
+    });
   }
-  const verified = { ...evidence, validation: { ...evidence.validation, externalConsumer: true }, consumerStack: stack, consumerDependencyReportSha256: sha256(readFileSync(report)) };
+  const verified = {
+    ...evidence,
+    validation: { ...evidence.validation, externalConsumer: true },
+    consumerStack: stack,
+    consumerDependencyReportSha256: sha256(readFileSync(report)),
+  };
   writeFileSync(path.join(artifactRoot, 'evidence.json'), JSON.stringify(verified, null, 2) + '\n');
   // Recheck raw bytes, source/maps, original common audits and the fresh consumer report.
   inspectArtifact({ root, artifactRoot, commit });
-  console.log(`Verified the same candidate ${evidence.sha256} with locked ${stack.name}. No upload or stage performed.`);
+  console.log(
+    `Verified the same candidate ${evidence.sha256} with locked ${stack.name}. No upload or stage performed.`,
+  );
   return verified;
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
   const root = process.cwd();
-  const git = args => execFileSync('git', args, { cwd: root, encoding: 'utf8' }).trim();
-  const clean = () => assert.equal(git(['status', '--porcelain', '--untracked-files=all']), '', 'Release source must remain clean');
-  clean(); const commit = git(['rev-parse', 'HEAD']);
+  const git = (args) => execFileSync('git', args, { cwd: root, encoding: 'utf8' }).trim();
+  const clean = () =>
+    assert.equal(
+      git(['status', '--porcelain', '--untracked-files=all']),
+      '',
+      'Release source must remain clean',
+    );
+  clean();
+  const commit = git(['rev-parse', 'HEAD']);
   verifyConsumerCandidate({ root, commit });
-  clean(); assert.equal(git(['rev-parse', 'HEAD']), commit, 'Source commit changed');
+  clean();
+  assert.equal(git(['rev-parse', 'HEAD']), commit, 'Source commit changed');
 }

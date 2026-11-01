@@ -12,5 +12,5 @@
     "skipLibCheck": true,
     "types": ["vite/client", "node"]
   },
-  "include": ["packages/hono-pages/src", "examples"]
+  "include": ["packages/void-plugin-hono-jsx/src", "examples"]
 }
