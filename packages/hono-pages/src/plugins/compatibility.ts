@@ -5,7 +5,7 @@ import { version as helperViteVersion } from 'vite';
 
 export const supportedFrameworkRanges = {
   void: '>=1.2.1 <1.3.0',
-  hono: '>=4.13.13 <5.0.0',
+  hono: '>=4.13.16 <5.0.0',
   vite: '>=8.0.16 <9.0.0',
 };
 export const supportedViteRange = supportedFrameworkRanges.vite;
@@ -25,7 +25,7 @@ export function supportsFramework(name: keyof typeof supportedFrameworkRanges, v
   const [major, minor, patch] = match.slice(1).map(Number);
   if (![major, minor, patch].every(Number.isSafeInteger)) return false;
   if (name === 'void') return major === 1 && minor === 2 && patch >= 1;
-  if (name === 'hono') return major === 4 && (minor > 13 || (minor === 13 && patch >= 13));
+  if (name === 'hono') return major === 4 && (minor > 13 || (minor === 13 && patch >= 16));
   return major === 8 && (minor > 0 || patch >= 16);
 }
 export const supportsVite = (version: unknown): boolean => supportsFramework('vite', version);

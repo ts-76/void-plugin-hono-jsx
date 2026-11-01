@@ -6,7 +6,7 @@ import { spawnSync } from 'node:child_process';
 
 export async function checkCompatibilityConsumer({ consumer, env, stack }) {
   const build = () => spawnSync(process.execPath, launcherArgs(consumer, 'build', [], env), { cwd: consumer, env, encoding: 'utf8' });
-  for (const [name, version] of [['void', stack.void], ['hono', '4.13.13']]) {
+  for (const [name, version] of [['void', stack.void], ['hono', '4.13.16']]) {
     const path = join(consumer, 'node_modules', name, 'package.json');
     const original = await readFile(path, 'utf8');
     try {

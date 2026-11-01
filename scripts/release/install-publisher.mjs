@@ -36,8 +36,8 @@ await extract(policy.distribution.url, policy.distribution.integrity, runtime, t
 const manifestPath = path.join(runtime, 'package.json');
 const manifest = JSON.parse(readFileSync(manifestPath));
 assert.equal(manifest.version, policy.version);
-// No runtime range is changed. Test/workspace/lifecycle metadata is not part of
-// this private publisher; never install dependencies or run scripts at stage time.
+// The upstream manifest remains unchanged. Security-fixed glob/minimatch in the
+// private lock exceed upstream ranges; see PUBLISHER.md. Never run install/scripts here.
 for (const key of ['devDependencies', 'workspaces', 'scripts']) delete manifest[key];
 manifest.private = true;
 assert.deepEqual(lock.packages[''].dependencies, manifest.dependencies);

@@ -6,7 +6,7 @@
     "node": ">=24.22.1 <25.0.0"
   },
   "dependencies": {
-    "hono": "4.13.13",
+    "hono": "4.13.16",
     "void-plugin-hono-jsx": "0.1.0-rc.1"
   },
   "devDependencies": {

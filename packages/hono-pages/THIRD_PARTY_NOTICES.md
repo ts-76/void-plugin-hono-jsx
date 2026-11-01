@@ -30,7 +30,7 @@ SOFTWARE.
 
 ## Hono
 
-Source distribution: `hono@4.13.13`, published npm package. Hono is required as an exact peer dependency.
+Source distribution: `hono@4.13.16`, published npm package. Hono is required as an exact peer dependency.
 
 MIT License
 

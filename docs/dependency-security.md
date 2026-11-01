@@ -1,5 +1,13 @@
 # Dependency advisory acceptance
 
+## Hono and publisher remediation — 2026-11-01
+
+This isolated update retains the public-main Void 1.2.1 baseline. Hono is pinned to 4.13.16 in the root and locked consumers, and the adapter/common Markdown peer floor is 4.13.16. This selects the November 1 security release explicitly; consumers must update Hono alongside the adapter. The CSS regression exercises closing tags split across template/value boundaries in the adapter's SSR document.
+
+The private npm publisher pins glob 14.0.3 and minimatch 11.0.2 outside upstream npm dependency ranges. Archive/file integrity, embedded-source matching and a fresh zero-finding OSV audit remain mandatory; see [the publisher compatibility exception](../scripts/release/PUBLISHER.md). No risk allowlist was added.
+
+The existing Void/Cloudflare/esbuild findings are not repaired by this change. The historical acceptance below remains bound to its original lockfiles and advisories. Changed lockfiles require reassessment, so publication remains blocked; this update does not refresh acceptance hashes, approve new findings or submit a release.
+
 ## 0.9.1 owner acceptance — 2026-10-25
 
 The owner explicitly accepted the remaining Void/Cloudflare tooling risks for **void-plugin-hono-jsx 0.9.1 only** after reassessment. This is a new, version-specific decision; it does not extend the earlier 0.9.0 approval to arbitrary releases. The latest root, ordinary-consumer and Markdown-consumer audits retain 16 propagated entries (High 6, Moderate 10, Critical 0), representing the existing esbuild advisory and the same four undici/Zod advisories described below. Upstream Void's latest release remains 1.2.1. These dependencies are not repaired by this acceptance.

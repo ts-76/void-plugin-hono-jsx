@@ -11,6 +11,16 @@ const page = { component: 'index', props: {}, params: {}, shared: {}, errors: nu
 const assets = { css: '<link rel="stylesheet" href="/app.css">', preloads: '', body: '' };
 const styles = html => html.match(/<style id="hono-css"[^>]*>([\s\S]*?)<\/style>/)?.[1];
 
+test('SSR CSS cannot close its style host across template/value boundaries', async () => {
+  const payload = '/style><script id="css-injection">alert(1)</script>';
+  for (const className of [css`content:"<${payload}";`, css`content:"${'<'}${payload}";`]) {
+    const html = await renderHonoDocument(jsx('p', { class: className, children: 'safe' }), page, assets);
+    assert.equal((html.match(/<\/style>/gi) ?? []).length, 1);
+    assert.doesNotMatch(html, /<\/style><script/i);
+    assert.match(html, /safe/);
+  }
+});
+
 test('complete SSR callbacks fill one head host before application styles', async () => {
   const component = () => jsx('p', { class: css`color:rgb(11,22,33);`, children: '日本語 & English' });
   const html = await renderHonoDocument(jsx(component, {}), page, assets);

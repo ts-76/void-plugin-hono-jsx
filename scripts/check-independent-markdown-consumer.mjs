@@ -10,7 +10,7 @@ const run=(args,cwd=root)=>execFileSync('npm',args,{cwd,encoding:'utf8',maxBuffe
 const audit=()=>{const report=JSON.parse(run(['audit','--json']));assert.equal(report.metadata.vulnerabilities.total,0);console.log(JSON.stringify({independentDependencyAudit:report.metadata.vulnerabilities}));};
 const packed=JSON.parse(run(['pack','--ignore-scripts','--json','--pack-destination',root],join(repo,'packages/hono-markdown')));
 await writeFile(join(root,'package.json'),'{"type":"module","private":true}');
-run(['install','--ignore-scripts','--no-audit','--no-fund',join(root,packed[0].filename),'hono@4.13.13']);
+run(['install','--ignore-scripts','--no-audit','--no-fund',join(root,packed[0].filename),'hono@4.13.16']);
 audit();
 const manifest = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'));
 for (const name of ['markdown-exit', 'markdown-it-container']) assert.equal(manifest.dependencies?.[name], undefined, 'Parsers must be installed transitively');
@@ -26,7 +26,7 @@ assert.equal(output.needsCodeCopy,false);
 console.log(JSON.stringify({articleMinimalPeers:true,yamlInstalled:false,shikiInstalled:false}));`);
 console.log(execFileSync(process.execPath,[join(root,'article.mjs')],{cwd:root,encoding:'utf8'}));
 await verifyMarkdownWorkerConsumer(root);
-run(['install','--ignore-scripts','--no-audit','--no-fund',join(root,packed[0].filename),'hono@4.13.13','yaml@2.9.1','shiki@4.5.0','@shikijs/transformers@4.5.0']);
+run(['install','--ignore-scripts','--no-audit','--no-fund',join(root,packed[0].filename),'hono@4.13.16','yaml@2.9.1','shiki@4.5.0','@shikijs/transformers@4.5.0']);
 audit();
 const check=String.raw`import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';

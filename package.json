@@ -33,7 +33,7 @@
     "pretest": "npm run build:markdown"
   },
   "dependencies": {
-    "hono": "4.13.13",
+    "hono": "4.13.16",
     "@ts-76/hono-markdown": "file:packages/hono-markdown"
   },
   "devDependencies": {

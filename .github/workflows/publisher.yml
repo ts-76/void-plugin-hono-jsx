@@ -27,7 +27,9 @@ jobs:
       - name: Audit every inventoried package against current advisories
         run: node scripts/release/check-publisher.mjs
       - name: Verify the publisher's OIDC, isolation and failure gates
-        run: node --test tests/publisher.test.mjs tests/publisher-js.test.mjs
+        run: node --test tests/publisher.test.mjs tests/publisher-js.test.mjs tests/publisher-bundles.test.mjs
+      - name: Verify pack, ignore rules and release-command compatibility
+        run: node scripts/release/publisher-runtime-test.mjs
       - name: Exercise staging with external networking disabled
         run: sudo env PUBLISHER_NODE="$(command -v node)" unshare --net python3 scripts/release/probe-publisher-js.py "$RELEASE_CLI" "$RUNNER_TEMP/publisher-report"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

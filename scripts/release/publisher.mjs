@@ -6,6 +6,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { registry, sha256, stageArguments, stageReceipt } from './gate.mjs';
 import { publisherInventory } from './publisher-inventory.mjs';
+import { verifyPublisherBundles } from './publisher-bundles.mjs';
 import { pathToFileURL } from 'node:url';
 
 export const policyPath = fileURLToPath(new URL('./publisher-policy.json', import.meta.url));
@@ -79,7 +80,7 @@ export function publisherSnapshot(root) {
       const name = path.relative(root, file).replaceAll('\\', '/');
       const bytes = readFileSync(file);
       table.push({ path: name, sha256: sha256(bytes) });
-      if (/\.(?:mjs|cjs|js)$/.test(name) || name.endsWith('package.json')) files.set(name, bytes.toString('utf8'));
+      if (/\.(?:mjs|cjs|js|js\.map)$/.test(name) || name.endsWith('package.json')) files.set(name, bytes.toString('utf8'));
     }
   } };
   visit(root);
@@ -97,6 +98,7 @@ export function verifyPublisher(cli, policy = loadPublisherPolicy(), { local = f
   const { files, filesSha256, inventory } = publisherSnapshot(root);
   assert.equal(filesSha256, policy.filesSha256, 'Publisher files changed');
   assert.deepEqual(inventory, JSON.parse(readFileSync(inventoryPath)), 'Publisher inventory differs from distributed files');
+  verifyPublisherBundles(files, inventory);
   assert.equal(JSON.parse(files.get('package.json')).version, policy.version);
 }
 
