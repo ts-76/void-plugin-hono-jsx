@@ -9,6 +9,17 @@ const locks = [
   'fixtures/consumer-void-1-vp/package-lock.json',
 ];
 const digest = (bytes) => createHash('sha256').update(bytes).digest('hex');
+class StaleConsumerRiskAcceptance extends Error {}
+
+// A plan can report expired consent, but must never reuse it for staging.
+export function consumerRiskDecision(options) {
+  try {
+    return { accepted: acceptedConsumerRisks(options), blockers: [] };
+  } catch (error) {
+    if (!(error instanceof StaleConsumerRiskAcceptance)) throw error;
+    return { accepted: [], blockers: ['consumer-risk-acceptance-stale'] };
+  }
+}
 export const canonical = (value) => JSON.stringify(normalize(value));
 function normalize(value) {
   if (Array.isArray(value)) return value.map(normalize);
@@ -27,18 +38,26 @@ export function acceptedConsumerRisks({ root, pkg, policy }) {
   const acceptance = policy.consumerRiskAcceptance;
   if (!acceptance || acceptance.packageVersion !== pkg.version) return [];
   assert.equal(acceptance.schema, 1);
-  assert.equal(acceptance.node, policy.releaseNode, 'Consumer risk Node baseline changed');
-  assert.equal(acceptance.voidPeer, pkg.peerDependencies?.void, 'Consumer risk Void peer changed');
+  assert.equal(
+    acceptance.node,
+    policy.releaseNode,
+    new StaleConsumerRiskAcceptance('Consumer risk Node baseline changed'),
+  );
+  assert.equal(
+    acceptance.voidPeer,
+    pkg.peerDependencies?.void,
+    new StaleConsumerRiskAcceptance('Consumer risk Void peer changed'),
+  );
   assert.deepEqual(
     Object.keys(acceptance.lockfiles).sort(),
     [...locks].sort(),
-    'Consumer risk lock set changed',
+    new StaleConsumerRiskAcceptance('Consumer risk lock set changed'),
   );
   for (const file of locks)
     assert.equal(
       digest(readFileSync(path.join(root, file))),
       acceptance.lockfiles[file],
-      `Consumer risk lock changed: ${file}`,
+      new StaleConsumerRiskAcceptance(`Consumer risk lock changed: ${file}`),
     );
   assert.equal(acceptance.advisories.length, 4);
   return acceptance.advisories.map((item) => {

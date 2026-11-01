@@ -31,6 +31,8 @@ The preserved feature-layout refactor and the local Void 1.4.0 update are combin
 
 Updates within the existing Cloudflare/Miniflare/Drizzle/minimatch ranges resolved no new versions and left the same 17 propagated entries. Newer `@cloudflare/config` and `@cloudflare/workers-auth` releases contain fixed Zod/undici, but their ranges and cf's embedded copy remain constrained by Void. No forced transitive overrides are applied.
 
+The release-plan report now represents expired peer/Node/lock consent as `consumer-risk-acceptance-stale` with no accepted consumer advisories. Unreviewed findings also add `dependency-advisories-unreviewed`. Reporting this blocked plan can complete successfully in CI; it does not establish publication readiness. Both staging and stage-argument construction still require `status: ready`. Malformed policy, changed artifact bytes and changed advisory records continue to throw. Regression tests verify the blocked decision and staging rejection without renewing the historical approval.
+
 Compatible direct updates select @types/node 24.19.2, magic-string 1.4.5, Oxfmt 0.75.0, Playwright 1.64.1 and plain Vite 8.3.5. The aligned Vite Plus/core 1.3.0 fixture is retained. These changes do not repair the remaining Void/Cloudflare advisories or renew historical release consent.
 
 ## 0.9.1 owner acceptance — 2026-10-25

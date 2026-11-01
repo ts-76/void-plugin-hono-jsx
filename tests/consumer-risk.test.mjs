@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import {
   acceptedConsumerRisks,
+  consumerRiskDecision,
   verifyConsumerRiskAdvisories,
   canonical,
 } from '../scripts/release/consumer-risk.mjs';
@@ -61,6 +62,44 @@ test('consumer acceptance expires with the adapter version and cannot waive a ch
     );
     writeFileSync(path.join(f.root, 'fixtures/consumer-void-1-vp/package-lock.json'), 'updated');
     assert.throws(() => acceptedConsumerRisks(f), /lock changed/);
+  } finally {
+    f.cleanup();
+  }
+});
+
+test('risk decisions report stale consent without accepting any advisory and still reject malformed policy', () => {
+  const f = fixture();
+  try {
+    assert.deepEqual(consumerRiskDecision(f), { accepted: acceptedConsumerRisks(f), blockers: [] });
+    for (const change of [
+      { policy: { ...f.policy, releaseNode: '24.23.0' } },
+      { pkg: { ...f.pkg, peerDependencies: { void: '>=1.4.0 <1.5.0' } } },
+      {
+        policy: {
+          ...f.policy,
+          consumerRiskAcceptance: { ...f.policy.consumerRiskAcceptance, lockfiles: {} },
+        },
+      },
+    ]) {
+      assert.deepEqual(consumerRiskDecision({ ...f, ...change }), {
+        accepted: [],
+        blockers: ['consumer-risk-acceptance-stale'],
+      });
+    }
+    writeFileSync(path.join(f.root, 'package-lock.json'), 'changed');
+    assert.deepEqual(consumerRiskDecision(f), {
+      accepted: [],
+      blockers: ['consumer-risk-acceptance-stale'],
+    });
+    assert.throws(() =>
+      consumerRiskDecision({
+        ...f,
+        policy: {
+          ...f.policy,
+          consumerRiskAcceptance: { ...f.policy.consumerRiskAcceptance, schema: 2 },
+        },
+      }),
+    );
   } finally {
     f.cleanup();
   }

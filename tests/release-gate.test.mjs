@@ -104,6 +104,43 @@ test('accepted dependency advisory remains reported while new consumer findings 
   }
 });
 
+test('a stale consumer approval is reported as blocked and cannot produce stage arguments', () => {
+  const f = fixture();
+  try {
+    const url = 'https://github.com/advisories/GHSA-xjj6-f33q-929c';
+    const report = JSON.stringify({
+      metadata: { vulnerabilities: { total: 1 } },
+      vulnerabilities: { undici: { via: [{ url }] } },
+    });
+    writeFileSync(path.join(f.artifactRoot, 'consumer-dependency-audit.json'), report);
+    f.evidence.consumerDependencyReportSha256 = sha256(report);
+    writeFileSync(path.join(f.artifactRoot, 'evidence.json'), JSON.stringify(f.evidence));
+    writeFileSync(
+      path.join(f.root, 'release-policy.json'),
+      JSON.stringify({
+        ...f.policy,
+        consumerRiskAcceptance: {
+          schema: 1,
+          packageVersion: f.pkg.version,
+          node: f.policy.releaseNode,
+          voidPeer: '>=1.2.1 <1.3.0',
+        },
+      }),
+    );
+    const plan = createPlan(f.options);
+    assert.equal(plan.status, 'blocked');
+    assert.ok(plan.blockers.includes('consumer-risk-acceptance-stale'));
+    assert.ok(plan.blockers.includes('dependency-advisories-unreviewed'));
+    assert.deepEqual(plan.dependencyAdvisories, [url]);
+    assert.throws(
+      () => stageArguments(plan, f.policy, f.tarball),
+      /consumer-risk-acceptance-stale/,
+    );
+  } finally {
+    f.cleanup();
+  }
+});
+
 test('public metadata and tag must match the reviewed experimental policy', () => {
   const f = fixture();
   try {

@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync, realpathSync, readdirSync } from 'node:fs';
 import { inspectSourceMaps } from './source-maps.mjs';
 import path from 'node:path';
-import { acceptedConsumerRisks } from './consumer-risk.mjs';
+import { consumerRiskDecision } from './consumer-risk.mjs';
 export const registry = 'https://registry.npmjs.org/';
 export const json = (file) => JSON.parse(readFileSync(file, 'utf8'));
 export const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
@@ -212,13 +212,15 @@ export function createPlan(options) {
       ),
     ),
   ];
+  const consumerRisks = consumerRiskDecision({
+    root: options.root || process.cwd(),
+    pkg: artifact.pkg,
+    policy: artifact.policy,
+  });
+  blockers.push(...consumerRisks.blockers);
   const accepted = [
     ...(artifact.policy.approvedDependencyAdvisories || []),
-    ...acceptedConsumerRisks({
-      root: options.root || process.cwd(),
-      pkg: artifact.pkg,
-      policy: artifact.policy,
-    }),
+    ...consumerRisks.accepted,
   ];
   if (advisories.some((url) => !accepted.includes(url)))
     blockers.push('dependency-advisories-unreviewed');
