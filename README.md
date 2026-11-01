@@ -12,7 +12,7 @@ Use Node.js 24.22.1 or newer within Node 24.
 
 ```sh
 npm install void-plugin-hono-jsx hono@4.13.16
-npm install --save-dev void@1.2.1 vite@8.3.4 typescript@7.0.2
+npm install --save-dev void@1.4.0 vite@8.3.4 typescript@7.0.2
 ```
 
 ```ts
@@ -45,12 +45,12 @@ For an existing scaffold, follow the [setup guide](packages/void-plugin-hono-jsx
 | Dependency | Supported stable range | Tested version |
 | --- | --- | --- |
 | Node.js | >=24.22.1 <25.0.0 | 24.22.1 |
-| Void | >=1.2.1 <1.3.0 | 1.2.1 |
+| Void | >=1.4.0 <1.5.0 | 1.4.0 |
 | Hono | >=4.13.16 <5.0.0 | 4.13.16 |
 | Vite | >=8.0.16 <9.0.0 | 8.3.4 |
 
 Vite Plus 1.3.0 is also tested with its matching core alias. See [launcher setup](packages/void-plugin-hono-jsx/README.md#running-vite-and-launcher-diagnostics).
-Ranges allow stable updates; the table lists the versions actually tested. Void 1.2.1 is the minimum: navigation and refresh use its corrected history/hash protocol.
+Ranges allow stable updates; the table lists the versions actually tested. Void 1.4.0 is the minimum: navigation and refresh use its corrected history/hash protocol.
 
 ## Features
 

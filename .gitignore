@@ -18,3 +18,5 @@ stage-receipt.json
 
 # Generated from the root release-please changelog during package build.
 /packages/void-plugin-hono-jsx/CHANGELOG.md
+
+.harness/dev/*/notes/

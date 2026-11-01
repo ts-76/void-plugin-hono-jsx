@@ -187,10 +187,13 @@ export async function checkStaticConsumer({ repo, consumer, browser, env }) {
     join(consumer, 'pages/deferred.server.ts'),
     "import { defer } from 'void'; export const loader = () => ({ slow: defer(async () => 'value') });",
   );
-  const deferredLog = build();
-  assert.match(deferredLog, /deferred props cannot be statically prerendered/);
+  assert.throws(() => build(), (error) => {
+    assert.match(String(error), /deferred props cannot be statically prerendered/);
+    assert.match(String(error), /page\(s\) failed to prerender/);
+    return true;
+  });
   await assert.rejects(access(join(output, 'deferred.html')));
   console.log(
-    'Static diagnostics: actions fail discovery; deferred prerender warns and emits no HTML according to Void build behavior.',
+    'Static diagnostics: actions fail discovery; deferred prerender fails the build and emits no HTML.',
   );
 }
