@@ -16,6 +16,8 @@ The default install uses `latest`. Use `@next` to test a release candidate, or a
 
 Version 0.9.1 accepts known risks in the required Void/Cloudflare tooling: affected undici can terminate a Node development/CLI process on a malformed peer response, and affected Zod can allocate excessive validation issues. Keep dev/preview private, use trusted project configuration and avoid unbounded external inputs. These dependencies remain unfixed; the audit is nonzero. See the [0.9.1 acceptance, exact scope and usage limits](https://github.com/ts-76/void-plugin-hono-jsx/blob/v0.9.1/docs/dependency-security.md).
 
+Current main targets Void 1.4.0 and retains additional upstream findings. Publication is on hold pending upstream fixes; the historical 0.9.1 acceptance does not cover this baseline. See [current dependency limits](https://github.com/ts-76/void-plugin-hono-jsx/blob/main/SECURITY.md).
+
 ## Configure
 
 ```ts
@@ -84,34 +86,34 @@ import {
 import { Form, useForm, useIslandForm, action } from 'void-plugin-hono-jsx/form';
 ```
 
-See the [Pages guide](https://github.com/ts-76/void-plugin-hono-jsx/blob/main/docs/pages.md) for navigation options, form methods, pending UI and error handling.
+Runnable navigation, forms and error handling are in the [Pages example](https://github.com/ts-76/void-plugin-hono-jsx/tree/main/examples/pages).
 
 ### Multipart forms
 
 Use `<Form form={form} encType="multipart/form-data">` or pass `FormData` to a form submission method.
 Files, repeated fields and the clicked submitter are preserved.
 Full Pages performs one GET after a successful mutation, so the destination must support GET and loaders may rerun.
-Read the [multipart transport guide](https://github.com/ts-76/void-plugin-hono-jsx/blob/main/docs/pages.md#multipart-forms).
+Cancellation cannot undo writes.
 
 ## Deferred loader props
 
 Return Void's `defer()` from a loader, then read `Deferred<T>` or use `deferredResult()` with Hono Suspense.
 Deferred data is supported in full Pages. Deferred islands and static deferred output are unsupported.
-See [deferred data](https://github.com/ts-76/void-plugin-hono-jsx/blob/main/docs/pages.md#deferred-loader-props).
+Failed prefetch may resolve to `null`.
 
 ## Islands
 
 Use `.island.tsx` pages and attributed imports such as `with { island: 'visible' }`.
 Supported policies are `load`, `visible`, `idle` and `media:(query)`.
 Static-only pages send no client script. Use `useIslandForm` for island forms.
-Follow the [island examples and restrictions](https://github.com/ts-76/void-plugin-hono-jsx/blob/main/docs/pages.md#islands).
+Use the [Pages island example](https://github.com/ts-76/void-plugin-hono-jsx/tree/main/examples/pages) for scheduling and component boundaries.
 
 ## Static output and prerendering
 
 Set `output: 'static'` in `void.config.ts` and build with Vite.
 Serve the generated HTML, assets and `/_void/pages` JSON from `dist/client`.
 Actions require a server. Check the generated files: failed prerender paths may be omitted with a warning.
-See [static output](https://github.com/ts-76/void-plugin-hono-jsx/blob/main/docs/pages.md#static-output-and-prerendering).
+See the runnable [static fixture](https://github.com/ts-76/void-plugin-hono-jsx/tree/main/fixtures/static).
 
 ## Optional Markdown
 
@@ -128,7 +130,7 @@ It supports frontmatter, layouts, loaders, islands, Shiki highlighting, copy but
 Import `void-plugin-hono-jsx/theme-content.css` and wrap Markdown in `.void-md` for scoped styles.
 
 Markdown uses document navigation and preserves authored HTML. Use trusted content; no HTML sanitization is provided.
-See the [Markdown guide](https://github.com/ts-76/void-plugin-hono-jsx/blob/main/docs/markdown.md) for static components, explicit islands and migration from 0.1.x, or the [honoxpress example](https://github.com/ts-76/void-plugin-hono-jsx/blob/main/docs/honoxpress.md).
+The [Markdown fixture](https://github.com/ts-76/void-plugin-hono-jsx/tree/main/fixtures/markdown) exercises static components and explicit islands. Host syntax and context are supplied by `@ts-76/hono-markdown`; install optional highlighting peers when enabling highlighting.
 
 ## Hono CSS
 
@@ -149,9 +151,9 @@ Use the documented package exports for application imports.
 - Development edits reload the document and reset local state.
 - Failed deferred prefetch can resolve to `null`.
 - A local Void/Miniflare connection-reuse issue remains unresolved after some rejected POSTs.
-- Direct Workers ISR has a [dated verification](https://github.com/ts-76/void-plugin-hono-jsx/blob/main/docs/isr-cloudflare-verification.md) with an unresolved query-purge limitation. The managed Void platform remains unverified.
+- Direct Workers ISR has historical verification with an unresolved query-purge limitation. The managed Void platform remains unverified.
 
-See [known limitations](https://github.com/ts-76/void-plugin-hono-jsx/blob/main/docs/known-limitations.md) for conditions and follow-up work.
+Production ISR path purge enumerates eventually consistent KV keys and may miss recent query variants; immediate/global invalidation and single-flight regeneration are not guaranteed. Managed Void hosting remains unverified. On the historical macOS Void 1.1.11/Miniflare baseline, a rejected POST could break a later reused connection; independent test connections were a workaround, not a fix.
 
 ## Security
 

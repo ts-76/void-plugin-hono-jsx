@@ -1,7 +1,7 @@
 import type { Plugin } from 'vite';
 
 export const markdownDiagnostic =
-  'Hono Pages: Markdown requires voidHonoMarkdown() from void-plugin-hono-jsx/markdown/plugin and its optional parser dependencies. See docs/markdown.md.';
+  'Hono Pages: Markdown requires voidHonoMarkdown() from void-plugin-hono-jsx/markdown/plugin and any optional highlighting dependencies. See https://github.com/ts-76/void-plugin-hono-jsx/tree/main/packages/void-plugin-hono-jsx#optional-markdown.';
 export type HonoMarkdownApi = {
   adapter: 'hono';
   clientEntryId: string;

@@ -1,6 +1,6 @@
 # void-plugin-hono-jsx
 
-0.7.0 retains known undici/Zod risks in the required Void/Cloudflare development and CLI tooling, including a reachable process-termination case. The owner accepted them for this release only; they are not fixed. See the [dependency acceptance and usage limits](docs/dependency-security.md).
+The current main baseline retains known Void/Cloudflare tooling vulnerabilities. Publication is on hold pending upstream fixes; previous version-specific risk acceptance does not authorize this graph. See [SECURITY.md](SECURITY.md).
 
 Hono JSX for [Void](https://void.cloud): server-rendered pages, client navigation, forms and islands. Void handles routing, loaders, actions and caching.
 
@@ -59,19 +59,14 @@ Ranges allow stable updates; the table lists the versions actually tested. Void 
 - JSON and multipart forms, including island forms.
 - Deferred page data with Hono `use()` and Suspense.
 - Islands with load, visible, idle and media scheduling.
-- Static output and optional [Markdown](docs/markdown.md) with code highlighting, copying, containers and themes.
+- Static output and optional [Markdown](packages/void-plugin-hono-jsx/README.md#optional-markdown) with code highlighting, copying, containers and themes.
 
 Browser mounting redraws server-rendered content. Development edits reload the page and reset local state.
-Direct Workers ISR has a dated verification with an unresolved query-purge limitation. The managed Void platform remains unverified. See [known limitations](docs/known-limitations.md).
+Direct Workers ISR has a dated verification with an unresolved query-purge limitation. The managed Void platform remains unverified. See [runtime limits](packages/void-plugin-hono-jsx/README.md#compatibility-and-rendering-limits).
 
-## Documentation
+## Usage
 
-- [Setup and package exports](packages/void-plugin-hono-jsx/README.md)
-- [Pages, navigation, forms and islands](docs/pages.md)
-- [Markdown](docs/markdown.md)
-- [Examples and testing](docs/testing.md)
-- [Roadmap](docs/stable-roadmap.md)
-- [Contributing](CONTRIBUTING.md)
+See [setup and package exports](packages/void-plugin-hono-jsx/README.md), the runnable [Pages example](examples/pages), and [contributing](CONTRIBUTING.md).
 
 ## Development
 
