@@ -56,7 +56,7 @@ test('unsupported running Vite fails despite project and adapter resolving suppo
       (error) => {
         assert.match(error.message, /running Vite 9\.0\.0 is unsupported/);
         assert.ok(error.message.includes(join(p.root, 'node_modules/vite/package.json')));
-        assert.match(error.message, /Adapter helper Vite: 8\.3\.4; package\.json: .*package\.json/);
+        assert.match(error.message, /Adapter helper Vite: 8\.3\.5; package\.json: .*package\.json/);
         assert.match(
           error.message,
           /installing project vite alone does not update the running Vite/,

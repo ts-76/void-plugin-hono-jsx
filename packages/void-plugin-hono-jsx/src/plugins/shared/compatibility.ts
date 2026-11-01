@@ -92,12 +92,12 @@ export function assertSupportedFrameworks({
     `Running Vite from hook context: ${typeof viteVersion === 'string' ? viteVersion : 'unavailable'}. Adapter helper Vite: ${helperViteVersion}; package.json: ${describe('vite', adapter)}. Project Vite package.json: ${describe('vite', project)}. Package paths are diagnostics, not the running Vite identity.`;
   if (!supportsVite(viteVersion)) {
     throw new Error(
-      `Hono Pages: running Vite ${typeof viteVersion === 'string' ? viteVersion : 'unavailable'} is unsupported; expected ${supportedViteRange}. ${diagnostic()} Update the CLI/launcher that executes Vite. For bundled launchers such as vp, installing project vite alone does not update the running Vite. For standard Vite, install vite@^8.3.4 and run vite directly.`,
+      `Hono Pages: running Vite ${typeof viteVersion === 'string' ? viteVersion : 'unavailable'} is unsupported; expected ${supportedViteRange}. ${diagnostic()} Update the CLI/launcher that executes Vite. For bundled launchers such as vp, installing project vite alone does not update the running Vite. For standard Vite, install vite@^8.3.5 and run vite directly.`,
     );
   }
   if (!supportsVite(helperViteVersion)) {
     throw new Error(
-      `Hono Pages: adapter helper Vite ${helperViteVersion} is unsupported; expected ${supportedViteRange}. ${diagnostic()} Inspect the adapter's resolved peer copy; install vite@^8.3.4 and refresh the adapter's peer resolution/lockfile if a stale copy remains.`,
+      `Hono Pages: adapter helper Vite ${helperViteVersion} is unsupported; expected ${supportedViteRange}. ${diagnostic()} Inspect the adapter's resolved peer copy; install vite@^8.3.5 and refresh the adapter's peer resolution/lockfile if a stale copy remains.`,
     );
   }
   for (const name of ['void', 'hono'] as const) {

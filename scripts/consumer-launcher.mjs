@@ -4,8 +4,8 @@ export const consumerStacks = {
   baseline: {
     fixture: 'consumer-void-1-vite',
     void: '1.4.0',
-    vite: '8.3.4',
-    hostVite: '8.3.4',
+    vite: '8.3.5',
+    hostVite: '8.3.5',
     launcher: 'vite',
   },
   'void-1-vp': {

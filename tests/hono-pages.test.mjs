@@ -159,11 +159,59 @@ test('Void resolves default, named, exclusive and disabled layout chains', async
     async (plugin) => {
       await plugin.buildStart();
       const client = await plugin.load(plugin.resolveId('virtual:void-pages-client'));
-      const manifest = new Function(client.replace(/^import .*;$/gm, '').replace(/^await startHonoPages\(.*$/m, 'return layoutTree;'))();
-    assert.deepEqual(manifest['nested/one'], ['layout', 'nested/layout']);
-    assert.deepEqual(manifest['nested/named'], ['layout', '_layouts/shell']);
-    assert.deepEqual(manifest['nested/exclusive'], ['_layouts/shell']);
-    assert.equal(manifest['nested/bare'], undefined);
+      const manifest = new Function(
+        client
+          .replace(/^import .*;$/gm, '')
+          .replace(/^await startHonoPages\(.*$/m, 'return layoutTree;'),
+      )();
+      assert.deepEqual(manifest['nested/one'], ['layout', 'nested/layout']);
+      assert.deepEqual(manifest['nested/named'], ['layout', '_layouts/shell']);
+      assert.deepEqual(manifest['nested/exclusive'], ['_layouts/shell']);
+      assert.equal(manifest['nested/bare'], undefined);
+    },
+  );
+});
+
+test('loader, action and named-action modules remain server-only in the component manifest', async () => {
+  await withPages(
+    {
+      'edit.tsx': page,
+      'edit.server.ts':
+        'export const loader = () => ({ name: "Original" }); export const action = () => ({});',
+      'named.tsx': page,
+      'named.server.ts': 'export const actions = { save: () => ({}) };',
+    },
+    async (plugin) => {
+      await plugin.buildStart();
+      const client = await plugin.load(plugin.resolveId('virtual:void-pages-client'));
+      assert.match(client, /edit\.tsx/);
+      assert.match(client, /named\.tsx/);
+      assert.doesNotMatch(client, /edit\.server|named\.server/);
+    },
+  );
+});
+
+const filesForPolicy = (policy) =>
+  `import Counter from '../Counter' with { island: '${policy}' }; export default Counter;`;
+
+for (const policy of ['idle', 'visible', 'media:(max-width: 600px)']) {
+  test(`accepts supported island policy ${policy} during page discovery`, async () => {
+    await withPages(
+      {
+        'index.island.tsx': `import Counter from '../Counter' with { island: '${policy}' }; export default Counter;`,
+        '../Counter.tsx': page,
+      },
+      async (_plugin, plugins) => {
+        const islands = plugins.find((plugin) => plugin.name === 'void-hono:islands');
+        await islands.buildStart();
+        const source = filesForPolicy(policy);
+        const transformed = islands.transform(
+          source,
+          join(process.cwd(), 'pages/index.island.tsx'),
+        );
+        assert.ok(transformed.code.includes(JSON.stringify(policy)));
+      },
+    );
   });
 }
 

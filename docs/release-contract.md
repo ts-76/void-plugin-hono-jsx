@@ -9,7 +9,7 @@ The adapter supports the documented Pages APIs on the following stable framework
 | Node.js | >=24.22.1 <25.0.0 | 24.22.1 |
 | Void | >=1.4.0 <1.5.0 | 1.4.0 |
 | Hono | >=4.13.16 <5.0.0 | 4.13.16 |
-| Vite | >=8.0.16 <9.0.0 | 8.3.4 |
+| Vite | >=8.0.16 <9.0.0 | 8.3.5 |
 | Vite Plus | Host Vite must satisfy the Vite range | 1.3.0 with matching core alias |
 
 Void 1.4.0 is the minimum supported version; upgrade Void together with this adapter. The router uses its public `refreshPage` helper so refresh refetches hashed URLs without adding history entries, while `preserveState` visits update the address bar.

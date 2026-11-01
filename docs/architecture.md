@@ -67,7 +67,7 @@ Browser mounting redraws SSR content; DOM reuse and state-preserving HMR are not
 
 `render-state.ts` owns the render transaction state; `client.tsx` connects it to Hono effects and the error boundary. A committed frame settles all coalesced waiters up to its generation. A failed frame cannot commit; its recovery runs outside render traversal and restores the last committed frame only if no newer navigation has started. It rejects only the affected waiters. Unmount rejects every pending waiter. Deferred updates are accepted only for the current source props object, including after rollback.
 
-Static output uses Void's generated HTML and Pages JSON with a file-only server. Actions require a server. Deferred static routes fail rendering; the pinned Void version may continue the build and omit those routes, so expected output files are checked explicitly.
+Static output uses Void's generated HTML and Pages JSON with a file-only server. Actions require a server. Deferred static routes fail the build on Void 1.4.0; tests verify both the error and the absence of output HTML.
 
 Load/visible/idle/media islands use Void's scheduler to mount interactive components once their condition is met. Static-only island pages emit no executable client scripts. Unknown policies, attributed imports inside interactive components and ordinary Pages forms in islands fail with diagnostics. Static page/layout/component graphs are scanned with cycle-safe propagation so nested static imports and named island layouts receive client scripts only when their active chain needs them. Local ISR uses Void's own KV/Cache API worker path; see [ISR validation](isr.md) for observed behavior and unverified managed-edge scope.
 

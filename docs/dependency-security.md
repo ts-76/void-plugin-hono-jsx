@@ -25,6 +25,14 @@ A trial update within the compatible Cloudflare ranges did not remove the findin
 
 `release-policy.json` retains the historical acceptance verbatim. Its exact peer/lock/advisory bindings do not match this updated baseline, so release preparation must fail closed. Neither that acceptance nor `dependencySecurityApproved` authorizes this changed dependency graph. A fresh assessment and explicit release decision are required before publication; no publication or deployment was performed for this local update.
 
+## Integrated refactor and compatible updates — 2026-11-01
+
+The preserved feature-layout refactor and the local Void 1.4.0 update are combined in a separate checkout with Hono 4.13.16 and the fixed npm publisher. Public package imports remain stable; internal package paths now use `packages/void-plugin-hono-jsx`.
+
+Updates within the existing Cloudflare/Miniflare/Drizzle/minimatch ranges resolved no new versions and left the same 17 propagated entries. Newer `@cloudflare/config` and `@cloudflare/workers-auth` releases contain fixed Zod/undici, but their ranges and cf's embedded copy remain constrained by Void. No forced transitive overrides are applied.
+
+Compatible direct updates select @types/node 24.19.2, magic-string 1.4.5, Oxfmt 0.75.0, Playwright 1.64.1 and plain Vite 8.3.5. The aligned Vite Plus/core 1.3.0 fixture is retained. These changes do not repair the remaining Void/Cloudflare advisories or renew historical release consent.
+
 ## 0.9.1 owner acceptance — 2026-10-25
 
 The owner explicitly accepted the remaining Void/Cloudflare tooling risks for **void-plugin-hono-jsx 0.9.1 only** after reassessment. This is a new, version-specific decision; it does not extend the earlier 0.9.0 approval to arbitrary releases. The latest root, ordinary-consumer and Markdown-consumer audits retain 16 propagated entries (High 6, Moderate 10, Critical 0), representing the existing esbuild advisory and the same four undici/Zod advisories described below. Upstream Void's latest release remains 1.2.1. These dependencies are not repaired by this acceptance.

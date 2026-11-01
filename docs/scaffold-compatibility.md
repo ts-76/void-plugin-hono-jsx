@@ -2,7 +2,7 @@
 
 ## Current release baseline — 2026-10-24
 
-The current baseline uses Node 24.22.1 / Void 1.4.0 / Hono 4.13.16 / TypeScript 7.0.2. Required Hono-only consumers are plain Vite 8.3.4 and aligned Vite Plus/core 1.3.0 (host Vite 8.3.4). The current ranges are Void >=1.4.0 <1.5.0, Hono >=4.13.16 <5.0.0, Vite >=8.0.16 <9.0.0, Node >=24.22.1 <25.0.0. Only locked fixtures are tested results, not every future release within a range. Old Void 0.x fixtures cannot select a release stack.
+The current baseline uses Node 24.22.1 / Void 1.4.0 / Hono 4.13.16 / TypeScript 7.0.2. Required Hono-only consumers are plain Vite 8.3.5 and aligned Vite Plus/core 1.3.0 (host Vite 8.3.4). The current ranges are Void >=1.4.0 <1.5.0, Hono >=4.13.16 <5.0.0, Vite >=8.0.16 <9.0.0, Node >=24.22.1 <25.0.0. Only locked fixtures are tested results, not every future release within a range. Old Void 0.x fixtures cannot select a release stack.
 
 Use the [release contract](release-contract.md), [limitations/update procedure](known-limitations.md#updating-the-supported-baseline) and [testing guide](testing.md). The dated direct Workers/D1 verification used Void 1.1.11; Void 1.4.0 has local dev/preview coverage only. Production ISR and the managed Void platform remain outside the guarantee.
 
@@ -15,9 +15,9 @@ These ranges and running-Vite checks shipped in alpha.3; alpha.1/alpha.2 retain 
 | Locked consumer | Void | Direct `vite` dependency | Launcher / actual hook Vite |
 | --- | --- | --- | --- |
 | baseline | 0.26.1 | 8.3.3 | vite / 8.3.3 |
-| vite-patch | 0.26.1 | 8.3.4 | vite / 8.3.4 |
-| latest-vite | 0.27.0 | 8.3.4 | vite / 8.3.4 |
-| scaffold-vp | 0.27.0 | 8.3.4 | Vite Plus 0.1.24 / 8.0.16 |
+| vite-patch | 0.26.1 | 8.3.5 | vite / 8.3.4 |
+| latest-vite | 0.27.0 | 8.3.5 | vite / 8.3.4 |
+| scaffold-vp | 0.27.0 | 8.3.5 | Vite Plus 0.1.24 / 8.0.16 |
 | latest-vp | 0.27.0 | npm:@voidzero-dev/vite-plus-core@1.1.0 | Vite Plus 1.1.0 / 8.3.3 |
 
 Hono 4.13.16 and TypeScript 7.0.2 were the latest versions on that date and are shared by every fixture. The three new-stack fixtures retain the React scaffold dependencies from that snapshot: React/DOM/types 19.3.0, @void/react 0.27.0 and oxc-transform-react 0.153.0. Their presence is tested; converting application React source is still required. Full consumers exercise declarations, dev/build/preview, SSR, browser mounting, counter/nav/reset/reload, concurrent SSR during page/loader changes, route add/remove, deferred HTML/NDJSON, islands, static HTML/JSON and local ISR. Managed deployment remains unverified.
