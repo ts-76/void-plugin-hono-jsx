@@ -159,7 +159,7 @@ export async function checkMarkdownConsumer({
       console.error(logs.slice(-8000));
       throw error;
     } finally {
-      if (child.exitCode === null) {
+      if (child.exitCode === null && child.signalCode === null) {
         const exited = new Promise((resolve) => child.once('exit', resolve));
         const stop = (signal) => {
           try {
@@ -170,7 +170,7 @@ export async function checkMarkdownConsumer({
         };
         stop('SIGTERM');
         await Promise.race([exited, new Promise((resolve) => setTimeout(resolve, 3000))]);
-        if (child.exitCode === null) {
+        if (child.exitCode === null && child.signalCode === null) {
           stop('SIGKILL');
           await exited;
         }
