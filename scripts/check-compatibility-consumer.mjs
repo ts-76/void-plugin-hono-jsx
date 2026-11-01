@@ -5,8 +5,16 @@ import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
 export async function checkCompatibilityConsumer({ consumer, env, stack }) {
-  const build = () => spawnSync(process.execPath, launcherArgs(consumer, 'build', [], env), { cwd: consumer, env, encoding: 'utf8' });
-  for (const [name, version] of [['void', stack.void], ['hono', '4.13.13']]) {
+  const build = () =>
+    spawnSync(process.execPath, launcherArgs(consumer, 'build', [], env), {
+      cwd: consumer,
+      env,
+      encoding: 'utf8',
+    });
+  for (const [name, version] of [
+    ['void', stack.void],
+    ['hono', '4.13.16'],
+  ]) {
     const path = join(consumer, 'node_modules', name, 'package.json');
     const original = await readFile(path, 'utf8');
     try {
@@ -18,7 +26,9 @@ export async function checkCompatibilityConsumer({ consumer, env, stack }) {
       assert.ok(diagnostic.includes(`${name} 999.0.0 is unsupported`));
       assert.ok(diagnostic.includes(path), `Missing resolved ${name} metadata path`);
       assert.ok(diagnostic.includes(`Running Vite from hook context: ${stack.hostVite}`));
-    } finally { await writeFile(path, original); }
+    } finally {
+      await writeFile(path, original);
+    }
   }
   const voidPath = join(consumer, 'node_modules/void/package.json');
   const originalVoid = await readFile(voidPath, 'utf8');
@@ -29,11 +39,16 @@ export async function checkCompatibilityConsumer({ consumer, env, stack }) {
       assert.notEqual(result.status, 0, `Unsupported Void ${version} must fail`);
       assert.ok((result.stdout + result.stderr).includes(`void ${version} is unsupported`));
     }
-  } finally { await writeFile(voidPath, originalVoid); }
+  } finally {
+    await writeFile(voidPath, originalVoid);
+  }
   const configPath = join(consumer, 'vite.config.ts');
   const originalConfig = await readFile(configPath, 'utf8');
   const vitePath = join(consumer, 'node_modules/vite/package.json');
-  assert.equal(JSON.parse(await readFile(vitePath, 'utf8')).version, stack.vitePackageVersion ?? stack.vite);
+  assert.equal(
+    JSON.parse(await readFile(vitePath, 'utf8')).version,
+    stack.vitePackageVersion ?? stack.vite,
+  );
   try {
     // Same real host and npm dependency; report a different host via the actual hook.
     const config = `import { defineConfig } from 'vite';
@@ -46,11 +61,19 @@ plugin.config = function(config, env) { return configHook.call({ ...this, meta: 
 export default defineConfig({ plugins: [voidPlugin(), ...pages] });`;
     await writeFile(configPath, config);
     const result = build();
-    assert.notEqual(result.status, 0, 'Unsupported running Vite must fail despite supported installed Vite');
+    assert.notEqual(
+      result.status,
+      0,
+      'Unsupported running Vite must fail despite supported installed Vite',
+    );
     const diagnostic = result.stdout + result.stderr;
     assert.match(diagnostic, /running Vite 9\.0\.0 is unsupported/);
     assert.ok(diagnostic.includes(vitePath), 'Missing diagnostic resolved Vite package path');
     assert.match(diagnostic, /CLI\/launcher/);
-  } finally { await writeFile(configPath, originalConfig); }
-  console.log(`Compatibility: real host Vite ${stack.hostVite}, resolved metadata paths and rejection of a differing unsupported host verified.`);
+  } finally {
+    await writeFile(configPath, originalConfig);
+  }
+  console.log(
+    `Compatibility: real host Vite ${stack.hostVite}, resolved metadata paths and rejection of a differing unsupported host verified.`,
+  );
 }

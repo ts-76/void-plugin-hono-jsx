@@ -1,0 +1,99 @@
+{
+  "name": "void-plugin-hono-jsx",
+  "version": "0.9.1",
+  "private": true,
+  "description": "Hono JSX Pages adapter for Void",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=24.22.1 <25.0.0"
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "THIRD_PARTY_NOTICES.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "exports": {
+    "./plugin": {
+      "types": "./dist/plugins/pages/plugin.d.ts",
+      "import": "./dist/plugins/pages/plugin.js"
+    },
+    "./pages": {
+      "types": "./dist/server/pages/api.d.ts",
+      "default": "./dist/server/pages/api.js"
+    },
+    "./form": {
+      "types": "./dist/server/pages/form.d.ts",
+      "default": "./dist/server/pages/form.js"
+    },
+    "./markdown/plugin": {
+      "types": "./dist/plugins/markdown/plugin.d.ts",
+      "import": "./dist/plugins/markdown/plugin.js"
+    },
+    "./markdown": {
+      "types": "./dist/server/markdown/context.d.ts",
+      "browser": "./dist/browser/markdown/context.js",
+      "default": "./dist/server/markdown/context.js"
+    },
+    "./theme.css": {
+      "default": "./dist/theme/index.css"
+    },
+    "./theme-content.css": {
+      "default": "./dist/theme/content.css"
+    },
+    "./markdown/compiler": {
+      "types": "./dist/plugins/markdown/static.d.ts",
+      "default": "./dist/plugins/markdown/static.js"
+    },
+    "./markdown/client": {
+      "types": "./dist/browser/markdown/client.d.ts",
+      "import": "./dist/browser/markdown/client.js"
+    }
+  },
+  "peerDependencies": {
+    "hono": ">=4.13.16 <5.0.0",
+    "void": ">=1.4.0 <1.5.0",
+    "vite": ">=8.0.16 <9.0.0",
+    "yaml": ">=2.9.1 <3.0.0",
+    "shiki": ">=4.5.0 <5.0.0",
+    "@shikijs/transformers": ">=4.5.0 <5.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ts-76/void-plugin-hono-jsx.git",
+    "directory": "packages/void-plugin-hono-jsx"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/",
+    "tag": "next"
+  },
+  "bugs": {
+    "url": "https://github.com/ts-76/void-plugin-hono-jsx/issues"
+  },
+  "homepage": "https://github.com/ts-76/void-plugin-hono-jsx#readme",
+  "keywords": [
+    "void",
+    "hono",
+    "jsx",
+    "vite",
+    "ssr"
+  ],
+  "peerDependenciesMeta": {
+    "yaml": {
+      "optional": true
+    },
+    "shiki": {
+      "optional": true
+    },
+    "@shikijs/transformers": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "@ts-76/hono-markdown": "^0.2.1"
+  }
+}

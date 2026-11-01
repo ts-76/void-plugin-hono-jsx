@@ -1,5 +1,7 @@
 # Fixed-dependency npm publisher
 
+For the evaluation-only pnpm 12.15.0 follow-up on 2026-10-26, see the [target-specific native dependency and protocol assessment](pnpm12-publisher-assessment.md). It does not change the active npm publisher below.
+
 ## Current publisher — 2026-10-24
 
 The standard pnpm 11 and npm staging distributions still include affected dependencies. The current publisher is a **private reconstruction of official npm 11.21.1 code**, with runtime dependencies resolved inside its original manifest ranges and frozen in `scripts/release/npm-publisher-lock.json`. It is not the byte-identical standard npm distribution and is not published as another npm package.

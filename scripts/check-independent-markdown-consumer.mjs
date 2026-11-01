@@ -1,20 +1,40 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtemp,writeFile,readFile } from 'node:fs/promises';
-import { join,resolve } from 'node:path';
+import { mkdtemp, writeFile, readFile } from 'node:fs/promises';
+import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { verifyMarkdownWorkerConsumer } from './check-markdown-worker-consumer.mjs';
-const repo=resolve(import.meta.dirname,'..');
-const root=await mkdtemp(join(tmpdir(),'hono-markdown-independent-'));
-const run=(args,cwd=root)=>execFileSync('npm',args,{cwd,encoding:'utf8',maxBuffer:16*1024*1024});
-const audit=()=>{const report=JSON.parse(run(['audit','--json']));assert.equal(report.metadata.vulnerabilities.total,0);console.log(JSON.stringify({independentDependencyAudit:report.metadata.vulnerabilities}));};
-const packed=JSON.parse(run(['pack','--ignore-scripts','--json','--pack-destination',root],join(repo,'packages/hono-markdown')));
-await writeFile(join(root,'package.json'),'{"type":"module","private":true}');
-run(['install','--ignore-scripts','--no-audit','--no-fund',join(root,packed[0].filename),'hono@4.13.13']);
+const repo = resolve(import.meta.dirname, '..');
+const root = await mkdtemp(join(tmpdir(), 'hono-markdown-independent-'));
+const run = (args, cwd = root) =>
+  execFileSync('npm', args, { cwd, encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 });
+const audit = () => {
+  const report = JSON.parse(run(['audit', '--json']));
+  assert.equal(report.metadata.vulnerabilities.total, 0);
+  console.log(JSON.stringify({ independentDependencyAudit: report.metadata.vulnerabilities }));
+};
+const packed = JSON.parse(
+  run(
+    ['pack', '--ignore-scripts', '--json', '--pack-destination', root],
+    join(repo, 'packages/hono-markdown'),
+  ),
+);
+await writeFile(join(root, 'package.json'), '{"type":"module","private":true}');
+run([
+  'install',
+  '--ignore-scripts',
+  '--no-audit',
+  '--no-fund',
+  join(root, packed[0].filename),
+  'hono@4.13.16',
+]);
 audit();
 const manifest = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'));
-for (const name of ['markdown-exit', 'markdown-it-container']) assert.equal(manifest.dependencies?.[name], undefined, 'Parsers must be installed transitively');
-await writeFile(join(root,'article.mjs'),String.raw`import assert from 'node:assert/strict';
+for (const name of ['markdown-exit', 'markdown-it-container'])
+  assert.equal(manifest.dependencies?.[name], undefined, 'Parsers must be installed transitively');
+await writeFile(
+  join(root, 'article.mjs'),
+  String.raw`import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { renderMarkdown } from '@ts-76/hono-markdown/render';
 const require=createRequire(import.meta.url);
@@ -23,12 +43,25 @@ const output=await renderMarkdown('# Article\n\n<img src=x onerror="bad()">\n\n'
 assert.equal(output.headings[0].slug,'user-content-article');
 assert.doesNotMatch(output.html,/<img|<script>|class="copy"/);
 assert.equal(output.needsCodeCopy,false);
-console.log(JSON.stringify({articleMinimalPeers:true,yamlInstalled:false,shikiInstalled:false}));`);
-console.log(execFileSync(process.execPath,[join(root,'article.mjs')],{cwd:root,encoding:'utf8'}));
+console.log(JSON.stringify({articleMinimalPeers:true,yamlInstalled:false,shikiInstalled:false}));`,
+);
+console.log(
+  execFileSync(process.execPath, [join(root, 'article.mjs')], { cwd: root, encoding: 'utf8' }),
+);
 await verifyMarkdownWorkerConsumer(root);
-run(['install','--ignore-scripts','--no-audit','--no-fund',join(root,packed[0].filename),'hono@4.13.13','yaml@2.9.1','shiki@4.5.0','@shikijs/transformers@4.5.0']);
+run([
+  'install',
+  '--ignore-scripts',
+  '--no-audit',
+  '--no-fund',
+  join(root, packed[0].filename),
+  'hono@4.13.16',
+  'yaml@2.9.1',
+  'shiki@4.5.0',
+  '@shikijs/transformers@4.5.0',
+]);
 audit();
-const check=String.raw`import assert from 'node:assert/strict';
+const check = String.raw`import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { writeFile } from 'node:fs/promises';
 import { compileMarkdownModule, readMarkdownModule } from '@ts-76/hono-markdown/compiler';
@@ -55,5 +88,7 @@ const app=new Hono();app.get('/',c=>c.html(article.html));
 const response=await app.request('http://localhost/');
 assert.equal(response.status,200);assert.equal(await response.text(),article.html);
 console.log(JSON.stringify({root:process.cwd(),voidInstalled:false,viteInstalled:false,ssr:true,metadata:true,strictScripts:true,articleRendering:true,honoResponse:true}));`;
-await writeFile(join(root,'check.mjs'),check);
-console.log(execFileSync(process.execPath,[join(root,'check.mjs')],{cwd:root,encoding:'utf8'}));
+await writeFile(join(root, 'check.mjs'), check);
+console.log(
+  execFileSync(process.execPath, [join(root, 'check.mjs')], { cwd: root, encoding: 'utf8' }),
+);

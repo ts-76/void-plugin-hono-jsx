@@ -1,12 +1,10 @@
 {
   "repository": "ts-76/void-plugin-hono-jsx",
   "packageName": "void-plugin-hono-jsx",
-  "packagePath": "packages/hono-pages",
+  "packagePath": "packages/void-plugin-hono-jsx",
   "defaultBranch": "main",
   "tagPrefix": "v",
-  "nodeVersions": [
-    "24.22.1"
-  ],
+  "nodeVersions": ["24.22.1"],
   "releaseNode": "24.22.1",
   "stageEnabled": true,
   "publicPackageEnabled": true,
@@ -23,9 +21,7 @@
   "preventSelfReview": false,
   "historyDisclosureApproved": true,
   "dependencySecurityApproved": true,
-  "approvedDependencyAdvisories": [
-    "https://github.com/advisories/GHSA-67mh-4wv8-2f99"
-  ],
+  "approvedDependencyAdvisories": ["https://github.com/advisories/GHSA-67mh-4wv8-2f99"],
   "publisherVersion": "11.21.1",
   "consumerRiskAcceptance": {
     "schema": 1,

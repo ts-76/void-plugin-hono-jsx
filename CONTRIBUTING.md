@@ -14,6 +14,18 @@ npm run dev
 See [testing](docs/testing.md) for examples, check commands and browser setup.
 Run checks sequentially when they share example build output.
 
+Format maintained code with the pinned Oxc formatter, Oxfmt:
+
+```sh
+npm run fmt
+npm run fmt:check
+```
+
+The package CI checks formatting during `release:prepare`. `.oxfmtrc.json` defines
+the shared style and exclusions. Markdown documents and fixture content, dependency
+locks, publisher security inventories and the adapter's legacy theme snapshot are
+excluded so formatting does not rewrite authored syntax or recorded release bytes.
+
 ## Changes
 
 Keep routing, request protocols, caching and build lifecycle in Void.

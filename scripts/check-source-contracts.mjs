@@ -1,7 +1,12 @@
 import assert from 'node:assert/strict';
 import { readFile, readdir } from 'node:fs/promises';
 
-const payload = (html) => JSON.parse(html.match(/<script id="__VOID_PAGE_DATA__" type="application\/json">([\s\S]*?)<\/script>/)?.[1] ?? 'null');
+const payload = (html) =>
+  JSON.parse(
+    html.match(
+      /<script id="__VOID_PAGE_DATA__" type="application\/json">([\s\S]*?)<\/script>/,
+    )?.[1] ?? 'null',
+  );
 
 // Preserve the HTTP, SSR and bundle checks formerly run by the manual Pages scripts.
 export async function checkSourceContracts(base, checkBuild) {
@@ -11,11 +16,16 @@ export async function checkSourceContracts(base, checkBuild) {
   const html = await response.text();
   assert.match(html, /Server loader initial count: 7/);
   assert.match(html, /<output[^>]*id="count"[^>]*>7<\/output>/);
-  const data = html.match(/<script id="__VOID_PAGE_DATA__" type="application\/json">([\s\S]*?)<\/script>/)?.[1];
+  const data = html.match(
+    /<script id="__VOID_PAGE_DATA__" type="application\/json">([\s\S]*?)<\/script>/,
+  )?.[1];
   assert.ok(data && !data.includes('<'), 'Safe embedded page JSON');
   assert.equal(payload(html).component, 'index');
   assert.equal(payload(html).props.initialCount, 7);
-  assert.equal(payload(html).props.message, '</script><script>globalThis.__honoPagesInjected = true</script>&\u2028\u2029');
+  assert.equal(
+    payload(html).props.message,
+    '</script><script>globalThis.__honoPagesInjected = true</script>&\u2028\u2029',
+  );
   assert.match(html, /&lt;\/script&gt;&lt;script&gt;/);
   assert.match(html, /<script type="module"[^>]*src=/);
 
@@ -23,7 +33,13 @@ export async function checkSourceContracts(base, checkBuild) {
     ['/about', 'about', 'Static route', {}, {}],
     ['/users/alice', 'users/[id]', 'alice', { id: 'alice' }, { id: 'alice' }],
     ['/users/bob', 'users/[id]', 'bob', { id: 'bob' }, { id: 'bob' }],
-    ['/docs/guide/start', 'docs/[...slug]', 'guide/start', { slug: 'guide/start' }, { slug: 'guide/start' }],
+    [
+      '/docs/guide/start',
+      'docs/[...slug]',
+      'guide/start',
+      { slug: 'guide/start' },
+      { slug: 'guide/start' },
+    ],
     ['/contact', '(marketing)/contact', 'Grouped route', {}, {}],
   ]) {
     const response = await fetch(new URL(path, base));
@@ -55,7 +71,13 @@ export async function checkSourceContracts(base, checkBuild) {
     assert.equal(response.status, 404);
   }
 
-  for (const [name, chain] of Object.entries({ one: ['root', 'nested'], two: ['root', 'nested'], named: ['root', 'named'], exclusive: ['named'], bare: [] })) {
+  for (const [name, chain] of Object.entries({
+    one: ['root', 'nested'],
+    two: ['root', 'nested'],
+    named: ['root', 'named'],
+    exclusive: ['named'],
+    bare: [],
+  })) {
     const response = await fetch(base + '/layouts/' + name);
     assert.equal(response.status, 200);
     const html = await response.text();
@@ -64,14 +86,31 @@ export async function checkSourceContracts(base, checkBuild) {
       assert.ok(position >= 0, `Missing SSR layout ${layout}`);
       return position;
     });
-    assert.deepEqual(positions, [...positions].sort((a, b) => a - b));
+    assert.deepEqual(
+      positions,
+      [...positions].sort((a, b) => a - b),
+    );
     assert.equal((html.match(/data-layout=/g) ?? []).length, chain.length);
     if (chain.length) assert.ok(html.includes('demo') && html.includes('/layouts/' + name));
   }
-  assert.ok((await (await fetch(base + '/users/alice')).text()).includes('&quot;id&quot;:&quot;alice&quot;'));
+  assert.ok(
+    (await (await fetch(base + '/users/alice')).text()).includes(
+      '&quot;id&quot;:&quot;alice&quot;',
+    ),
+  );
 
   async function action(path, method = 'POST', name = 'Test', headers = {}) {
-    return fetch(base + path, { method, headers: { 'X-VoidPages': 'true', Accept: 'application/json', 'Content-Type': 'application/json', ...headers }, body: JSON.stringify({ name }), redirect: 'manual' });
+    return fetch(base + path, {
+      method,
+      headers: {
+        'X-VoidPages': 'true',
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        ...headers,
+      },
+      body: JSON.stringify({ name }),
+      redirect: 'manual',
+    });
   }
   for (const path of ['/edit', '/named?save']) {
     for (const method of ['POST', 'PUT', 'PATCH', 'DELETE']) {
@@ -93,10 +132,16 @@ export async function checkSourceContracts(base, checkBuild) {
   // Unknown-action routing does not need a body. A body-bearing unknown POST
   // can reset Workerd's reused dev connection (documented upstream limitation).
   // Keep that transport repro separate from this HTTP 404 contract check.
-  const unknown = await fetch(base + '/named?unknown', { method: 'POST', headers: { 'X-VoidPages': 'true', Accept: 'application/json', Connection: 'close' } });
+  const unknown = await fetch(base + '/named?unknown', {
+    method: 'POST',
+    headers: { 'X-VoidPages': 'true', Accept: 'application/json', Connection: 'close' },
+  });
   await unknown.text();
   assert.equal(unknown.status, 404);
-  const failure = await fetch(base + '/named?fail', { method: 'POST', headers: { 'X-VoidPages': 'true', Accept: 'application/json', Connection: 'close' } });
+  const failure = await fetch(base + '/named?fail', {
+    method: 'POST',
+    headers: { 'X-VoidPages': 'true', Accept: 'application/json', Connection: 'close' },
+  });
   assert.match(await failure.text(), /Example action failed\./);
   assert.equal(failure.status, 500);
 
@@ -112,17 +157,38 @@ export async function checkSourceContracts(base, checkBuild) {
     assert.equal((markup.match(/charset="UTF-8"/g) ?? []).length, 1);
   }
   const hostile = '</title><script>window.headInjected=true</script>&"';
-  const markup = await (await fetch(base + '/head/one?title=' + encodeURIComponent(hostile))).text();
-  assert.ok(markup.includes('<title>&lt;/title&gt;&lt;script&gt;window.headInjected=true&lt;/script&gt;&amp;&quot; | Hono Pages</title>'));
+  const markup = await (
+    await fetch(base + '/head/one?title=' + encodeURIComponent(hostile))
+  ).text();
+  assert.ok(
+    markup.includes(
+      '<title>&lt;/title&gt;&lt;script&gt;window.headInjected=true&lt;/script&gt;&amp;&quot; | Hono Pages</title>',
+    ),
+  );
   assert.ok(!markup.includes('<script>window.headInjected=true</script>'));
 
   if (checkBuild) {
-    const source = async (directory) => (await Promise.all((await readdir(directory)).filter((file) => file.endsWith('.js')).map((file) => readFile(new URL(file, directory), 'utf8')))).join('\n');
+    const source = async (directory) =>
+      (
+        await Promise.all(
+          (await readdir(directory))
+            .filter((file) => file.endsWith('.js'))
+            .map((file) => readFile(new URL(file, directory), 'utf8')),
+        )
+      ).join('\n');
     const client = await source(new URL('../examples/pages/dist/client/assets/', import.meta.url));
     const server = await source(new URL('../examples/pages/dist/ssr/assets/', import.meta.url));
-    assert.ok(server.includes('HonoPagesServerOnlySentinel_93ac62'), 'Sentinel exists in server bundle');
-    assert.ok(!client.includes('HonoPagesServerOnlySentinel_93ac62'), 'Server-only code absent from browser');
+    assert.ok(
+      server.includes('HonoPagesServerOnlySentinel_93ac62'),
+      'Sentinel exists in server bundle',
+    );
+    assert.ok(
+      !client.includes('HonoPagesServerOnlySentinel_93ac62'),
+      'Server-only code absent from browser',
+    );
     assert.doesNotMatch(client, /Example action failed\.|Name is required\./);
   }
-  console.log(`Source HTTP ${base}: safe props, routes, client-only shells, SSR layouts/head, action protocol and ${checkBuild ? 'bundle isolation' : 'development rendering'} passed.`);
+  console.log(
+    `Source HTTP ${base}: safe props, routes, client-only shells, SSR layouts/head, action protocol and ${checkBuild ? 'bundle isolation' : 'development rendering'} passed.`,
+  );
 }

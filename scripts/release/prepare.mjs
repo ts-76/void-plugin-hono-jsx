@@ -9,7 +9,11 @@ import { json, sha256, inside, inspectTarball } from './gate.mjs';
 import { publishDryRun } from './dry-run.mjs';
 import { dependencyAudit } from './dependency-audit.mjs';
 
-assert.ok(process.argv.length === 2 || (process.argv.length === 3 && process.argv[2] === '--defer-consumer'), 'Use --defer-consumer only for parallel package CI');
+assert.ok(
+  process.argv.length === 2 ||
+    (process.argv.length === 3 && process.argv[2] === '--defer-consumer'),
+  'Use --defer-consumer only for parallel package CI',
+);
 const deferConsumer = process.argv[2] === '--defer-consumer';
 const root = process.cwd();
 const policy = json('release-policy.json');
@@ -21,8 +25,13 @@ assert.equal(pkg.name, policy.packageName);
 assert.match(pkg.version, /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/);
 assert.notEqual(pkg.version, '0.0.0');
 assert.equal(process.version, 'v' + policy.releaseNode, 'Use the configured release Node');
-const git = args => execFileSync('git', args, { encoding: 'utf8' }).trim();
-const clean = () => assert.equal(git(['status', '--porcelain', '--untracked-files=all']), '', 'Commit source before preparing release evidence');
+const git = (args) => execFileSync('git', args, { encoding: 'utf8' }).trim();
+const clean = () =>
+  assert.equal(
+    git(['status', '--porcelain', '--untracked-files=all']),
+    '',
+    'Commit source before preparing release evidence',
+  );
 clean();
 const commit = git(['rev-parse', 'HEAD']);
 const sourceMetadataSha256 = sha256(readFileSync(path.join(pkgRoot, 'package.json')));
@@ -30,18 +39,49 @@ const output = path.join(root, 'artifacts');
 rmSync(output, { recursive: true, force: true });
 mkdirSync(output);
 const temporary = mkdtempSync(path.join(tmpdir(), 'hono-pages-release-'));
-const env = { ...process.env, WRANGLER_LOG_PATH: path.join(temporary, 'logs'), WRANGLER_SEND_METRICS: 'false', VOID_INSPECTOR_PORT: 'false', CLOUDFLARE_CF_FETCH_ENABLED: 'false' };
-const npm = (args, cwd = root, capture = false) => execFileSync(process.execPath, [npmCli, ...args], { cwd, env, encoding: 'utf8', stdio: capture ? ['ignore', 'pipe', 'pipe'] : 'inherit', timeout: 10 * 60 * 1000, maxBuffer: 8 * 1024 * 1024 });
+const env = {
+  ...process.env,
+  WRANGLER_LOG_PATH: path.join(temporary, 'logs'),
+  WRANGLER_SEND_METRICS: 'false',
+  VOID_INSPECTOR_PORT: 'false',
+  CLOUDFLARE_CF_FETCH_ENABLED: 'false',
+};
+const npm = (args, cwd = root, capture = false) =>
+  execFileSync(process.execPath, [npmCli, ...args], {
+    cwd,
+    env,
+    encoding: 'utf8',
+    stdio: capture ? ['ignore', 'pipe', 'pipe'] : 'inherit',
+    timeout: 10 * 60 * 1000,
+    maxBuffer: 8 * 1024 * 1024,
+  });
 try {
   dependencyAudit({ npmCli, cwd: root, env, output: path.join(output, 'dependency-audit.json') });
-  for (const command of ['audit:release', 'audit:history', 'audit:secrets', 'typecheck', 'test', 'build:custom-ssr', 'check:source', 'build:package']) npm(['run', command]);
+  for (const command of [
+    'fmt:check',
+    'audit:release',
+    'audit:history',
+    'audit:secrets',
+    'typecheck',
+    'test',
+    'build:custom-ssr',
+    'check:source',
+    'build:package',
+  ])
+    npm(['run', command]);
   const candidate = path.join(temporary, 'package');
   mkdirSync(candidate);
-  for (const file of pkg.files) cpSync(path.join(pkgRoot, file), path.join(candidate, file), { recursive: true });
+  for (const file of pkg.files)
+    cpSync(path.join(pkgRoot, file), path.join(candidate, file), { recursive: true });
   // Source stays private. This one documented metadata change is isolated to the
   // candidate and recorded before its exact bytes are exercised by the consumer.
-  writeFileSync(path.join(candidate, 'package.json'), JSON.stringify({ ...pkg, private: false }, null, 2) + '\n');
-  const packed = JSON.parse(npm(['pack', '--ignore-scripts', '--json', '--pack-destination', output], candidate, true));
+  writeFileSync(
+    path.join(candidate, 'package.json'),
+    JSON.stringify({ ...pkg, private: false }, null, 2) + '\n',
+  );
+  const packed = JSON.parse(
+    npm(['pack', '--ignore-scripts', '--json', '--pack-destination', output], candidate, true),
+  );
   assert.equal(packed.length, 1);
   const tarball = path.join(output, packed[0].filename);
   const files = inspectTarball(tarball);
@@ -55,15 +95,43 @@ try {
   assert.equal(git(['rev-parse', 'HEAD']), commit, 'Source commit changed during validation');
   assert.equal(sha256(readFileSync(path.join(pkgRoot, 'package.json'))), sourceMetadataSha256);
   const bytes = readFileSync(tarball);
-  const evidence = { schema: 2, commit, node: process.version, package: { name: pkg.name, version: pkg.version }, packagePath: policy.packagePath,
-    sourceMetadataSha256, candidateMetadataChange: { private: false }, tarball: packed[0].filename, files, sha256: acceptedSha256,
-    integrity: 'sha512-' + createHash('sha512').update(bytes).digest('base64'), size: bytes.length,
-    validation: { typecheck: true, build: true, test: true, source: true, history: true, secrets: true, dryRun: true, externalConsumer: !deferConsumer },
+  const evidence = {
+    schema: 2,
+    commit,
+    node: process.version,
+    package: { name: pkg.name, version: pkg.version },
+    packagePath: policy.packagePath,
+    sourceMetadataSha256,
+    candidateMetadataChange: { private: false },
+    tarball: packed[0].filename,
+    files,
+    sha256: acceptedSha256,
+    integrity: 'sha512-' + createHash('sha512').update(bytes).digest('base64'),
+    size: bytes.length,
+    validation: {
+      typecheck: true,
+      build: true,
+      test: true,
+      source: true,
+      history: true,
+      secrets: true,
+      dryRun: true,
+      externalConsumer: !deferConsumer,
+    },
     historyReportSha256: sha256(readFileSync(path.join(output, 'history-audit.json'))),
     dependencyReportSha256: sha256(readFileSync(path.join(output, 'dependency-audit.json'))),
-    consumerDependencyReportSha256: deferConsumer ? null : sha256(readFileSync(path.join(output, 'consumer-dependency-audit.json'))),
+    consumerDependencyReportSha256: deferConsumer
+      ? null
+      : sha256(readFileSync(path.join(output, 'consumer-dependency-audit.json'))),
     consumerStack: deferConsumer ? null : consumerStack(),
-    workflow: process.env.GITHUB_WORKFLOW_REF || null, runId: process.env.GITHUB_RUN_ID || null, runAttempt: process.env.GITHUB_RUN_ATTEMPT || null };
+    workflow: process.env.GITHUB_WORKFLOW_REF || null,
+    runId: process.env.GITHUB_RUN_ID || null,
+    runAttempt: process.env.GITHUB_RUN_ATTEMPT || null,
+  };
   writeFileSync(path.join(output, 'evidence.json'), JSON.stringify(evidence, null, 2) + '\n');
-  console.log(`${deferConsumer ? "Prepared (consumer verification pending)" : "Accepted"} ${pkg.name}@${pkg.version}: ${files.length} files; SHA256 ${evidence.sha256}. No registry upload or approval performed.`);
-} finally { rmSync(temporary, { recursive: true, force: true }); }
+  console.log(
+    `${deferConsumer ? 'Prepared (consumer verification pending)' : 'Accepted'} ${pkg.name}@${pkg.version}: ${files.length} files; SHA256 ${evidence.sha256}. No registry upload or approval performed.`,
+  );
+} finally {
+  rmSync(temporary, { recursive: true, force: true });
+}

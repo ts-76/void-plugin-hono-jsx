@@ -12,7 +12,7 @@
       "extra-files": [
         {
           "type": "json",
-          "path": "packages/hono-pages/package.json",
+          "path": "packages/void-plugin-hono-jsx/package.json",
           "jsonpath": "$.version"
         }
       ],

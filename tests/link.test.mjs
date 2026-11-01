@@ -5,20 +5,52 @@ import { transformWithOxc } from 'vite';
 import { jsx } from 'hono/jsx/jsx-runtime';
 import { createSsrRouter } from 'void/pages-client';
 
-const source = await readFile(new URL('../packages/hono-pages/src/runtime/pages.tsx', import.meta.url), 'utf8');
-const transformed = await transformWithOxc(source, 'pages.tsx', { jsx: { runtime: 'automatic', importSource: 'hono/jsx' } });
-const code = transformed.code.replace(/from (["'])([^"']+)\1/g, (_, quote, name) => 'from ' + JSON.stringify(name.startsWith('.') ? new URL(name, new URL('../packages/hono-pages/src/runtime/pages.tsx', import.meta.url)).href : import.meta.resolve(name)));
-const { Link, RouterContext, NavigationContext, useNavigation } = await import('data:text/javascript;base64,' + Buffer.from(code).toString('base64'));
-const html = async (props) => jsx(RouterContext.Provider, { value: createSsrRouter('/'), children: jsx(Link, { children: 'Go', ...props }) }).toString();
+const source = await readFile(
+  new URL('../packages/void-plugin-hono-jsx/src/runtime/pages/api.tsx', import.meta.url),
+  'utf8',
+);
+const transformed = await transformWithOxc(source, 'pages.tsx', {
+  jsx: { runtime: 'automatic', importSource: 'hono/jsx' },
+});
+const code = transformed.code.replace(
+  /from (["'])([^"']+)\1/g,
+  (_, quote, name) =>
+    'from ' +
+    JSON.stringify(
+      name.startsWith('.')
+        ? new URL(
+            name,
+            new URL('../packages/void-plugin-hono-jsx/src/runtime/pages/api.tsx', import.meta.url),
+          ).href
+        : import.meta.resolve(name),
+    ),
+);
+const { Link, RouterContext, NavigationContext, useNavigation } = await import(
+  'data:text/javascript;base64,' + Buffer.from(code).toString('base64')
+);
+const html = async (props) =>
+  jsx(RouterContext.Provider, {
+    value: createSsrRouter('/'),
+    children: jsx(Link, { children: 'Go', ...props }),
+  }).toString();
 
 test('SSR Link merges query data without leaking navigation props or browser effects', async () => {
-  const rendered = await html({ href: '/users?keep=1', data: { tag: ['one', 'two'], empty: null }, prefetch: 'mount', preserveState: true, viewTransition: false });
+  const rendered = await html({
+    href: '/users?keep=1',
+    data: { tag: ['one', 'two'], empty: null },
+    prefetch: 'mount',
+    preserveState: true,
+    viewTransition: false,
+  });
   assert.match(rendered, /href="\/users\?keep=1(?:&amp;|&)tag=one(?:&amp;|&)tag=two"/);
   assert.doesNotMatch(rendered, /prefetch=|preserveState=|viewTransition=|empty=/);
 });
 
 test('mutation Link renders a button, not a GET anchor', async () => {
-  assert.match(await html({ href: '/users?save', method: 'patch', data: { value: 'saved' } }), /^<button[^>]*type="button"/);
+  assert.match(
+    await html({ href: '/users?save', method: 'patch', data: { value: 'saved' } }),
+    /^<button[^>]*type="button"/,
+  );
 });
 
 for (const props of [
@@ -27,13 +59,17 @@ for (const props of [
   { href: '/', method: 'put', reloadDocument: true },
   { href: '/', prefetch: 'unknown' },
   { href: '/', method: 'TRACE' },
-]) test('invalid Link options fail during SSR: ' + JSON.stringify(props), async () => {
-  await assert.rejects(() => html(props), /Link|GET data/);
-});
+])
+  test('invalid Link options fail during SSR: ' + JSON.stringify(props), async () => {
+    await assert.rejects(() => html(props), /Link|GET data/);
+  });
 
 test('navigation hook is idle in SSR and requires a provider', async () => {
   const read = () => jsx('output', { children: JSON.stringify(useNavigation()) });
   await assert.rejects(async () => jsx(read, {}).toString(), /requires a page provider/);
-  const markup = await jsx(NavigationContext.Provider, { value: { state: 'idle', location: null, method: null }, children: jsx(read, {}) }).toString();
+  const markup = await jsx(NavigationContext.Provider, {
+    value: { state: 'idle', location: null, method: null },
+    children: jsx(read, {}),
+  }).toString();
   assert.match(markup, /idle/);
 });

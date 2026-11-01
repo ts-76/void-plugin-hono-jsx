@@ -1,5 +1,40 @@
 # Dependency advisory acceptance
 
+## Hono and publisher remediation — 2026-11-01
+
+This integration uses the existing local Void 1.4.0 baseline. Hono is pinned to 4.13.16 in the root and locked consumers, and the adapter/common Markdown peer floor is 4.13.16. This selects the November 1 security release explicitly; consumers must update Hono alongside the adapter. The CSS regression exercises closing tags split across template/value boundaries in the adapter's SSR document.
+
+The private npm publisher pins glob 14.0.3 and minimatch 11.0.2 outside upstream npm dependency ranges. Archive/file integrity, embedded-source matching and a fresh zero-finding OSV audit remain mandatory; see [the publisher compatibility exception](../scripts/release/PUBLISHER.md). No risk allowlist was added.
+
+The existing Void/Cloudflare/esbuild findings are not repaired by this change. The historical acceptance below remains bound to its original lockfiles and advisories. Changed lockfiles require reassessment, so publication remains blocked; this update does not refresh acceptance hashes, approve new findings or submit a release.
+
+## Local Void 1.4.0 update — 2026-11-01
+
+The local baseline now pins Void 1.4.0, with peer support limited to `>=1.4.0 <1.5.0`. The owner explicitly requested this version before its normal three-day release age; that exception covers Void and its required same-release `@void/*` packages only. Dependency installation disabled lifecycle scripts. This update is not a security fix or a new advisory acceptance.
+
+Fresh npm audits of the root and both active locked consumers each report **17 propagated package entries (High 6, Moderate 11, Critical 0)**. These are 11 distinct advisory records: the existing esbuild and Zod advisories, eight undici advisories, and the newly reported minimatch advisory `GHSA-g3hv-75wg-m249`. The additional undici records are `GHSA-4w7w-5xrc-9h26`, `GHSA-2m5v-pch6-74hx`, `GHSA-qrxm-fqhp-jwvm`, `GHSA-9fm3-97px-rjf6`, and `GHSA-55wc-3pg8-jfw6`; the three previously recorded undici records remain. Counts describe these dependency inventories, not demonstrated exploitability in every application.
+
+Void 1.4.0 still brings these upstream constraints:
+
+- `@cloudflare/config@0.27.0` pins Zod 4.6.5.
+- `@cloudflare/workers-auth@0.14.1`, its workers-utils dependency and Miniflare beta packages pin undici 7.29.1. The required `cf@1.0.0-beta.18` distribution also embeds an undici 7.29.1 implementation in `dist/wrangler-migration-R9TQ_4Qd.mjs`; changing a top-level undici installation would not replace it.
+- Drizzle Kit 0.31.11 retains esbuild 0.18.20 through `@esbuild-kit/esm-loader` and `@esbuild-kit/core-utils`.
+- Void's minimatch 10.x constraint does not admit the advisory's fixed 11.0.1 release.
+
+A trial update within the compatible Cloudflare ranges did not remove the findings, so those unrelated transitive changes were discarded. No overrides, forced transitive versions or unsupported downgrade were retained. The historical usage limits below still apply while these dependencies remain affected.
+
+`release-policy.json` retains the historical acceptance verbatim. Its exact peer/lock/advisory bindings do not match this updated baseline, so release preparation must fail closed. Neither that acceptance nor `dependencySecurityApproved` authorizes this changed dependency graph. A fresh assessment and explicit release decision are required before publication; no publication or deployment was performed for this local update.
+
+## Integrated refactor and compatible updates — 2026-11-01
+
+The preserved feature-layout refactor and the local Void 1.4.0 update are combined in a separate checkout with Hono 4.13.16 and the fixed npm publisher. Public package imports remain stable; internal package paths now use `packages/void-plugin-hono-jsx`.
+
+Updates within the existing Cloudflare/Miniflare/Drizzle/minimatch ranges resolved no new versions and left the same 17 propagated entries. Newer `@cloudflare/config` and `@cloudflare/workers-auth` releases contain fixed Zod/undici, but their ranges and cf's embedded copy remain constrained by Void. No forced transitive overrides are applied.
+
+The release-plan report now represents expired peer/Node/lock consent as `consumer-risk-acceptance-stale` with no accepted consumer advisories. Unreviewed findings also add `dependency-advisories-unreviewed`. Reporting this blocked plan can complete successfully in CI; it does not establish publication readiness. Both staging and stage-argument construction still require `status: ready`. Malformed policy, changed artifact bytes and changed advisory records continue to throw. Regression tests verify the blocked decision and staging rejection without renewing the historical approval.
+
+Compatible direct updates select @types/node 24.19.2, magic-string 1.4.5, Oxfmt 0.75.0, Playwright 1.64.1 and plain Vite 8.3.5. The aligned Vite Plus/core 1.3.0 fixture is retained. These changes do not repair the remaining Void/Cloudflare advisories or renew historical release consent.
+
 ## 0.9.1 owner acceptance — 2026-10-25
 
 The owner explicitly accepted the remaining Void/Cloudflare tooling risks for **void-plugin-hono-jsx 0.9.1 only** after reassessment. This is a new, version-specific decision; it does not extend the earlier 0.9.0 approval to arbitrary releases. The latest root, ordinary-consumer and Markdown-consumer audits retain 16 propagated entries (High 6, Moderate 10, Critical 0), representing the existing esbuild advisory and the same four undici/Zod advisories described below. Upstream Void's latest release remains 1.2.1. These dependencies are not repaired by this acceptance.
@@ -66,7 +101,7 @@ The original reachability evidence and its limits are in [rc-security-assessment
 
 ## Initial alpha acceptance
 
-Current RC/normal preparation boundaries and update triggers are in [known-limitations.md](known-limitations.md); the dated RC reassessment is in [rc-security-assessment.md](rc-security-assessment.md). The dated alpha investigation below used the original filenames; the current JSX transform is `src/plugins/jsx-transform.ts`, while `src/plugins/hono-jsx.ts` is the composition entry.
+Current RC/normal preparation boundaries and update triggers are in [known-limitations.md](known-limitations.md); the dated RC reassessment is in [rc-security-assessment.md](rc-security-assessment.md). The dated alpha investigation below used the original filenames; the current JSX transform is `src/plugins/shared/jsx-transform.ts`, while `src/plugins/pages/plugin.ts` is the composition entry.
 
 On 2026-10-11, the maintainer accepted the remaining upstream esbuild advisory as a known limitation for preparing `void-plugin-hono-jsx@0.1.0-alpha.0` on `next`, without adding dependency overrides. This records acceptance of one advisory on the pinned peer baseline, not approval to upload, publish, disclose Git history or change repository visibility.
 
@@ -88,7 +123,7 @@ The adapter archive ships no dependency implementation and has no direct esbuild
 
 ## Observed use and limits of the assessment
 
-- `packages/hono-pages/src/plugins/hono-jsx.ts` uses Vite's `transformWithOxc` for JSX. `scripts/build-package.mjs` uses TypeScript's `tsc` to generate the package output.
+- `packages/void-plugin-hono-jsx/src/plugins/pages/plugin.ts` uses Vite's `transformWithOxc` for JSX. `scripts/build-package.mjs` uses TypeScript's `tsc` to generate the package output.
 - The installed `@esbuild-kit/core-utils/dist/index.js` uses esbuild's `transform` and `transformSync`; its ESM loader supplies TypeScript module loading. No esbuild `serve` invocation was found in the adapter or these loader modules.
 - Void's installed DB/init/deploy tooling resolves Drizzle's CLI. That dependency belongs to the upstream framework; this adapter does not control its installation or every execution path.
 - The advisory concerns esbuild's own development server allowing other websites to read responses through permissive CORS. The observed transform calls do not start that server. This is limited source inspection, not proof that every Void command or every consumer configuration is unreachable or safe.

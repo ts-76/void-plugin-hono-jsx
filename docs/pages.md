@@ -1,6 +1,6 @@
 # Pages, navigation and forms
 
-Configure the adapter with the [setup guide](../packages/hono-pages/README.md).
+Configure the adapter with the [setup guide](../packages/void-plugin-hono-jsx/README.md).
 Void discovers routes and runs loaders/actions; components use Hono JSX.
 
 ## Navigation

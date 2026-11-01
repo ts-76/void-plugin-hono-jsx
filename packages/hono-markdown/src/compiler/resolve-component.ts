@@ -6,10 +6,14 @@ export function resolveComponent(specifier: string, importerDir: string, extensi
   if (!specifier.startsWith('.')) return null;
   const base = resolve(importerDir, specifier);
   const is = (path: string, kind: 'file' | 'directory') => {
-    try { const stat = statSync(path); return kind === 'file' ? stat.isFile() : stat.isDirectory(); }
-    catch { return false; }
+    try {
+      const stat = statSync(path);
+      return kind === 'file' ? stat.isFile() : stat.isDirectory();
+    } catch {
+      return false;
+    }
   };
-  for (const path of [...extensions.map(extension => base + extension), base]) {
+  for (const path of [...extensions.map((extension) => base + extension), base]) {
     if (is(path, 'file')) return path;
   }
   if (is(base, 'directory')) {
