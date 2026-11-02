@@ -4,7 +4,7 @@ import { dirname, join } from 'node:path';
 import { version as helperViteVersion } from 'vite';
 
 export const supportedFrameworkRanges = {
-  void: '>=1.4.0 <1.5.0',
+  void: '>=1.5.0 <1.6.0',
   hono: '>=4.13.16 <5.0.0',
   vite: '>=8.0.16 <9.0.0',
 };
@@ -33,7 +33,7 @@ export function supportsFramework(
   if (!match) return false;
   const [major, minor, patch] = match.slice(1).map(Number);
   if (![major, minor, patch].every(Number.isSafeInteger)) return false;
-  if (name === 'void') return major === 1 && minor === 4;
+  if (name === 'void') return major === 1 && minor === 5;
   if (name === 'hono') return major === 4 && (minor > 13 || (minor === 13 && patch >= 16));
   return major === 8 && (minor > 0 || patch >= 16);
 }

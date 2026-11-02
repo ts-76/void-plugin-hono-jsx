@@ -9,14 +9,14 @@ Use Node.js 24.22.1 or newer within Node 24.
 
 ```sh
 npm install void-plugin-hono-jsx hono@4.13.16
-npm install --save-dev void@1.4.0 vite@8.3.5 typescript@7.0.2
+npm install --save-dev void@1.5.0 vite@8.3.5 typescript@7.0.2
 ```
 
 The default install uses `latest`. Use `@next` to test a release candidate, or an explicit version for reproducible installs.
 
 Version 0.9.1 accepts known risks in the required Void/Cloudflare tooling: affected undici can terminate a Node development/CLI process on a malformed peer response, and affected Zod can allocate excessive validation issues. Keep dev/preview private, use trusted project configuration and avoid unbounded external inputs. These dependencies remain unfixed; the audit is nonzero. See the [0.9.1 acceptance, exact scope and usage limits](https://github.com/ts-76/void-plugin-hono-jsx/blob/v0.9.1/docs/dependency-security.md).
 
-Current main targets Void 1.4.0 and retains additional upstream findings. Publication is on hold pending upstream fixes; the historical 0.9.1 acceptance does not cover this baseline. See [current dependency limits](https://github.com/ts-76/void-plugin-hono-jsx/blob/main/SECURITY.md).
+This candidate validates Void 1.5.0 and retains the Drizzle/esbuild tooling finding. Publication is on hold pending upstream fixes; the historical 0.9.1 acceptance does not cover this baseline. See [current dependency limits](https://github.com/ts-76/void-plugin-hono-jsx/blob/main/SECURITY.md).
 
 ## Configure
 
@@ -39,22 +39,22 @@ The adapter includes JSX transformation. Run Vite from the project root and keep
 | Dependency | Supported stable range | Tested version |
 | --- | --- | --- |
 | Node.js | >=24.22.1 <25.0.0 | 24.22.1 |
-| Void | >=1.4.0 <1.5.0 | 1.4.0 |
+| Void | >=1.5.0 <1.6.0 | 1.5.0 |
 | Hono | >=4.13.16 <5.0.0 | 4.13.16 |
 | Vite | >=8.0.16 <9.0.0 | 8.3.5 |
 
-TypeScript 7.0.2 and Vite Plus/core 1.3.0 are tested. Prerelease framework versions and Void 0.x are unsupported.
+TypeScript 7.0.2 and Vite Plus/core 1.4.0 are tested. Prerelease framework versions and Void 0.x are unsupported.
 Accepted ranges do not imply that every future release has been tested.
 
 ## Running Vite and launcher diagnostics
 
-For Vite Plus 1.3.0, keep the launcher and core aligned:
+For Vite Plus 1.4.0, keep the launcher and core aligned:
 
 ```json
 {
   "devDependencies": {
-    "vite": "npm:@voidzero-dev/vite-plus-core@1.3.0",
-    "vite-plus": "1.3.0"
+    "vite": "npm:@voidzero-dev/vite-plus-core@1.4.0",
+    "vite-plus": "1.4.0"
   },
   "overrides": { "vite": "$vite" }
 }
@@ -120,7 +120,7 @@ See the runnable [static fixture](https://github.com/ts-76/void-plugin-hono-jsx/
 Install these peers only when using Markdown:
 
 ```sh
-npm install yaml@2.9.1 shiki@4.5.0 @shikijs/transformers@4.5.0
+npm install yaml@2.9.1 shiki@4.6.0 @shikijs/transformers@4.6.0
 ```
 
 The common package 0.2.1 or newer installs `markdown-exit` and `markdown-it-container` automatically. They do not need app-owned dependency declarations.

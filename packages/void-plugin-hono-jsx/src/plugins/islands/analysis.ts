@@ -10,12 +10,18 @@ import {
 import { resolveComponent } from '../shared/resolve-component.ts';
 import { markdownDiagnostic, type HonoMarkdownApi } from '../markdown/api.ts';
 
+// Markdown graph sources are already JavaScript modules. Void 1.5 scans .md
+// files as raw Markdown script blocks, so select its module parser for this input.
+function graphFilename(filename: string) {
+  return filename.endsWith('.md') ? `${filename}.tsx` : filename;
+}
+
 export function islandImports(
   code: string,
   filename: string,
   body = parseSync(filename, code).program.body,
 ) {
-  const found = findIslandImports(code, filename);
+  const found = findIslandImports(code, graphFilename(filename));
   const attributed = body.filter(
     (node) =>
       node.type === 'ImportDeclaration' &&
@@ -223,7 +229,7 @@ export function analyzeIslands(
   const cssImports = [
     ...new Set(
       [...pageFiles].flatMap((file) =>
-        findStaticCssImports(analyses.get(file)!.code, file).map((item) =>
+        findStaticCssImports(analyses.get(file)!.code, graphFilename(file)).map((item) =>
           rewriteCssImportForVirtualModule(item.statement, item.specifier, file),
         ),
       ),
