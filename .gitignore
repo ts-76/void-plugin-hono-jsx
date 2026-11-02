@@ -20,3 +20,6 @@ stage-receipt.json
 /packages/void-plugin-hono-jsx/CHANGELOG.md
 
 .harness/dev/*/notes/
+
+# Void 1.5 generated Cloudflare build output
+.cloudflare/
