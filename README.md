@@ -1,6 +1,6 @@
 # void-plugin-hono-jsx
 
-0.7.0 retains known undici/Zod risks in the required Void/Cloudflare development and CLI tooling, including a reachable process-termination case. The owner accepted them for this release only; they are not fixed. See the [dependency acceptance and usage limits](docs/dependency-security.md).
+The current main baseline retains the known Drizzle/esbuild tooling vulnerability. Publication is on hold pending upstream fixes; previous version-specific risk acceptance does not authorize this graph. See [SECURITY.md](SECURITY.md).
 
 Hono JSX for [Void](https://void.cloud): server-rendered pages, client navigation, forms and islands. Void handles routing, loaders, actions and caching.
 
@@ -12,7 +12,7 @@ Use Node.js 24.22.1 or newer within Node 24.
 
 ```sh
 npm install void-plugin-hono-jsx hono@4.13.16
-npm install --save-dev void@1.4.0 vite@8.3.5 typescript@7.0.2
+npm install --save-dev void@1.5.0 vite@8.3.5 typescript@7.0.2
 ```
 
 ```ts
@@ -45,12 +45,12 @@ For an existing scaffold, follow the [setup guide](packages/void-plugin-hono-jsx
 | Dependency | Supported stable range | Tested version |
 | --- | --- | --- |
 | Node.js | >=24.22.1 <25.0.0 | 24.22.1 |
-| Void | >=1.4.0 <1.5.0 | 1.4.0 |
+| Void | >=1.5.0 <1.6.0 | 1.5.0 |
 | Hono | >=4.13.16 <5.0.0 | 4.13.16 |
 | Vite | >=8.0.16 <9.0.0 | 8.3.5 |
 
-Vite Plus 1.3.0 is also tested with its matching core alias. See [launcher setup](packages/void-plugin-hono-jsx/README.md#running-vite-and-launcher-diagnostics).
-Ranges allow stable updates; the table lists the versions actually tested. Void 1.4.0 is the minimum: navigation and refresh use its corrected history/hash protocol.
+Vite Plus 1.4.0 is also tested with its matching core alias. See [launcher setup](packages/void-plugin-hono-jsx/README.md#running-vite-and-launcher-diagnostics).
+Ranges allow stable updates; the table lists the versions actually tested. Void 1.5.0 is the validated minor; navigation, actions and the Cloudflare integration are checked against its current protocol.
 
 ## Features
 
@@ -59,19 +59,14 @@ Ranges allow stable updates; the table lists the versions actually tested. Void 
 - JSON and multipart forms, including island forms.
 - Deferred page data with Hono `use()` and Suspense.
 - Islands with load, visible, idle and media scheduling.
-- Static output and optional [Markdown](docs/markdown.md) with code highlighting, copying, containers and themes.
+- Static output and optional [Markdown](packages/void-plugin-hono-jsx/README.md#optional-markdown) with code highlighting, copying, containers and themes.
 
 Browser mounting redraws server-rendered content. Development edits reload the page and reset local state.
-Direct Workers ISR has a dated verification with an unresolved query-purge limitation. The managed Void platform remains unverified. See [known limitations](docs/known-limitations.md).
+Direct Workers ISR has a dated verification with an unresolved query-purge limitation. The managed Void platform remains unverified. See [runtime limits](packages/void-plugin-hono-jsx/README.md#compatibility-and-rendering-limits).
 
-## Documentation
+## Usage
 
-- [Setup and package exports](packages/void-plugin-hono-jsx/README.md)
-- [Pages, navigation, forms and islands](docs/pages.md)
-- [Markdown](docs/markdown.md)
-- [Examples and testing](docs/testing.md)
-- [Roadmap](docs/stable-roadmap.md)
-- [Contributing](CONTRIBUTING.md)
+See [setup and package exports](packages/void-plugin-hono-jsx/README.md), the runnable [Pages example](examples/pages), and [contributing](CONTRIBUTING.md).
 
 ## Development
 
@@ -91,7 +86,7 @@ Report vulnerabilities [privately](https://github.com/ts-76/void-plugin-hono-jsx
 compiler, literal component parsing, metadata context/hooks, CSS and DOM island
 scheduling. It has no Void or Vite dependency. Accepted release checks install the published common dependency; local
 development checks may select a candidate tarball alongside the adapter.
-The adapter requires `@ts-76/hono-markdown@^0.2.1` so installations include the internal parser dependencies as well as the
+The adapter requires `@ts-76/hono-markdown@^0.3.0` so installations include the internal parser dependencies as well as the
 fence-range and island-attribute security fixes.
 
 The Void plugin owns page discovery, layouts, head, loaders, virtual modules and

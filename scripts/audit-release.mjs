@@ -50,10 +50,17 @@ const lock = JSON.parse(readFileSync('package-lock.json', 'utf8'));
 assert.equal(lock.version, pkg.version);
 assert.equal(lock.packages[''].version, pkg.version);
 assert.equal(JSON.parse(readFileSync('.release-please-manifest.json', 'utf8'))['.'], pkg.version);
+const policy = JSON.parse(readFileSync('release-policy.json', 'utf8'));
+assert.ok(
+  pkg.version.includes('-')
+    ? policy.distTag === 'next'
+    : ['next', 'latest'].includes(policy.distTag),
+  'Prereleases require next; normal releases require a reviewed next/latest channel',
+);
 assert.deepEqual(pkg.publishConfig, {
   access: 'public',
   registry: 'https://registry.npmjs.org/',
-  tag: 'next',
+  tag: policy.distTag,
 });
 if (failures.length) throw new Error(`Release audit failed:\n${failures.join('\n')}`);
 console.log(

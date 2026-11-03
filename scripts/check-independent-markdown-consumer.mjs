@@ -57,8 +57,8 @@ run([
   join(root, packed[0].filename),
   'hono@4.13.16',
   'yaml@2.9.1',
-  'shiki@4.5.0',
-  '@shikijs/transformers@4.5.0',
+  'shiki@4.6.0',
+  '@shikijs/transformers@4.6.0',
 ]);
 audit();
 const check = String.raw`import assert from 'node:assert/strict';

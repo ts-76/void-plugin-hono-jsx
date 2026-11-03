@@ -11,7 +11,7 @@ npm ci
 npm run dev
 ```
 
-See [testing](docs/testing.md) for examples, check commands and browser setup.
+Run `npm run check:source`, `npm run fmt:check`, `npm run typecheck`, `npm test`, and `npm run check:consumer`. Packed consumers require Playwright Chromium (`npx playwright install chromium`).
 Run checks sequentially when they share example build output.
 
 Format maintained code with the pinned Oxc formatter, Oxfmt:
@@ -52,9 +52,6 @@ Include:
 Remove credentials, private URLs, personal paths and application data from reports.
 Report vulnerabilities [privately](https://github.com/ts-76/void-plugin-hono-jsx/security/advisories/new), following [SECURITY.md](SECURITY.md).
 
-## Maintainer references
+## Release checks
 
-- [Architecture](docs/architecture.md)
-- [Supported behavior](docs/release-contract.md)
-- [Release automation](docs/release-please.md)
-- [Release checklist](docs/release-checklist.md)
+Release Please manages versions and changelog. `npm run release:prepare` verifies the exact candidate, locked consumers and publisher; `npm run release:plan` reports remaining gates. Keep `release-policy.json`, audit inventories and publisher checks authoritative. A successful PR check is separate from release approval. The current Void/Cloudflare findings keep publication on hold; do not renew historical acceptance or relax audit gates during cleanup.

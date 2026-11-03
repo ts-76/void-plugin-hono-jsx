@@ -95,7 +95,10 @@ export async function checkDevelopmentConsumer({ page, origin, consumer, assertR
       await new Promise((resolve) => setTimeout(resolve, 50));
     }
     assert.ok(ready, 'New page route did not appear');
-    await page.goto(origin + '/added');
+    // Void may reload the program while a newly added route is opening. Wait
+    // for the document, then verify the actual single initialization below;
+    // a navigation's load event can be replaced by that development reload.
+    await page.goto(origin + '/added', { waitUntil: 'domcontentloaded' });
     await mountedOnce();
     await page.locator('#added-home').click();
     await page.waitForURL(origin + '/');
@@ -116,6 +119,18 @@ export async function checkDevelopmentConsumer({ page, origin, consumer, assertR
     );
   } catch (error) {
     failed = true;
+    console.error('Development consumer navigation state:', {
+      url: page.url(),
+      addedPage: await page
+        .locator('#added-page')
+        .count()
+        .catch(() => null),
+      mounted: await page
+        .locator('#app')
+        .getAttribute('data-hono-pages')
+        .catch(() => null),
+      mountWrites: await page.evaluate(() => window.__consumerMountWrites).catch(() => null),
+    });
     throw error;
   } finally {
     await rm(added, { force: true });

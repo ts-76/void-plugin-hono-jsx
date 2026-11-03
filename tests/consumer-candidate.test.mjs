@@ -210,6 +210,6 @@ test('a failed parallel consumer leaves pending evidence unaccepted', () => {
 test('release preparation cannot select historical unsupported frameworks', () => {
   for (const name of ['vite-patch', 'latest-vite', 'scaffold-vp', 'latest-vp', 'void-1-vite'])
     assert.throws(() => consumerStack({ RELEASE_CONSUMER_STACK: name }), /Unknown consumer stack/);
-  assert.equal(consumerStack({}).void, '1.4.0');
+  assert.equal(consumerStack({}).void, '1.5.0');
   assert.equal(consumerStack({}).fixture, 'consumer-void-1-vite');
 });
