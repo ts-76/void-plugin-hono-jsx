@@ -32,7 +32,7 @@
     "node": "24.22.1",
     "voidPeer": ">=1.5.0 <1.6.0",
     "lockfiles": {
-      "package-lock.json": "976b1a9368918a11e2b49e79fabc8421391c548c7268860d73ed1198bd7f49d6",
+      "package-lock.json": "3bf16d76ab99c887a1d32d82780a97f1dc5ddd1277670111ef59f9b98f4e7b93",
       "fixtures/consumer-void-1-vite/package-lock.json": "62325c808371d53d1b9194fecd9aedf38a3e8c36ccab5ca3183421a4b1029d82",
       "fixtures/consumer-void-1-vp/package-lock.json": "cbfc2d677cdb977db9efae3264dd0b70b8939ab19ff30c9ea90f9fa56cc7de91"
     },
