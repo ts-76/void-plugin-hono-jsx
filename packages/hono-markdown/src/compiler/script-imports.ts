@@ -5,7 +5,8 @@ export function parseSync(filename: string, source: string) {
       program: parse(source, {
         sourceType: 'module',
         sourceFilename: filename,
-        plugins: ['typescript', 'importAttributes'],
+        // Import attributes are standard syntax in Babel 8.
+        plugins: ['typescript'],
       }).program,
       errors: [] as Error[],
     };
