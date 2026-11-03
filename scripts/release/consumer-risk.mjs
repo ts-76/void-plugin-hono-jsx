@@ -59,7 +59,12 @@ export function acceptedConsumerRisks({ root, pkg, policy }) {
       acceptance.lockfiles[file],
       new StaleConsumerRiskAcceptance(`Consumer risk lock changed: ${file}`),
     );
-  assert.equal(acceptance.advisories.length, 4);
+  assert.ok(Array.isArray(acceptance.advisories) && acceptance.advisories.length > 0);
+  assert.equal(
+    new Set(acceptance.advisories.map((item) => item.id)).size,
+    acceptance.advisories.length,
+    'Duplicate consumer advisory',
+  );
   return acceptance.advisories.map((item) => {
     assert.match(item.id, /^GHSA-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}$/);
     assert.match(item.sha256, /^[a-f0-9]{64}$/);

@@ -204,7 +204,7 @@ test('release archives cannot retain a common Markdown range without the island 
   const f = fixture();
   try {
     const metadata = path.join(f.root, 'candidate/package/package.json');
-    for (const range of ['^0.1.0', '^0.1.1', '^0.1.2', '^0.2.0', '^0.2.1']) {
+    for (const range of ['^0.1.0', '^0.1.1', '^0.1.2', '^0.2.0', '^0.2.1', '^0.2.2']) {
       writeFileSync(
         metadata,
         JSON.stringify({
@@ -220,13 +220,13 @@ test('release archives cannot retain a common Markdown range without the island 
         path.join(f.root, 'candidate'),
         ...f.evidence.files.map((file) => 'package/' + file),
       ]);
-      if (range === '^0.2.1') inspectTarball(f.tarball);
+      if (range === '^0.2.2') inspectTarball(f.tarball);
       else assert.throws(() => inspectTarball(f.tarball), /fixed common Markdown runtime/);
     }
     const actual = JSON.parse(
       readFileSync(new URL('../packages/void-plugin-hono-jsx/package.json', import.meta.url)),
     );
-    assert.equal(actual.dependencies['@ts-76/hono-markdown'], '^0.2.1');
+    assert.equal(actual.dependencies['@ts-76/hono-markdown'], '^0.2.2');
   } finally {
     f.cleanup();
   }

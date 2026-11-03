@@ -105,6 +105,24 @@ test('risk decisions report stale consent without accepting any advisory and sti
   }
 });
 
+test('a smaller reviewed advisory set is accepted but empty and duplicate records fail closed', () => {
+  const f = fixture();
+  try {
+    f.policy.consumerRiskAcceptance.advisories = f.policy.consumerRiskAcceptance.advisories.slice(
+      0,
+      1,
+    );
+    assert.equal(acceptedConsumerRisks(f).length, 1);
+    const record = f.policy.consumerRiskAcceptance.advisories[0];
+    f.policy.consumerRiskAcceptance.advisories = [record, record];
+    assert.throws(() => acceptedConsumerRisks(f), /Duplicate consumer advisory/);
+    f.policy.consumerRiskAcceptance.advisories = [];
+    assert.throws(() => acceptedConsumerRisks(f));
+  } finally {
+    f.cleanup();
+  }
+});
+
 test('fresh advisory verification accepts the complete unchanged records regardless of JSON key order', async () => {
   const f = fixture();
   try {

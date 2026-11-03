@@ -7,7 +7,7 @@ Reports are reviewed on a best-effort basis; no response-time SLA is offered.
 
 ## Supported versions
 
-Security and bug fixes target the latest normal release series, currently **0.9.x**.
+Security and bug fixes target the latest normal release series, currently **0.10.x**.
 Older normal series and historical alpha/RC versions have no guaranteed backports.
 Upgrade to the latest supported release.
 
@@ -22,8 +22,8 @@ Applications remain responsible for authentication, authorization, CSRF protecti
 
 Consumer dependencies and publisher tooling have separate assessments.
 Known findings remain conditional and nonzero; they do not cover new advisories or other execution paths.
-The 2026-11-03 candidate validates Void 1.5.0 and has 5 propagated audit entries (0 High, 5 Moderate) from one advisory in esbuild 0.18.20 through Drizzle Kit. Compatible upstream Cloudflare updates clear the previously recorded undici, Zod and minimatch findings; the inspected cf distribution embeds undici 7.30.1. These counts describe the dependency inventory, not demonstrated exposure in every application. Publication is on hold pending upstream fixes. Historical acceptance for 0.9.1 applies only to its original Node/peer/lock/advisory bindings and does not cover the current graph.
+The 2026-11-03 candidate validates Void 1.5.0 and has 5 propagated audit entries (0 High, 5 Moderate) from one advisory in esbuild 0.18.20 through Drizzle Kit. Compatible upstream Cloudflare updates clear the previously recorded undici, Zod and minimatch findings; the inspected cf distribution embeds undici 7.30.1. These counts describe the dependency inventory, not demonstrated exposure in every application. On 2026-11-03 the owner explicitly accepted this remaining advisory for the 0.10.0 candidate only. The release policy binds that decision to Node 24.22.1, the Void 1.5 peer range, all three exact lockfiles and the fresh advisory content. Historical 0.9.1 consent is not reused.
 
 Keep development/preview private, use trusted project configuration, bound external inputs, and do not use the affected esbuild serve feature. Worker-native fetch and application-defined handlers need their own assessment.
 
-Publisher tooling has a separate zero-finding gate. Its pinned compatibility exception and verification are in [scripts/release/PUBLISHER.md](scripts/release/PUBLISHER.md); this does not repair consumer dependencies. `release-policy.json`, exact inventories, hashes and fresh audit checks remain mandatory. Cleanup does not add risk acceptance or permit publication.
+Publisher tooling has a separate zero-finding gate. Its pinned compatibility exception and verification are in [scripts/release/PUBLISHER.md](scripts/release/PUBLISHER.md); this does not repair consumer dependencies. `release-policy.json`, exact inventories, hashes and fresh audit checks remain mandatory. New findings, changed advisory contents or dependency bindings require reassessment before staging.
