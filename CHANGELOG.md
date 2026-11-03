@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.10.0](https://github.com/ts-76/void-plugin-hono-jsx/compare/v0.9.1...v0.10.0) (2026-11-03)
+
+
+### ⚠ BREAKING CHANGES
+
+* **deps:** Requires Void 1.5.x and common Markdown 0.3.x on Node 24.22.1.
+
+### Bug Fixes
+
+* **deps:** require Void 1.5 and consolidate toolchain updates ([#165](https://github.com/ts-76/void-plugin-hono-jsx/issues/165)) ([eeacdca](https://github.com/ts-76/void-plugin-hono-jsx/commit/eeacdcab53fd624a736438b0fe2c196944755341))
+* integrate local Void 1.4 compatibility work ([55f4422](https://github.com/ts-76/void-plugin-hono-jsx/commit/55f4422ababf6ae8775f5871300718ca3b28f61b))
+* **release:** report expired risk approval as a blocked plan ([a811644](https://github.com/ts-76/void-plugin-hono-jsx/commit/a8116444d7d7265b50478bc32eaad60fe2fb0ef3))
+* **test:** avoid signalling a terminated consumer server ([1538088](https://github.com/ts-76/void-plugin-hono-jsx/commit/1538088f14a7911b1316ea5121b272e8bfd3c32b))
+* update Hono and isolate patched npm publisher ([7bd4aeb](https://github.com/ts-76/void-plugin-hono-jsx/commit/7bd4aebd2c2ecb3420bc6377c946b9c9007c6c06))
+
+
+### Release Automation
+
+* pin remaining GitHub Actions to commit SHAs ([#162](https://github.com/ts-76/void-plugin-hono-jsx/issues/162)) ([c7689d2](https://github.com/ts-76/void-plugin-hono-jsx/commit/c7689d212299d4baa8a08e8b72aaec696f60761a))
+
 ## [0.9.1](https://github.com/ts-76/void-plugin-hono-jsx/compare/v0.9.0...v0.9.1) (2026-10-25)
 
 
