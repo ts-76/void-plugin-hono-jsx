@@ -69,7 +69,7 @@
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/",
-    "tag": "next"
+    "tag": "latest"
   },
   "bugs": {
     "url": "https://github.com/ts-76/void-plugin-hono-jsx/issues"
@@ -94,6 +94,6 @@
     }
   },
   "dependencies": {
-    "@ts-76/hono-markdown": "^0.2.2"
+    "@ts-76/hono-markdown": "^0.3.0"
   }
 }

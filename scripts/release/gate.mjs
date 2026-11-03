@@ -404,8 +404,8 @@ function inspectArchive(bytes, expectedFiles) {
   assert.ok(
     !pkg.dependencies ||
       (Object.keys(pkg.dependencies).length === 1 &&
-        pkg.dependencies['@ts-76/hono-markdown'] === '^0.2.2'),
-    'Only documented peer dependencies and the fixed common Markdown runtime (^0.2.2) are shipped',
+        pkg.dependencies['@ts-76/hono-markdown'] === '^0.3.0'),
+    'Only documented peer dependencies and the fixed common Markdown runtime (^0.3.0) are shipped',
   );
   return { files, contents };
 }
