@@ -162,3 +162,7 @@ use 0.2.x directly.
 
 Trusted `/compiler` options and Shiki output, client islands and host adapter
 configuration are unchanged.
+
+## Compiler toolchain
+
+Version 0.3 requires Node.js 22.18+ on the 22.x line or Node.js 24.11+ for the Babel 8 compiler dependency. Babel parser remains required to parse authored island imports safely. The bundled runtime remains independently verified on Cloudflare Workers.
