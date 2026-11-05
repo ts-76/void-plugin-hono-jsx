@@ -8,9 +8,14 @@ export async function checkFormConsumer({ origin, page, assert }) {
   await page.locator('#app[data-hono-pages="mounted"]').waitFor();
   await wait('#form-state', 'false:false:false:false');
   await page.locator('#form-name').fill('');
+  await page.locator('#form-note').fill('');
   await page.locator('#form-save').click();
   await wait('#field-error', 'Name is required.');
+  await wait('#note-error', 'Note is required.');
   assert.equal(await page.locator('#form-name').inputValue(), '');
+  await page.locator('#form-note').fill('Corrected');
+  await wait('#note-error', '');
+  await wait('#field-error', 'Name is required.');
   await page.locator('#clear-field').click();
   await wait('#field-error', '');
   await page.locator('#clear-error').click();

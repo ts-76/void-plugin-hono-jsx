@@ -9,8 +9,8 @@ export function EditPage({
   submissions: number;
   named?: boolean;
 }) {
-  const form = useForm({ name });
   const url = named ? '/named?save' : '/edit';
+  const form = useForm(url, { name });
   return (
     <main id="page-content" className="page-content">
       <div className="page-heading">
@@ -62,7 +62,15 @@ export function EditPage({
                 {form.pending ? '保存中…' : '変更を保存'}
               </button>
               <button className="button" type="button" id="reset-form" onClick={form.reset}>
-                入力を戻す
+                保存時の入力に戻す
+              </button>
+              <button
+                className="button button-quiet"
+                type="button"
+                id="reset-initial"
+                onClick={() => form.reset({ initial: true })}
+              >
+                最初の入力に戻す
               </button>
               <button
                 className="button button-quiet"

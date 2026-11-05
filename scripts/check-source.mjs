@@ -231,6 +231,11 @@ async function smoke(mode, browser) {
       assert.equal(await text('#form-success'), 'true');
       assert.equal(await page.evaluate(() => window.actionDocument), 123);
     }
+    await page.locator('#name').fill('unsaved change');
+    await click('#reset-form');
+    assert.equal(await page.locator('#name').inputValue(), 'patch value');
+    await click('#reset-initial');
+    assert.equal(await page.locator('#name').inputValue(), 'Original');
     await click('#delete');
     await waitText('#saved-name', 'Original');
     await page.goto(origin + '/named');

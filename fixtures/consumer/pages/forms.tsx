@@ -1,6 +1,6 @@
 import { Form, action, useForm } from 'void-plugin-hono-jsx/form';
 export default function Forms({ saved, submissions }: { saved: string; submissions: number }) {
-  const form = useForm('/forms?save', { name: 'Original' });
+  const form = useForm('/forms?save', { name: 'Original', note: 'Default' });
   return (
     <main>
       <h1>Forms</h1>
@@ -23,6 +23,14 @@ export default function Forms({ saved, submissions }: { saved: string; submissio
           }
         />
         <output id="field-error">{form.errors.name ?? ''}</output>
+        <input
+          id="form-note"
+          value={String(form.data.note)}
+          onInput={(event: Event) =>
+            form.setData('note', (event.currentTarget as HTMLInputElement).value)
+          }
+        />
+        <output id="note-error">{form.errors.note ?? ''}</output>
         <button id="form-save" type="submit" disabled={form.pending}>
           Save
         </button>

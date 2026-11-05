@@ -1,12 +1,15 @@
 import { useContext, useEffect, useRef, useState } from 'hono/jsx';
 import {
+  cloneFormValue,
   isAbortError,
   isEqualFormValue,
   interpolateRouteParams,
+  parseFormResetArgs,
   submitAction,
   VoidActionError,
   type ActionResult,
   type FormMethod,
+  type FormResetOptions,
 } from 'void/pages-client';
 import type { ActionFormOptions, ActionUrl, ResolveActionBody } from 'void/routes';
 import { RouterContext, useErrors, useRouter, action } from './api.tsx';
@@ -30,7 +33,7 @@ export type HonoForm<T extends Fields> = {
   recentlySuccessful: boolean;
   submit(method: FormMethod, target?: string | FormData, body?: FormData): Promise<void>;
   cancel(): void;
-  reset: { (): void; (...fields: Array<keyof T & string>): void };
+  reset: { (): void; (...fields: Array<(keyof T & string) | FormResetOptions>): void };
   clearErrors(...fields: Array<keyof T & string>): void;
   clearError(): void;
 } & Record<FormMethod, (target?: string | FormData, body?: FormData) => Promise<void>>;
@@ -65,7 +68,13 @@ function fieldErrors(error: VoidActionError): Record<string, string> {
   );
 }
 
+type FormOptions = { params?: Record<string, string>; resetOnSuccess?: boolean };
 export function useForm<T extends Fields>(initialData: T): HonoForm<T>;
+export function useForm<T extends Fields>(
+  url: [ActionUrl] extends [never] ? string : never,
+  defaults: T,
+  options?: FormOptions,
+): HonoForm<T>;
 export function useForm<U extends ActionUrl & string>(
   url: U,
   defaults: Body<U>,
@@ -74,7 +83,7 @@ export function useForm<U extends ActionUrl & string>(
 export function useForm(
   initial: string | Fields,
   values?: Fields,
-  options?: { params?: Record<string, string> },
+  options?: FormOptions,
 ): HonoForm<Fields> {
   if (!useContext(RouterContext))
     throw new Error(
@@ -93,6 +102,7 @@ export function useForm(
       }),
     () => router.refresh(),
     bound,
+    options?.resetOnSuccess,
   );
 }
 
@@ -158,10 +168,13 @@ function useFormModel<T extends Fields>(
   send: FormTransport,
   abort: () => void | Promise<unknown>,
   bound?: string,
+  resetOnSuccess = false,
 ): HonoForm<T> {
-  const defaults = useRef({ ...initial });
-  const current = useRef({ ...defaults.current });
-  const [data, updateData] = useState(current.current);
+  const initialValues = useRef<T | null>(null);
+  const initialSnapshot = (initialValues.current ??= cloneFormValue(initial));
+  const defaults = useRef(initialSnapshot);
+  const [data, updateData] = useState(() => cloneFormValue(initialSnapshot));
+  const current = useRef(data);
   const [errors, setErrors] = useState(initialErrors);
   const [pending, setPending] = useState(false);
   const [wasSuccessful, setSuccessful] = useState(false);
@@ -180,15 +193,21 @@ function useFormModel<T extends Fields>(
   );
 
   const setData: SetData<T> = (next: T | ((current: T) => T) | string, value?: unknown) => {
+    const previous = current.current;
     current.current =
       typeof next === 'string'
         ? ({ ...current.current, [next]: value } as T)
         : typeof next === 'function'
           ? next(current.current)
           : { ...next };
-    updateData(current.current);
+    const edited = current.current;
+    updateData(edited);
     setSuccessful(false);
-    setErrors({});
+    setErrors((messages) =>
+      Object.fromEntries(
+        Object.entries(messages).filter(([key]) => isEqualFormValue(previous[key], edited[key])),
+      ),
+    );
     setError(null);
     setRecent(false);
     clearTimeout(timer.current);
@@ -207,14 +226,20 @@ function useFormModel<T extends Fields>(
     clearTimeout(timer.current);
     setError(null);
     setErrors({});
-    const submitted = { ...current.current };
+    const submitted = cloneFormValue(current.current);
     const payload = multipart ? new FormData() : submitted;
     if (multipart) for (const [name, value] of multipart) (payload as FormData).append(name, value);
     try {
       const result = await send(method, url, payload);
       if (id !== generation.current) return;
       if (result.ok) {
-        if (bound && !multipart) defaults.current = submitted;
+        if (bound && !multipart) {
+          defaults.current = resetOnSuccess ? initialSnapshot : submitted;
+          if (resetOnSuccess && isEqualFormValue(current.current, submitted)) {
+            current.current = cloneFormValue(defaults.current);
+            updateData(current.current);
+          }
+        }
         setSuccessful(true);
         setRecent(true);
         timer.current = setTimeout(() => {
@@ -258,15 +283,21 @@ function useFormModel<T extends Fields>(
     hasChanges: Object.keys({ ...defaults.current, ...data }).some(
       (key) => !isEqualFormValue(defaults.current[key], data[key]),
     ),
-    reset(...fields: Array<string | MouseEvent>) {
-      const keys = fields.filter((field): field is string => typeof field === 'string');
+    reset(...args: Array<string | FormResetOptions | MouseEvent>) {
+      const { initial: toInitial, fields } = parseFormResetArgs(
+        args.filter(
+          (arg): arg is string | FormResetOptions =>
+            typeof arg === 'string' || !(arg instanceof Event),
+        ),
+      );
+      const source = toInitial ? initialSnapshot : defaults.current;
       setData(
-        keys.length
+        fields.length
           ? ({
               ...current.current,
-              ...Object.fromEntries(keys.map((key) => [key, defaults.current[key]])),
+              ...Object.fromEntries(fields.map((key) => [key, cloneFormValue(source[key])])),
             } as T)
-          : { ...defaults.current },
+          : cloneFormValue(source),
       );
     },
     clearErrors(...fields) {

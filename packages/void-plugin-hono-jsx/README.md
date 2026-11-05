@@ -97,6 +97,11 @@ An individual link can override the default or opt out with `prefetch={false}`.
 parameters are the same. Query changes can keep state. A different record resets
 page state while the surrounding layout keeps its usual lifetime.
 
+For a bound `useForm()`, `reset()` restores the last submitted values after a
+successful JSON action. Use `reset({ initial: true })` to restore the original
+values, or `resetOnSuccess: true` to restore them after each successful save.
+Editing a field dismisses its own validation message and preserves other messages.
+
 ### Multipart forms
 
 Use `<Form form={form} encType="multipart/form-data">` or pass `FormData` to a form submission method.
