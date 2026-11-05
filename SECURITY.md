@@ -7,7 +7,7 @@ Reports are reviewed on a best-effort basis; no response-time SLA is offered.
 
 ## Supported versions
 
-Security and bug fixes target the latest normal release series, currently **0.10.x**.
+Security and bug fixes target the latest normal release series, currently **0.11.x**.
 Older normal series and historical alpha/RC versions have no guaranteed backports.
 Upgrade to the latest supported release.
 
@@ -22,6 +22,8 @@ Applications remain responsible for authentication, authorization, CSRF protecti
 
 Consumer dependencies and publisher tooling have separate assessments.
 Known findings remain conditional and nonzero; they do not cover new advisories or other execution paths.
+The 0.11.0 candidate uses Void 1.6.2. A fresh audit of each of the three locked dependency trees reported five Moderate entries for one advisory, [GHSA-67mh-4wv8-2f99](https://github.com/advisories/GHSA-67mh-4wv8-2f99), through Drizzle Kit and esbuild 0.18.20. High and Critical counts were zero. The advisory affects esbuild's development server. On 2026-11-06 the owner accepted this finding for these exact 0.11.0 dependency trees on the condition that the affected serve feature is not used. The decision is bound to Node 24.22.1, the Void 1.6 peer range, the three lockfiles and the advisory content.
+
 The 2026-11-03 candidate validates Void 1.5.0 and has 5 propagated audit entries (0 High, 5 Moderate) from one advisory in esbuild 0.18.20 through Drizzle Kit. Compatible upstream Cloudflare updates clear the previously recorded undici, Zod and minimatch findings; the inspected cf distribution embeds undici 7.30.1. These counts describe the dependency inventory, not demonstrated exposure in every application. On 2026-11-03 the owner explicitly accepted this remaining advisory for the 0.10.0 candidate only. The release policy binds that decision to Node 24.22.1, the Void 1.5 peer range, all three exact lockfiles and the fresh advisory content. Historical 0.9.1 consent is not reused.
 
 Keep development/preview private, use trusted project configuration, bound external inputs, and do not use the affected esbuild serve feature. Worker-native fetch and application-defined handlers need their own assessment.

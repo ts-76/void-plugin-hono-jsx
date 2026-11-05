@@ -25,16 +25,16 @@
   "publisherVersion": "11.21.1",
   "consumerRiskAcceptance": {
     "schema": 1,
-    "packageVersion": "0.10.0",
+    "packageVersion": "0.11.0",
     "approvedBy": "ts-76",
-    "approvedOn": "2026-11-03",
-    "decision": "Owner explicitly accepts GHSA-67mh-4wv8-2f99 through Drizzle Kit/esbuild for this Void 1.5.0 candidate only. Use trusted configuration and bounded inputs, keep development/preview private, and do not expose the affected esbuild serve feature. This does not waive new advisories or other dependency trees.",
+    "approvedOn": "2026-11-06",
+    "decision": "Owner explicitly accepts GHSA-67mh-4wv8-2f99 through Drizzle Kit/esbuild for these locked Void 1.6.2 dependency trees in 0.11.0 only. Use trusted configuration and bounded inputs, keep development and preview private, and do not use the affected esbuild serve feature. New findings and changed dependencies require reassessment.",
     "node": "24.22.1",
-    "voidPeer": ">=1.5.0 <1.6.0",
+    "voidPeer": ">=1.6.2 <1.7.0",
     "lockfiles": {
-      "package-lock.json": "3bf16d76ab99c887a1d32d82780a97f1dc5ddd1277670111ef59f9b98f4e7b93",
-      "fixtures/consumer-void-1-vite/package-lock.json": "62325c808371d53d1b9194fecd9aedf38a3e8c36ccab5ca3183421a4b1029d82",
-      "fixtures/consumer-void-1-vp/package-lock.json": "cbfc2d677cdb977db9efae3264dd0b70b8939ab19ff30c9ea90f9fa56cc7de91"
+      "package-lock.json": "9bba4f5224edad3f97f29999361b5120eba5699510cd3ab68a65d2222304e4b6",
+      "fixtures/consumer-void-1-vite/package-lock.json": "edeef34d528917ae5568c3f0baa6d7cf04f2a5ed6b5128e527ed32e1b4ad71a7",
+      "fixtures/consumer-void-1-vp/package-lock.json": "cd1b5b1ef81eb9cfbcf24996b65efb051d8522830883212d9112fcb237cf5515"
     },
     "advisories": [
       {

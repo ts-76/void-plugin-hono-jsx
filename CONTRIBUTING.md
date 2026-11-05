@@ -54,4 +54,4 @@ Report vulnerabilities [privately](https://github.com/ts-76/void-plugin-hono-jsx
 
 ## Release checks
 
-Release Please manages versions and changelog. `npm run release:prepare` verifies the exact candidate, locked consumers and publisher; `npm run release:plan` reports remaining gates. Keep `release-policy.json`, audit inventories and publisher checks authoritative. A successful PR check is separate from release approval. The current Void/Cloudflare findings keep publication on hold; do not renew historical acceptance or relax audit gates during cleanup.
+Release Please manages versions and changelog. `npm run release:prepare` verifies the exact candidate, locked consumers and publisher; `npm run release:plan` reports remaining gates. Keep `release-policy.json`, audit inventories and publisher checks authoritative. A successful PR check is separate from release approval. Any consumer risk acceptance applies only to its documented release, locks and advisory content. Reassess new findings and changed dependencies before staging.

@@ -14,10 +14,6 @@ npm install --save-dev void@1.6.2 vite@8.3.5 typescript@7.0.2
 
 The default install uses `latest`. Use `@next` to test a release candidate, or an explicit version for reproducible installs.
 
-Version 0.9.1 accepts known risks in the required Void/Cloudflare tooling: affected undici can terminate a Node development/CLI process on a malformed peer response, and affected Zod can allocate excessive validation issues. Keep dev/preview private, use trusted project configuration and avoid unbounded external inputs. These dependencies remain unfixed; the audit is nonzero. See the [0.9.1 acceptance, exact scope and usage limits](https://github.com/ts-76/void-plugin-hono-jsx/blob/v0.9.1/docs/dependency-security.md).
-
-The Void 1.6 dependency graph requires its own release audit. The version-specific Void 1.5 acceptance does not apply to it. See [current dependency limits](https://github.com/ts-76/void-plugin-hono-jsx/blob/main/SECURITY.md).
-
 ## Configure
 
 ```ts
@@ -184,8 +180,7 @@ Production ISR path purge enumerates eventually consistent KV keys and may miss 
 
 ## Security
 
-The reviewed Void dependency tree retains an upstream esbuild advisory.
-The adapter adds no transitive overrides. Publisher tooling is assessed separately.
+The locked Void 1.6.2 dependency trees for 0.11.0 retain an upstream esbuild development-server advisory. The scoped acceptance requires keeping the affected esbuild serve feature out of use. Publisher tooling is assessed separately.
 See the [security policy](https://github.com/ts-76/void-plugin-hono-jsx/blob/main/SECURITY.md) and report vulnerabilities [privately](https://github.com/ts-76/void-plugin-hono-jsx/security/advisories/new).
 
 ## Shared Hono Markdown and host boundaries
