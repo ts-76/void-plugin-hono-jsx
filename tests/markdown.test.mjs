@@ -120,11 +120,12 @@ test('configured optional Markdown participates in server manifests and island g
     pages.environment = { mode: 'build' };
     await pages.buildStart();
     await islands.buildStart();
-    const server = await pages.load(pages.resolveId('virtual:void-pages-renderer'));
+    const loadPages = typeof pages.load === 'function' ? pages.load : pages.load.handler;
+    const server = await loadPages.call(pages, pages.resolveId('virtual:void-pages-renderer'));
     assert.match(server, /index\.md/);
     assert.match(server, /markdown: true/);
     assert.match(server, /new Set\(\["index"\]\)/);
-    const client = await pages.load(pages.resolveId('virtual:void-pages-client'));
+    const client = await loadPages.call(pages, pages.resolveId('virtual:void-pages-client'));
     assert.doesNotMatch(client, /index\.md/);
     assert.match(client, /other\.tsx/);
     assert.match(islands.load(islands.resolveId('virtual:void-islands-client')), /Counter\.tsx/);
