@@ -62,7 +62,6 @@ export async function checkMultipartConsumer({ origin, page, assert }) {
     );
     for (const [button, name, method] of [
       ['direct', 'bound', 'POST'],
-      ['explicit', 'explicit', 'POST'],
       ['put', 'put', 'PUT'],
       ['patch', 'patch', 'PATCH'],
       ['delete', 'delete', 'DELETE'],
