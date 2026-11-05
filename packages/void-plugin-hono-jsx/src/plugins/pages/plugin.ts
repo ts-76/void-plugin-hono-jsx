@@ -11,12 +11,14 @@ import {
 import {
   generateComponentManifest,
   resolvePagesDir,
+  resolvePrefetchConfig,
+  type PagesPluginOptions,
   resolveStaticPageDataBuildOptions,
   scanPages,
   type PageScanResult,
 } from 'void/pages';
 import type { Plugin } from 'vite';
-import { parseCacheFor, type CacheForInput } from 'void/pages-prefetch';
+import { parseCacheFor } from 'void/pages-prefetch';
 import { honoJsxTransform } from '../shared/jsx-transform.ts';
 import { honoIslands } from '../islands/plugin.ts';
 import { markdownApi, markdownDiagnostic, type HonoMarkdownApi } from '../markdown/api.ts';
@@ -39,17 +41,21 @@ export type HonoJsxOptions = {
   viewTransitions?: boolean;
   /** A default-exported local TSX/JSX component; keeps the current page mounted. */
   navigationFallback?: { component: string; delay?: number };
-  prefetch?: { hoverDelay?: number; cacheFor?: CacheForInput };
+  prefetch?: PagesPluginOptions['prefetch'];
 };
 
 function clientOptions(options: HonoJsxOptions) {
   const viewTransitions = options.viewTransitions ?? false;
-  const prefetchHoverDelay = options.prefetch?.hoverDelay ?? 75;
+  const {
+    defaultStrategy: prefetchDefaultStrategy,
+    hoverDelay: prefetchHoverDelay,
+    cacheFor,
+  } = resolvePrefetchConfig(options.prefetch);
   if (typeof viewTransitions !== 'boolean')
     throw new Error('Hono Pages: viewTransitions must be a boolean.');
   if (!Number.isFinite(prefetchHoverDelay) || prefetchHoverDelay < 0)
     throw new Error('Hono Pages: prefetch.hoverDelay must be a finite non-negative number.');
-  const prefetchDefaultCacheFor = parseCacheFor(options.prefetch?.cacheFor ?? '30s');
+  const prefetchDefaultCacheFor = parseCacheFor(cacheFor);
   if (
     ![prefetchDefaultCacheFor.stale, prefetchDefaultCacheFor.expires].every(
       (value) => Number.isFinite(value) && value >= 0,
@@ -60,7 +66,7 @@ function clientOptions(options: HonoJsxOptions) {
       'Hono Pages: prefetch.cacheFor must have finite non-negative durations, with stale <= expires.',
     );
   }
-  return { viewTransitions, prefetchHoverDelay, prefetchDefaultCacheFor };
+  return { viewTransitions, prefetchHoverDelay, prefetchDefaultCacheFor, prefetchDefaultStrategy };
 }
 
 /** Compose Hono JSX transformation, Pages and islands using verified Void contracts. */

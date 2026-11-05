@@ -1,7 +1,12 @@
 import { createContext, useContext, useEffect, useRef, type JSX } from 'hono/jsx';
 import {
   createActionClient,
-  mergeDataIntoHref,
+  linkActiveAttributes,
+  linkPendingAttributes,
+  linkPrefetchStrategies,
+  observeLinkVisible,
+  resolveLink,
+  type LinkActiveMatch,
   type NavigationState,
   type NavigationMethod,
   type VoidRouter,
@@ -52,6 +57,7 @@ export function useRouter(): VoidRouter {
 export type PrefetchStrategy = 'hover' | 'click' | 'mount' | 'visible';
 export type LinkProps = Omit<JSX.IntrinsicElements['a'], 'href' | 'onClick'> & {
   href: string;
+  activeMatch?: LinkActiveMatch;
   method?: NavigationMethod | Lowercase<NavigationMethod>;
   data?: Record<string, unknown>;
   preserveScroll?: boolean;
@@ -67,6 +73,7 @@ export type LinkProps = Omit<JSX.IntrinsicElements['a'], 'href' | 'onClick'> & {
 
 export function Link({
   href,
+  activeMatch,
   method = 'GET',
   data,
   preserveScroll,
@@ -74,7 +81,7 @@ export function Link({
   reloadDocument,
   replace,
   viewTransition,
-  prefetch = false,
+  prefetch,
   cacheFor,
   onNavigate,
   onClick,
@@ -86,23 +93,19 @@ export function Link({
   ...attributes
 }: LinkProps) {
   const router = useRouter();
+  const navigation = useContext(NavigationContext);
   const element = useRef<HTMLAnchorElement | HTMLButtonElement | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const normalized = method.toUpperCase();
-  const get = normalized === 'GET';
   if (!['GET', 'POST', 'PUT', 'PATCH', 'DELETE'].includes(normalized))
     throw new Error('Hono Link: unsupported method.');
-  if (!get && (prefetch !== false || reloadDocument))
-    throw new Error('Hono Link: prefetch and reloadDocument only support GET links.');
-  const destination = get ? mergeDataIntoHref(href, data) : href;
-  const strategies =
-    reloadDocument || prefetch === false
-      ? []
-      : prefetch === true
-        ? ['hover']
-        : typeof prefetch === 'string'
-          ? [prefetch]
-          : prefetch;
+  const link = resolveLink({ href, method, data, prefetch, reloadDocument });
+  const { isGet: get, href: destination } = link;
+  const strategies = linkPrefetchStrategies(
+    { prefetch, reloadDocument },
+    link,
+    router._prefetchDefaultStrategy,
+  );
   if (strategies.some((strategy) => !['hover', 'click', 'mount', 'visible'].includes(strategy)))
     throw new Error('Hono Link: unsupported prefetch strategy.');
   const clear = () => {
@@ -123,23 +126,32 @@ export function Link({
   const report = (error: unknown) =>
     window.dispatchEvent(new CustomEvent('hono-pages:navigation-error', { detail: error }));
   const fetchAhead = () => {
-    if (canHandle()) void router.prefetch(destination, { cacheFor }).catch(report);
+    if (!canHandle()) return;
+    const connection = (
+      navigator as Navigator & {
+        connection?: { saveData?: boolean; effectiveType?: string };
+      }
+    ).connection;
+    if (
+      connection?.saveData ||
+      connection?.effectiveType === '2g' ||
+      connection?.effectiveType === 'slow-2g'
+    )
+      return;
+    const target = new URL(destination, window.location.href);
+    if (target.pathname === window.location.pathname && target.search === window.location.search)
+      return;
+    void router.prefetch(destination, { cacheFor }).catch(report);
   };
   useEffect(() => {
     if (strategies.includes('mount')) fetchAhead();
-    let observer: IntersectionObserver | undefined;
-    if (strategies.includes('visible') && element.current) {
-      observer = new IntersectionObserver((entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) {
-          observer?.disconnect();
-          fetchAhead();
-        }
-      });
-      observer.observe(element.current);
-    }
+    const stopObserving =
+      strategies.includes('visible') && element.current
+        ? observeLinkVisible(element.current, fetchAhead)
+        : undefined;
     return () => {
       clear();
-      observer?.disconnect();
+      stopObserving?.();
     };
   }, [destination, prefetch, cacheFor, reloadDocument, router]);
   const events = {
@@ -194,9 +206,22 @@ export function Link({
     },
     onTouchStart(event: TouchEvent) {
       onTouchStart?.(event);
-      if (!event.defaultPrevented && strategies.includes('click')) fetchAhead();
+      if (!event.defaultPrevented && (strategies.includes('click') || strategies.includes('hover')))
+        fetchAhead();
     },
   };
-  if (get) return <a {...attributes} {...events} ref={element} href={destination} />;
-  return <button {...attributes} {...events} ref={element} type="button" />;
+  const pending = linkPendingAttributes(router, navigation, link);
+  const ref = typeof document === 'undefined' ? {} : { ref: element };
+  if (get)
+    return (
+      <a
+        {...linkActiveAttributes(router, link, activeMatch)}
+        {...pending}
+        {...attributes}
+        {...events}
+        {...ref}
+        href={String(destination)}
+      />
+    );
+  return <button {...pending} {...attributes} {...events} {...ref} type="button" />;
 }

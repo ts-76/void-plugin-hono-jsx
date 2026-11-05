@@ -97,6 +97,8 @@ async function smoke(mode, browser) {
     });
     await click('#nav-bob');
     await waitText('#route-value', 'bob');
+    assert.equal(await page.locator('#nav-bob').getAttribute('aria-current'), 'page');
+    assert.equal(await page.locator('#nav-alice').getAttribute('aria-current'), null);
     assert.equal(await page.evaluate(() => window.sourceDocument), 123);
     await click('#nav-alice');
     assert.equal(new URL(page.url()).search, '?tab=profile');
@@ -139,10 +141,10 @@ async function smoke(mode, browser) {
       );
       assert.equal(intercepted, false, `Native link ${selector}`);
     }
-    await page.evaluate(() => {
-      document.querySelector('#nav-slow').click();
-      setTimeout(() => document.querySelector('#nav-bob').click(), 40);
-    });
+    await page.locator('#nav-slow').click();
+    await page.locator('#nav-slow[data-void-pending]').waitFor();
+    await page.locator('#nav-bob').click();
+    await page.locator('#nav-slow[data-void-pending]').waitFor({ state: 'detached' });
     await waitText('#route-value', 'bob');
     await delay(800);
     assert.equal(await text('#route-value'), 'bob');

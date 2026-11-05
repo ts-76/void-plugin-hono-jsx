@@ -175,6 +175,7 @@ export async function createHonoRouter(config: VoidRouterConfig) {
 
   const raw: VoidRouter = {
     _hoverDelay: engine._hoverDelay,
+    _prefetchDefaultStrategy: engine._prefetchDefaultStrategy,
     get url() {
       return toUrl(routeUrl);
     },

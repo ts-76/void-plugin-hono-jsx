@@ -22,7 +22,7 @@ import { createRenderState, type RenderFrame } from './render-state.ts';
 
 type NavigationOptions = Pick<
   VoidRouterConfig,
-  'viewTransitions' | 'prefetchHoverDelay' | 'prefetchDefaultCacheFor'
+  'viewTransitions' | 'prefetchHoverDelay' | 'prefetchDefaultCacheFor' | 'prefetchDefaultStrategy'
 > & { navigationFallback?: NavigationFallbackOptions };
 
 type Manifest = Pick<

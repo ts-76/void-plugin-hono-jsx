@@ -88,6 +88,12 @@ import { Form, useForm, useIslandForm, action } from 'void-plugin-hono-jsx/form'
 
 Runnable navigation, forms and error handling are in the [Pages example](https://github.com/ts-76/void-plugin-hono-jsx/tree/main/examples/pages).
 
+`Link` marks the current page with `aria-current="page"` and `data-void-active`.
+Use `activeMatch="prefix"` to also style parent links. Links to the destination
+being loaded receive `data-void-pending`.
+Set `prefetch.defaultStrategy` in `voidHonoJsx()` for a default on GET links.
+An individual link can override the default or opt out with `prefetch={false}`.
+
 ### Multipart forms
 
 Use `<Form form={form} encType="multipart/form-data">` or pass `FormData` to a form submission method.
