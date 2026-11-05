@@ -192,11 +192,18 @@ await startHonoPages({ components, layoutTree, routeMeta, matchRoute, staticPage
           resolvedHook?.call(this, config);
         },
       },
-      configEnvironment() {
+      configEnvironment(environment) {
         const modules = Object.keys(publicRuntimeModules);
         const packages = [...new Set(modules.map((id) => id.split('/')[0]))];
         return {
-          optimizeDeps: { exclude: ['hono', ...modules] },
+          optimizeDeps: {
+            exclude: ['hono', ...modules],
+            // Both generated entries use this runtime. A late optimizer reload
+            // can overtake an island graph update and interrupt the remount.
+            ...(environment === 'client'
+              ? { include: ['void/pages-client', 'void/pages-prefetch'] }
+              : {}),
+          },
           resolve: { noExternal: ['hono', ...packages] },
         };
       },
