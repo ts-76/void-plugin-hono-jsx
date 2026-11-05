@@ -56,6 +56,25 @@ test('the page runtime composes layouts and keeps server metadata separate from 
   assert.match(html, /href="\/page.css"/);
 });
 
+test('SSR resolves the page URL against the actual request origin', async () => {
+  const { useRouter } = await import(
+    await runtimeModule(
+      new URL('../packages/void-plugin-hono-jsx/src/runtime/pages/api.tsx', import.meta.url),
+    )
+  );
+  const Page = () => jsx('output', { children: useRouter().url.href });
+  const render = createHonoPageRenderer(
+    { components: { index: async () => ({ default: Page }) }, layoutTree: {} },
+    { staticData: false, markdown: false, markdownScripts: new Set() },
+  );
+  const html = await render(
+    { ...page, url: '/items?tab=details' },
+    assets,
+    'https://example.test/items?tab=details',
+  );
+  assert.match(html, /<output>https:\/\/example\.test\/items\?tab=details<\/output>/);
+});
+
 test('the page runtime rejects invalid components and deferred static output', async () => {
   const options = { staticData: false, markdown: false, markdownScripts: new Set() };
   await assert.rejects(
