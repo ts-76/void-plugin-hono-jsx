@@ -13,7 +13,7 @@ const { RouterContext, PageContext } = await import(
   )
 );
 
-async function model(bound = true) {
+async function model(url = '/upload') {
   const visits = [];
   let form;
   const router = {
@@ -23,9 +23,7 @@ async function model(bound = true) {
     async refresh() {},
   };
   const Page = () => {
-    form = bound
-      ? useForm('/upload', { name: 'model-default' })
-      : useForm({ name: 'model-default' });
+    form = useForm(url, { name: 'model-default' });
     return jsx('p', { children: 'Form' });
   };
   await jsx(RouterContext.Provider, {
@@ -47,7 +45,7 @@ function payload() {
 test('bound FormData submits native values, repeated fields and files without replacing the JSON model', async () => {
   const { form, visits } = await model();
   const data = payload();
-  await form.post(data);
+  await form.post({ data });
   data.set('name', 'changed-after-submit');
   assert.equal(visits[0].url, '/upload');
   assert.equal(visits[0].method, 'POST');
@@ -64,18 +62,18 @@ test('bound FormData submits native values, repeated fields and files without re
   form.setData({ name: 'cleanup' });
 });
 
-test('URL plus FormData and submit(method, FormData) retain the requested mutation method', async () => {
+test('Bound action and submit(method, options) retain the requested mutation method', async () => {
   const { form, visits } = await model();
   const data = payload();
-  for (const method of ['post', 'put', 'patch', 'delete']) await form[method]('/explicit', data);
-  await form.submit('patch', data);
+  for (const method of ['post', 'put', 'patch', 'delete']) await form[method]({ data });
+  await form.submit('patch', { data });
   assert.deepEqual(
     visits.map(({ url, method }) => [url, method]),
     [
-      ['/explicit', 'POST'],
-      ['/explicit', 'PUT'],
-      ['/explicit', 'PATCH'],
-      ['/explicit', 'DELETE'],
+      ['/upload', 'POST'],
+      ['/upload', 'PUT'],
+      ['/upload', 'PATCH'],
+      ['/upload', 'DELETE'],
       ['/upload', 'PATCH'],
     ],
   );
@@ -83,13 +81,18 @@ test('URL plus FormData and submit(method, FormData) retain the requested mutati
   form.setData({ name: 'cleanup' });
 });
 
-test('JSON forms retain model submission and unbound FormData requires an explicit URL', async () => {
-  const { form, visits } = await model(false);
-  await assert.rejects(() => form.post(payload()), /supply an action URL/);
-  assert.equal(visits.length, 0);
-  await form.post('/json');
-  assert.deepEqual(visits[0].data, { name: 'model-default' });
-  await assert.rejects(() => form.post(payload(), payload()), /supply FormData once/);
+test('JSON forms use the bound URL and optionally submit an explicit payload', async () => {
+  const { form, visits } = await model('/json');
+  await form.post();
+  await form.post({ data: { name: 'override' } });
+  assert.deepEqual(
+    visits.map(({ url, data }) => [url, data]),
+    [
+      ['/json', { name: 'model-default' }],
+      ['/json', { name: 'override' }],
+    ],
+  );
+  assert.equal(form.data.name, 'model-default');
   form.setData({ name: 'cleanup' });
 });
 
@@ -110,18 +113,23 @@ test('island multipart transport lets fetch create its boundary while JSON trans
       });
     };
     const Page = () => {
-      form = useIslandForm({ name: 'model-default' });
+      form = useIslandForm('/upload', { name: 'model-default' });
       return jsx('p', { children: 'Island' });
     };
     await jsx(Page, {}).toString();
-    await form.post('/upload', payload());
+    await form.post({ data: payload() });
     assert.equal(requests[0].headers, undefined);
     assert.ok(requests[0].body instanceof FormData);
     assert.deepEqual(requests[0].body.getAll('tags'), ['one', 'two']);
-    await form.post('/json');
+    await form.post();
     assert.equal(requests[1].headers['Content-Type'], 'application/json');
     assert.equal(requests[1].body, '{"name":"model-default"}');
-    await form.post('https://other.test/upload', payload());
+    const Foreign = () => {
+      form = useIslandForm('https://other.test/upload', { name: 'model-default' });
+      return jsx('p', { children: 'Island' });
+    };
+    await jsx(Foreign, {}).toString();
+    await form.post({ data: payload() });
     assert.equal(requests.length, 2);
   } finally {
     globalThis.fetch = previousFetch;

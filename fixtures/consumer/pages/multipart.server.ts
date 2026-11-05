@@ -29,7 +29,7 @@ export const actions = {
           text: await file.text(),
         })),
     );
-    if (c.req.query('slow')) await new Promise((resolve) => setTimeout(resolve, 500));
+    if (data.has('slow')) await new Promise((resolve) => setTimeout(resolve, 500));
     result = {
       name,
       tags: data.getAll('tags').map(String),

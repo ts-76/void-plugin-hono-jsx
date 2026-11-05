@@ -5,7 +5,7 @@ import type { Props } from './index.server';
 export default function Page({ initialCount }: Props) {
   const [count, setCount] = useState(initialCount);
   const router = useRouter();
-  const form = useForm({ name: 'Consumer' });
+  const form = useForm('/forms?save', { name: 'Consumer' });
   return (
     <main>
       <h1>Clean package consumer</h1>

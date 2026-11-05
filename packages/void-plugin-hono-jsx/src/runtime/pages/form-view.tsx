@@ -13,16 +13,14 @@ export type FormProps = Omit<
   JSX.IntrinsicElements['form'],
   'action' | 'method' | 'onSubmit' | 'onError' | 'encType'
 > & {
-  form: FormModel<[target?: string | FormData, body?: FormData]>;
+  form: FormModel<[options?: { data: FormData }]>;
   method?: FormMethod;
   encType?: 'application/json' | 'multipart/form-data';
-  url?: string;
   renderError?: (error: VoidActionError) => Child;
 };
 export function Form({
   form,
   method = 'post',
-  url,
   encType = 'application/json',
   renderError,
   children,
@@ -48,7 +46,7 @@ export function Form({
                   (event as SubmitEvent).submitter,
                 )
               : undefined;
-          void form[method](url ?? data, url ? data : undefined);
+          void form[method](data ? { data } : undefined);
         }
       }}
     >

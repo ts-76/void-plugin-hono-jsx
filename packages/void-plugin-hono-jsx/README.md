@@ -97,14 +97,21 @@ An individual link can override the default or opt out with `prefetch={false}`.
 parameters are the same. Query changes can keep state. A different record resets
 page state while the surrounding layout keeps its usual lifetime.
 
-For a bound `useForm()`, `reset()` restores the last submitted values after a
+For `useForm()`, `reset()` restores the last submitted values after a
 successful JSON action. Use `reset({ initial: true })` to restore the original
 values, or `resetOnSuccess: true` to restore them after each successful save.
 Editing a field dismisses its own validation message and preserves other messages.
 
 ### Multipart forms
 
-Use `<Form form={form} encType="multipart/form-data">` or pass `FormData` to a form submission method.
+Create both Pages and Island forms with the action URL, for example
+`useForm('/forms?save', { name: '' })` or `useIslandForm('/forms?save', { name: '' })`.
+With the URL bound, use `<Form form={form}>` or call `form.post()`. Replace
+legacy `useForm(defaults)` and `<Form url>` with this form. Use a separate form
+or `action()` for a different action.
+
+Use `<Form form={form} encType="multipart/form-data">` or call
+`form.post({ data: formData })` to submit multipart data.
 Files, repeated fields and the clicked submitter are preserved.
 Full Pages performs one GET after a successful mutation, so the destination must support GET and loaders may rerun.
 Cancellation cannot undo writes.

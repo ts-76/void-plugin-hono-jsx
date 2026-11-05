@@ -11,6 +11,11 @@ export function EditPage({
 }) {
   const url = named ? '/named?save' : '/edit';
   const form = useForm(url, { name });
+  const slow = useForm('/named?slow', { name });
+  const failure = useForm('/named?fail', { name });
+  const redirect = useForm('/named?redirect', {});
+  const pending = form.pending || slow.pending || failure.pending || redirect.pending;
+  const error = failure.error ?? slow.error ?? redirect.error ?? form.error;
   return (
     <main id="page-content" className="page-content">
       <div className="page-heading">
@@ -28,7 +33,8 @@ export function EditPage({
           <form
             onSubmit={(event) => {
               event.preventDefault();
-              void form.post(url);
+              failure.clearError();
+              void form.post();
             }}
           >
             <div className="field">
@@ -58,8 +64,8 @@ export function EditPage({
               </p>
             </div>
             <div className="form-actions">
-              <button className="button button-primary" id="save" disabled={form.pending}>
-                {form.pending ? '保存中…' : '変更を保存'}
+              <button className="button button-primary" id="save" disabled={pending}>
+                {pending ? '保存中…' : '変更を保存'}
               </button>
               <button className="button" type="button" id="reset-form" onClick={form.reset}>
                 保存時の入力に戻す
@@ -76,22 +82,22 @@ export function EditPage({
                 className="button button-quiet"
                 type="button"
                 id="cancel"
-                disabled={!form.pending}
-                onClick={form.cancel}
+                disabled={!pending}
+                onClick={slow.pending ? slow.cancel : form.cancel}
               >
                 送信を中止
               </button>
             </div>
             <p className="form-feedback" role="status">
-              {form.pending
+              {pending
                 ? 'サーバーに送信しています。'
                 : form.wasSuccessful
                   ? '変更を保存しました。'
                   : '保存すると、保存結果に反映されます。'}
             </p>
-            {form.error && !form.errors.name && (
+            {error && !form.errors.name && (
               <p className="error-notice" role="alert">
-                {form.error.message}
+                {error.message}
               </p>
             )}
             <div className="action-tools">
@@ -102,8 +108,8 @@ export function EditPage({
                   className="button"
                   type="button"
                   id="put"
-                  disabled={form.pending}
-                  onClick={() => void form.put(url)}
+                  disabled={pending}
+                  onClick={() => void form.put()}
                 >
                   PUT
                 </button>
@@ -111,8 +117,8 @@ export function EditPage({
                   className="button"
                   type="button"
                   id="patch"
-                  disabled={form.pending}
-                  onClick={() => void form.patch(url)}
+                  disabled={pending}
+                  onClick={() => void form.patch()}
                 >
                   PATCH
                 </button>
@@ -120,8 +126,8 @@ export function EditPage({
                   className="button"
                   type="button"
                   id="delete"
-                  disabled={form.pending}
-                  onClick={() => void form.delete(url)}
+                  disabled={pending}
+                  onClick={() => void form.delete()}
                 >
                   DELETE
                 </button>
@@ -131,8 +137,8 @@ export function EditPage({
                       className="button"
                       type="button"
                       id="redirect"
-                      disabled={form.pending}
-                      onClick={() => void form.post('/named?redirect')}
+                      disabled={pending}
+                      onClick={() => void redirect.post()}
                     >
                       リダイレクト
                     </button>
@@ -140,8 +146,8 @@ export function EditPage({
                       className="button"
                       type="button"
                       id="fail"
-                      disabled={form.pending}
-                      onClick={() => void form.post('/named?fail')}
+                      disabled={pending}
+                      onClick={() => void failure.post({ data: form.data })}
                     >
                       エラー応答
                     </button>
@@ -149,8 +155,8 @@ export function EditPage({
                       className="button"
                       type="button"
                       id="slow"
-                      disabled={form.pending}
-                      onClick={() => void form.post('/named?slow')}
+                      disabled={pending}
+                      onClick={() => void slow.post({ data: form.data })}
                     >
                       遅い保存
                     </button>
@@ -185,10 +191,13 @@ export function EditPage({
         </section>
       </div>
       <output aria-hidden="true" className="visually-hidden" id="form-pending">
-        {String(form.pending)}
+        {String(pending)}
       </output>
       <output aria-hidden="true" className="visually-hidden" id="form-success">
         {String(form.wasSuccessful)}
+      </output>
+      <output aria-hidden="true" className="visually-hidden" id="slow-success">
+        {String(slow.wasSuccessful)}
       </output>
     </main>
   );

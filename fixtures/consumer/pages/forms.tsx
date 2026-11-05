@@ -1,6 +1,7 @@
 import { Form, action, useForm } from 'void-plugin-hono-jsx/form';
 export default function Forms({ saved, submissions }: { saved: string; submissions: number }) {
   const form = useForm('/forms?save', { name: 'Original', note: 'Default' });
+  const redirect = useForm('/forms?redirect', {});
   return (
     <main>
       <h1>Forms</h1>
@@ -44,10 +45,16 @@ export default function Forms({ saved, submissions }: { saved: string; submissio
       <button id="form-reset" onClick={form.reset}>
         Reset
       </button>
-      <button id="form-fail" onClick={() => void form.post('/forms?fail')}>
+      <button
+        id="form-fail"
+        onClick={() => void form.post({ data: { ...form.data, probe: 'fail' } })}
+      >
         Failure
       </button>
-      <button id="form-slow" onClick={() => void form.post('/forms?slow')}>
+      <button
+        id="form-slow"
+        onClick={() => void form.post({ data: { ...form.data, probe: 'slow' } })}
+      >
         Slow
       </button>
       <button id="form-cancel" onClick={form.cancel}>
@@ -64,10 +71,13 @@ export default function Forms({ saved, submissions }: { saved: string; submissio
       >
         One shot
       </button>
-      <button id="form-quota" onClick={() => void form.post('/forms?quota')}>
+      <button
+        id="form-quota"
+        onClick={() => void form.post({ data: { ...form.data, probe: 'quota' } })}
+      >
         Quota
       </button>
-      <button id="form-redirect" onClick={() => void form.post('/forms?redirect')}>
+      <button id="form-redirect" onClick={() => void redirect.post()}>
         Redirect
       </button>
     </main>

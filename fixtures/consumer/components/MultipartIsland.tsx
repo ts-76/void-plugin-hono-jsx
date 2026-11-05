@@ -1,13 +1,8 @@
 import { Form, useIslandForm } from 'void-plugin-hono-jsx/form';
 export default function MultipartIsland() {
-  const form = useIslandForm({ name: 'island-model' });
+  const form = useIslandForm('/multipart-island?upload', { name: 'island-model' });
   return (
-    <Form
-      id="island-multipart-form"
-      form={form}
-      url="/multipart-island?upload"
-      encType="multipart/form-data"
-    >
+    <Form id="island-multipart-form" form={form} encType="multipart/form-data">
       <input id="island-multipart-name" name="name" value="island-native" />
       <input type="hidden" name="tags" value="one" />
       <input type="hidden" name="tags" value="two" />

@@ -5,7 +5,8 @@ let submissions = 0;
 export const prerender = false;
 export const loader = defineHandler(() => ({ saved, submissions }));
 const save = defineHandler(async (c) => {
-  const body = await c.req.json<{ name: string }>();
+  const body = await c.req.json<{ name: string; probe?: 'slow' | 'fail' }>();
+  if (body.probe === 'slow') await new Promise((resolve) => setTimeout(resolve, 700));
   if (!body.name.trim()) throw new ValidationError({ name: 'Island name required.' });
   saved = c.req.method === 'DELETE' ? 'Island original' : body.name;
   submissions++;

@@ -262,7 +262,7 @@ async function smoke(mode, browser) {
     });
     await waitText('#form-pending', 'false');
     await delay(800);
-    assert.equal(await text('#form-success'), 'false');
+    assert.equal(await text('#slow-success'), 'false');
     await click('#redirect');
     await waitText('#route-value', 'saved');
     assert.equal(new URL(page.url()).pathname, '/users/saved');

@@ -4,7 +4,12 @@ let saved = 'Original';
 let submissions = 0;
 export const loader = defineHandler(() => ({ saved, submissions }));
 const save = defineHandler(async (c) => {
-  const body = await c.req.json<{ name: string; note?: string }>();
+  const body = await c.req.json<{
+    name: string;
+    note?: string;
+    probe?: 'slow' | 'fail' | 'quota';
+  }>();
+  if (body.probe === 'slow') await new Promise((resolve) => setTimeout(resolve, 500));
   const errors: Record<string, string> = {};
   if (!body.name.trim()) errors.name = 'Name is required.';
   if (body.note !== undefined && !body.note.trim()) errors.note = 'Note is required.';

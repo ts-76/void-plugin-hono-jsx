@@ -48,8 +48,10 @@ export async function checkIslandForms({ origin, page, assert }) {
   await page.reload();
   await wait('island-saved', 'Cancelled write');
   await mounted();
-  await page.route(origin + '/island-forms?fail', (route) =>
-    route.fulfill({ status: 500, contentType: 'application/json', body: '{}' }),
+  await page.route(origin + '/island-forms?save', (route) =>
+    route.request().method() === 'POST' && route.request().postDataJSON()?.probe === 'fail'
+      ? route.fulfill({ status: 500, contentType: 'application/json', body: '{}' })
+      : route.fallback(),
   );
   await page.locator('#island-fail').click();
   await page.getByRole('alert').waitFor();
