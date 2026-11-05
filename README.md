@@ -1,6 +1,6 @@
 # void-plugin-hono-jsx
 
-The Void 1.6 dependency graph requires a fresh release audit. Previous version-specific risk acceptance does not authorize this graph. See [SECURITY.md](SECURITY.md).
+The locked Void 1.6.2 dependency trees for 0.11.0 retain a known esbuild development-server advisory. The scoped acceptance requires keeping the affected esbuild serve feature out of use. See [SECURITY.md](SECURITY.md).
 
 Hono JSX for [Void](https://void.cloud): server-rendered pages, client navigation, forms and islands. Void handles routing, loaders, actions and caching.
 
