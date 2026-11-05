@@ -1,6 +1,10 @@
 import { Form, action, useForm } from 'void-plugin-hono-jsx/form';
 export default function Forms({ saved, submissions }: { saved: string; submissions: number }) {
-  const form = useForm('/forms?save', { name: 'Original', note: 'Default' });
+  const defaults: { name: string; note: string; probe?: 'slow' | 'fail' | 'quota' } = {
+    name: 'Original',
+    note: 'Default',
+  };
+  const form = useForm('/forms?save', defaults);
   const redirect = useForm('/forms?redirect', {});
   return (
     <main>

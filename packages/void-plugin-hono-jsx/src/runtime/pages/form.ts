@@ -17,7 +17,12 @@ export { Form, type FormProps } from './form-view.tsx';
 export { action };
 
 type Fields = Record<string, unknown>;
-type Body<U extends string> = ResolveActionBody<U> extends Fields ? ResolveActionBody<U> : Fields;
+type Body<U extends string> = [ResolveActionBody<U>] extends [never]
+  ? Fields
+  : ResolveActionBody<U> extends Fields
+    ? ResolveActionBody<U>
+    : Fields;
+type FormFields<U extends string, T extends Fields> = string extends keyof Body<U> ? T : Body<U>;
 type SetData<T> = {
   (next: T | ((current: T) => T)): void;
   <K extends keyof T & string>(field: K, value: T[K]): void;
@@ -76,13 +81,13 @@ export function useForm<T extends Fields>(
   defaults: T,
   options?: FormOptions,
 ): HonoForm<T>;
-export function useForm<U extends ActionUrl & string>(
+export function useForm<U extends ActionUrl & string, T extends Body<U>>(
   url: U,
-  defaults: Body<U>,
+  defaults: T,
   ...options: ActionFormOptions<U> extends { params: unknown }
     ? [options: ActionFormOptions<U>]
     : [options?: ActionFormOptions<U>]
-): HonoForm<Body<U>>;
+): HonoForm<FormFields<U, T>>;
 export function useForm(url: string, defaults: Fields, options?: FormOptions): HonoForm<Fields> {
   if (!useContext(RouterContext))
     throw new Error(

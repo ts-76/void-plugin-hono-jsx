@@ -1,6 +1,6 @@
 import { useForm, action } from 'void-plugin-hono-jsx/form';
 function checkBound() {
-  const form = useForm('/forms?save', { name: 'Original' });
+  const form = useForm('/forms?save', { name: 'Original', note: 'Default' });
   form.setData('name', 'New');
   form.reset({ initial: true }, 'name');
   form.clearErrors('note');
@@ -8,7 +8,7 @@ function checkBound() {
   const data = new FormData();
   form.post({ data });
   form.submit('put', { data });
-  form.post({ data: { name: 'Override' } });
+  form.post({ data: { name: 'Override', note: 'Kept' } });
   // @ts-expect-error unknown field
   form.setData('missing', 'New');
   // @ts-expect-error wrong field value
