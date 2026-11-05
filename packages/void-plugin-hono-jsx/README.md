@@ -9,14 +9,14 @@ Use Node.js 24.22.1 or newer within Node 24.
 
 ```sh
 npm install void-plugin-hono-jsx hono@4.13.16
-npm install --save-dev void@1.5.0 vite@8.3.5 typescript@7.0.2
+npm install --save-dev void@1.6.2 vite@8.3.5 typescript@7.0.2
 ```
 
 The default install uses `latest`. Use `@next` to test a release candidate, or an explicit version for reproducible installs.
 
 Version 0.9.1 accepts known risks in the required Void/Cloudflare tooling: affected undici can terminate a Node development/CLI process on a malformed peer response, and affected Zod can allocate excessive validation issues. Keep dev/preview private, use trusted project configuration and avoid unbounded external inputs. These dependencies remain unfixed; the audit is nonzero. See the [0.9.1 acceptance, exact scope and usage limits](https://github.com/ts-76/void-plugin-hono-jsx/blob/v0.9.1/docs/dependency-security.md).
 
-This candidate validates Void 1.5.0 and retains the Drizzle/esbuild tooling finding. Publication is on hold pending upstream fixes; the historical 0.9.1 acceptance does not cover this baseline. See [current dependency limits](https://github.com/ts-76/void-plugin-hono-jsx/blob/main/SECURITY.md).
+The Void 1.6 dependency graph requires its own release audit. The version-specific Void 1.5 acceptance does not apply to it. See [current dependency limits](https://github.com/ts-76/void-plugin-hono-jsx/blob/main/SECURITY.md).
 
 ## Configure
 
@@ -39,7 +39,7 @@ The adapter includes JSX transformation. Run Vite from the project root and keep
 | Dependency | Supported stable range | Tested version |
 | --- | --- | --- |
 | Node.js | >=24.22.1 <25.0.0 | 24.22.1 |
-| Void | >=1.5.0 <1.6.0 | 1.5.0 |
+| Void | >=1.6.2 <1.7.0 | 1.6.2 |
 | Hono | >=4.13.16 <5.0.0 | 4.13.16 |
 | Vite | >=8.0.16 <9.0.0 | 8.3.5 |
 
