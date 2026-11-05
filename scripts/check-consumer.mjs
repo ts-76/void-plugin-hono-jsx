@@ -123,11 +123,11 @@ async function smoke(mode, browser, staticOnly = false) {
         message.type() === 'error' &&
         !(
           ((message.location().url.endsWith('/links?fail') ||
-            message.location().url.endsWith('/forms?fail') ||
-            message.location().url.endsWith('/island-forms?fail') ||
+            message.location().url.endsWith('/forms?save') ||
+            message.location().url.endsWith('/island-forms?save') ||
             message.location().url.endsWith('/transitions?value=error')) &&
             message.text().includes('500')) ||
-          (message.location().url.endsWith('/forms?quota') && message.text().includes('429')) ||
+          (message.location().url.endsWith('/forms?save') && message.text().includes('429')) ||
           ((message.location().url.endsWith('/island-forms?save') ||
             message.location().url.endsWith('/multipart?upload') ||
             message.location().url.endsWith('/multipart-island?upload')) &&

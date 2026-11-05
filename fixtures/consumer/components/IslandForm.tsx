@@ -1,6 +1,11 @@
-import { Form, useIslandForm } from 'void-plugin-hono-jsx/form';
+import { Form, useIslandForm } from 'void-plugin-hono-jsx';
 export default function Island({ saved, submissions }: { saved: string; submissions: number }) {
-  const form = useIslandForm({ name: saved });
+  const form = useIslandForm('/island-forms?save', { name: saved } as {
+    name: string;
+    probe?: 'slow' | 'fail';
+  });
+  const foreign = useIslandForm('https://example.test/write', { name: saved });
+  const redirect = useIslandForm('/island-forms?redirect', {});
   return (
     <section>
       <output id="island-saved">{saved}</output>
@@ -9,8 +14,8 @@ export default function Island({ saved, submissions }: { saved: string; submissi
         {String(form.pending)}:{String(form.hasChanges)}:{String(form.wasSuccessful)}
       </output>
       <output id="island-field-error">{form.errors.name ?? ''}</output>
-      <output id="island-form-error">{form.error?.message ?? ''}</output>
-      <Form form={form} url="/island-forms?save">
+      <output id="island-form-error">{foreign.error?.message ?? form.error?.message ?? ''}</output>
+      <Form form={form}>
         <input
           id="island-name"
           value={form.data.name}
@@ -23,7 +28,7 @@ export default function Island({ saved, submissions }: { saved: string; submissi
         </button>
       </Form>
       {(['put', 'patch', 'delete'] as const).map((method) => (
-        <button id={'island-' + method} onClick={() => void form[method]('/island-forms?save')}>
+        <button id={'island-' + method} onClick={() => void form[method]()}>
           {method}
         </button>
       ))}
@@ -35,23 +40,30 @@ export default function Island({ saved, submissions }: { saved: string; submissi
         onClick={() => {
           form.clearErrors();
           form.clearError();
+          foreign.clearError();
         }}
       >
         Clear
       </button>
-      <button id="island-slow" onClick={() => void form.post('/island-forms?slow')}>
+      <button
+        id="island-slow"
+        onClick={() => void form.post({ data: { ...form.data, probe: 'slow' } })}
+      >
         Slow
       </button>
       <button id="island-cancel" onClick={form.cancel}>
         Cancel
       </button>
-      <button id="island-fail" onClick={() => void form.post('/island-forms?fail')}>
+      <button
+        id="island-fail"
+        onClick={() => void form.post({ data: { ...form.data, probe: 'fail' } })}
+      >
         Failure
       </button>
-      <button id="island-external" onClick={() => void form.post('https://example.test/write')}>
+      <button id="island-external" onClick={() => void foreign.post()}>
         External
       </button>
-      <button id="island-redirect" onClick={() => void form.post('/island-forms?redirect')}>
+      <button id="island-redirect" onClick={() => void redirect.post()}>
         Redirect
       </button>
     </section>

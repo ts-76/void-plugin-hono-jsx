@@ -16,6 +16,9 @@ async function withPages(files, check, options) {
     }
     process.chdir(root);
     const plugin = voidHonoJsx(options).find((plugin) => plugin.name === 'void-hono:pages');
+    if (typeof plugin.load !== 'function') plugin.load = plugin.load.handler;
+    plugin.meta = { viteVersion: '8.3.5' };
+    plugin.config({}, { command: 'build' });
     plugin.environment = { mode: 'build' };
     await check(plugin, voidHonoJsx());
   } finally {
@@ -76,12 +79,12 @@ test('development SSR captures page/layout modules with providers and excludes b
     async (plugin) => {
       await plugin.buildStart();
       const id = plugin.resolveId('virtual:void-pages-renderer');
-      plugin.environment.mode = 'dev';
+      plugin.config({}, { command: 'serve' });
       const development = await plugin.load(id);
       assert.match(development, /import \* as __honoPageSnapshot\d+ from .*index\.tsx/);
       assert.match(development, /import \* as __honoPageSnapshot\d+ from .*layout\.tsx/);
       assert.doesNotMatch(development, /browser\.tsx|\(\) => import\(/);
-      plugin.environment.mode = 'build';
+      plugin.config({}, { command: 'build' });
       const production = await plugin.load(id);
       assert.match(production, /\(\) => import\(/);
       assert.doesNotMatch(production, /__honoPageSnapshot/);
@@ -216,7 +219,7 @@ for (const policy of ['idle', 'visible', 'media:(max-width: 600px)']) {
 }
 
 test('island components reject form helpers with an explicit diagnostic', async () => {
-  const component = "import { useForm } from 'void-plugin-hono-jsx/form'; " + page;
+  const component = "import { useForm } from 'void-plugin-hono-jsx'; " + page;
   await withPages(
     {
       'index.island.tsx':
@@ -375,7 +378,7 @@ test('relative re-exports in static barrels retain the island client requirement
 });
 
 test('island components accept named provider-free form imports', async () => {
-  const component = "import { useIslandForm, Form } from 'void-plugin-hono-jsx/form'; " + page;
+  const component = "import { useIslandForm, Form } from 'void-plugin-hono-jsx'; " + page;
   await withPages(
     {
       'index.island.tsx':
@@ -424,7 +427,7 @@ for (const options of [
 test('Markdown routes fail discovery with the upstream gate and exact file', async () => {
   await withPages({ 'guide.md': '# Guide' }, async (plugin) => {
     await assert.rejects(
-      () => plugin.buildStart(),
+      () => plugin.load(plugin.resolveId('virtual:void-pages-renderer')),
       /Markdown requires voidHonoMarkdown.*guide\.md/,
     );
   });

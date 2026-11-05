@@ -1,5 +1,5 @@
 import { useState, type Child } from 'hono/jsx';
-import { Link } from 'void-plugin-hono-jsx/pages';
+import { Link } from 'void-plugin-hono-jsx';
 export default function Layout({ children }: { children: Child }) {
   const [count, setCount] = useState(0);
   return (

@@ -1,4 +1,4 @@
-import { Link, useRouter } from 'void-plugin-hono-jsx/pages';
+import { Link, useRouter } from 'void-plugin-hono-jsx';
 export default function Page() {
   return (
     <main>

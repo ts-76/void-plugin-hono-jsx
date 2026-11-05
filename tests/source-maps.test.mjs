@@ -1,8 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import MagicString from 'magic-string';
-import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping';
-import { rewritePagesImport } from '../scripts/rewrite-package-import.mjs';
 import { inspectSourceMaps } from '../scripts/release/source-maps.mjs';
 
 const source = "import { x } from './api.js'; export const value = 1;";
@@ -29,23 +27,6 @@ const valid = () =>
       }),
     ],
   ]);
-
-test('rewritten provider import preserves original columns for following code', () => {
-  const { code, map } = rewritePagesImport(
-    source,
-    JSON.parse(original.toString()),
-    'void-plugin-hono-jsx',
-  );
-  assert.match(code, /"void-plugin-hono-jsx\/pages"/);
-  const traced = originalPositionFor(new TraceMap(map), {
-    line: 1,
-    column: code.indexOf('export const'),
-  });
-  assert.equal(traced.source, '../src/runtime/pages/form.ts');
-  assert.equal(traced.line, 1);
-  assert.equal(traced.column, source.indexOf('export const'));
-  assert.deepEqual(map.sourcesContent, [source]);
-});
 
 test('package debug artifacts require both maps and local original source', () => {
   inspectSourceMaps(valid());

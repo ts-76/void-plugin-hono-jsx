@@ -1,12 +1,15 @@
 import { useContext, useEffect, useRef, useState } from 'hono/jsx';
 import {
+  cloneFormValue,
   isAbortError,
   isEqualFormValue,
   interpolateRouteParams,
+  parseFormResetArgs,
   submitAction,
   VoidActionError,
   type ActionResult,
   type FormMethod,
+  type FormResetOptions,
 } from 'void/pages-client';
 import type { ActionFormOptions, ActionUrl, ResolveActionBody } from 'void/routes';
 import { RouterContext, useErrors, useRouter, action } from './api.tsx';
@@ -14,11 +17,18 @@ export { Form, type FormProps } from './form-view.tsx';
 export { action };
 
 type Fields = Record<string, unknown>;
-type Body<U extends string> = ResolveActionBody<U> extends Fields ? ResolveActionBody<U> : Fields;
+type Body<U extends string> = [ResolveActionBody<U>] extends [never]
+  ? Fields
+  : ResolveActionBody<U> extends Fields
+    ? ResolveActionBody<U>
+    : Fields;
+type FormFields<U extends string, T extends Fields> = string extends keyof Body<U> ? T : Body<U>;
 type SetData<T> = {
   (next: T | ((current: T) => T)): void;
   <K extends keyof T & string>(field: K, value: T[K]): void;
 };
+export type FormSubmitOptions<T extends Fields> = { data?: T | FormData };
+
 export type HonoForm<T extends Fields> = {
   data: T;
   setData: SetData<T>;
@@ -28,12 +38,12 @@ export type HonoForm<T extends Fields> = {
   hasChanges: boolean;
   wasSuccessful: boolean;
   recentlySuccessful: boolean;
-  submit(method: FormMethod, target?: string | FormData, body?: FormData): Promise<void>;
+  submit(method: FormMethod, options?: FormSubmitOptions<T>): Promise<void>;
   cancel(): void;
-  reset: { (): void; (...fields: Array<keyof T & string>): void };
+  reset: { (): void; (...fields: Array<(keyof T & string) | FormResetOptions>): void };
   clearErrors(...fields: Array<keyof T & string>): void;
   clearError(): void;
-} & Record<FormMethod, (target?: string | FormData, body?: FormData) => Promise<void>>;
+} & Record<FormMethod, (options?: FormSubmitOptions<T>) => Promise<void>>;
 
 function toFormError(failure: unknown, url: string): VoidActionError {
   if (failure instanceof VoidActionError) return failure;
@@ -65,25 +75,28 @@ function fieldErrors(error: VoidActionError): Record<string, string> {
   );
 }
 
-export function useForm<T extends Fields>(initialData: T): HonoForm<T>;
-export function useForm<U extends ActionUrl & string>(
+type FormOptions = { params?: Record<string, string>; resetOnSuccess?: boolean };
+export function useForm<T extends Fields>(
+  url: [ActionUrl] extends [never] ? string : never,
+  defaults: T,
+  options?: FormOptions,
+): HonoForm<T>;
+export function useForm<U extends ActionUrl & string, T extends Body<U>>(
   url: U,
-  defaults: Body<U>,
-  options?: ActionFormOptions<U>,
-): HonoForm<Body<U>>;
-export function useForm(
-  initial: string | Fields,
-  values?: Fields,
-  options?: { params?: Record<string, string> },
-): HonoForm<Fields> {
+  defaults: T,
+  ...options: ActionFormOptions<U> extends { params: unknown }
+    ? [options: ActionFormOptions<U>]
+    : [options?: ActionFormOptions<U>]
+): HonoForm<FormFields<U, T>>;
+export function useForm(url: string, defaults: Fields, options?: FormOptions): HonoForm<Fields> {
   if (!useContext(RouterContext))
     throw new Error(
       'Hono Pages: useForm requires the full Pages renderer; use useIslandForm for islands.',
     );
   const router = useRouter();
-  const bound = typeof initial === 'string' ? initial : undefined;
   return useFormModel(
-    typeof initial === 'string' ? (values ?? {}) : initial,
+    url,
+    defaults,
     useErrors(),
     async (method, url, data) =>
       submitAction(router, interpolateRouteParams(url, options?.params), {
@@ -92,18 +105,23 @@ export function useForm(
         preserveScroll: true,
       }),
     () => router.refresh(),
-    bound,
+    options?.resetOnSuccess,
   );
 }
 
-export function useIslandForm<T extends Fields>(defaults: T): HonoForm<T> {
+export function useIslandForm<T extends Fields>(
+  url: string,
+  defaults: T,
+  options?: FormOptions,
+): HonoForm<T> {
   const controller = useRef<AbortController | null>(null);
   useEffect(() => () => controller.current?.abort(), []);
   return useFormModel(
+    url,
     defaults,
     {},
     async (method, url, data) => {
-      const target = new URL(url, window.location.href);
+      const target = new URL(interpolateRouteParams(url, options?.params), window.location.href);
       if (
         target.origin !== window.location.origin ||
         !['http:', 'https:'].includes(target.protocol)
@@ -144,6 +162,7 @@ export function useIslandForm<T extends Fields>(defaults: T): HonoForm<T> {
       };
     },
     () => controller.current?.abort(),
+    options?.resetOnSuccess,
   );
 }
 
@@ -153,15 +172,18 @@ type FormTransport = (
   data: Fields | FormData,
 ) => Promise<ActionResult>;
 function useFormModel<T extends Fields>(
+  url: string,
   initial: T,
   initialErrors: Record<string, string>,
   send: FormTransport,
   abort: () => void | Promise<unknown>,
-  bound?: string,
+  resetOnSuccess = false,
 ): HonoForm<T> {
-  const defaults = useRef({ ...initial });
-  const current = useRef({ ...defaults.current });
-  const [data, updateData] = useState(current.current);
+  const initialValues = useRef<T | null>(null);
+  const initialSnapshot = (initialValues.current ??= cloneFormValue(initial));
+  const defaults = useRef(initialSnapshot);
+  const [data, updateData] = useState(() => cloneFormValue(initialSnapshot));
+  const current = useRef(data);
   const [errors, setErrors] = useState(initialErrors);
   const [pending, setPending] = useState(false);
   const [wasSuccessful, setSuccessful] = useState(false);
@@ -180,24 +202,26 @@ function useFormModel<T extends Fields>(
   );
 
   const setData: SetData<T> = (next: T | ((current: T) => T) | string, value?: unknown) => {
+    const previous = current.current;
     current.current =
       typeof next === 'string'
         ? ({ ...current.current, [next]: value } as T)
         : typeof next === 'function'
           ? next(current.current)
           : { ...next };
-    updateData(current.current);
+    const edited = current.current;
+    updateData(edited);
     setSuccessful(false);
-    setErrors({});
+    setErrors((messages) =>
+      Object.fromEntries(
+        Object.entries(messages).filter(([key]) => isEqualFormValue(previous[key], edited[key])),
+      ),
+    );
     setError(null);
     setRecent(false);
     clearTimeout(timer.current);
   };
-  async function submit(method: FormMethod, target?: string | FormData, body?: FormData) {
-    if (target instanceof FormData && body) throw new Error('Hono Form: supply FormData once.');
-    const multipart = target instanceof FormData ? target : body;
-    const url = typeof target === 'string' ? target : bound;
-    if (!url) throw new Error('Hono Form: supply an action URL to useForm or submit.');
+  async function submit(method: FormMethod, options: FormSubmitOptions<T> = {}) {
     if (active.current) return;
     active.current = true;
     const id = ++generation.current;
@@ -207,14 +231,23 @@ function useFormModel<T extends Fields>(
     clearTimeout(timer.current);
     setError(null);
     setErrors({});
-    const submitted = { ...current.current };
-    const payload = multipart ? new FormData() : submitted;
-    if (multipart) for (const [name, value] of multipart) (payload as FormData).append(name, value);
+    const modelAtSubmit = current.current;
+    const data = options.data ?? modelAtSubmit;
+    const payload = data instanceof FormData ? new FormData() : cloneFormValue(data);
+    if (data instanceof FormData) {
+      for (const [name, value] of data) (payload as FormData).append(name, value);
+    }
     try {
       const result = await send(method, url, payload);
       if (id !== generation.current) return;
       if (result.ok) {
-        if (bound && !multipart) defaults.current = submitted;
+        if (!(payload instanceof FormData) && isEqualFormValue(payload, modelAtSubmit)) {
+          defaults.current = resetOnSuccess ? initialSnapshot : payload;
+          if (resetOnSuccess && isEqualFormValue(current.current, payload)) {
+            current.current = cloneFormValue(defaults.current);
+            updateData(current.current);
+          }
+        }
         setSuccessful(true);
         setRecent(true);
         timer.current = setTimeout(() => {
@@ -242,7 +275,7 @@ function useFormModel<T extends Fields>(
     setRecent(false);
     clearTimeout(timer.current);
     void Promise.resolve(abort()).catch((failure: unknown) => {
-      if (id === generation.current) setError(toFormError(failure, bound ?? 'island'));
+      if (id === generation.current) setError(toFormError(failure, url));
     });
   }
   return {
@@ -258,15 +291,21 @@ function useFormModel<T extends Fields>(
     hasChanges: Object.keys({ ...defaults.current, ...data }).some(
       (key) => !isEqualFormValue(defaults.current[key], data[key]),
     ),
-    reset(...fields: Array<string | MouseEvent>) {
-      const keys = fields.filter((field): field is string => typeof field === 'string');
+    reset(...args: Array<string | FormResetOptions | MouseEvent>) {
+      const { initial: toInitial, fields } = parseFormResetArgs(
+        args.filter(
+          (arg): arg is string | FormResetOptions =>
+            typeof arg === 'string' || !(arg instanceof Event),
+        ),
+      );
+      const source = toInitial ? initialSnapshot : defaults.current;
       setData(
-        keys.length
+        fields.length
           ? ({
               ...current.current,
-              ...Object.fromEntries(keys.map((key) => [key, defaults.current[key]])),
+              ...Object.fromEntries(fields.map((key) => [key, cloneFormValue(source[key])])),
             } as T)
-          : { ...defaults.current },
+          : cloneFormValue(source),
       );
     },
     clearErrors(...fields) {
@@ -281,9 +320,9 @@ function useFormModel<T extends Fields>(
     clearError() {
       setError(null);
     },
-    post: (target, body) => submit('post', target, body),
-    put: (target, body) => submit('put', target, body),
-    patch: (target, body) => submit('patch', target, body),
-    delete: (target, body) => submit('delete', target, body),
+    post: (options) => submit('post', options),
+    put: (options) => submit('put', options),
+    patch: (options) => submit('patch', options),
+    delete: (options) => submit('delete', options),
   };
 }

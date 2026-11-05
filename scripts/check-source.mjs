@@ -95,8 +95,13 @@ async function smoke(mode, browser) {
     await page.evaluate(() => {
       window.sourceDocument = 123;
     });
+    await page.locator('#route-count + button').click();
+    await waitText('#route-count', '1');
     await click('#nav-bob');
     await waitText('#route-value', 'bob');
+    await waitText('#route-count', '0');
+    assert.equal(await page.locator('#nav-bob').getAttribute('aria-current'), 'page');
+    assert.equal(await page.locator('#nav-alice').getAttribute('aria-current'), null);
     assert.equal(await page.evaluate(() => window.sourceDocument), 123);
     await click('#nav-alice');
     assert.equal(new URL(page.url()).search, '?tab=profile');
@@ -139,10 +144,10 @@ async function smoke(mode, browser) {
       );
       assert.equal(intercepted, false, `Native link ${selector}`);
     }
-    await page.evaluate(() => {
-      document.querySelector('#nav-slow').click();
-      setTimeout(() => document.querySelector('#nav-bob').click(), 40);
-    });
+    await page.locator('#nav-slow').click();
+    await page.locator('#nav-slow[data-void-pending]').waitFor();
+    await page.locator('#nav-bob').click();
+    await page.locator('#nav-slow[data-void-pending]').waitFor({ state: 'detached' });
     await waitText('#route-value', 'bob');
     await delay(800);
     assert.equal(await text('#route-value'), 'bob');
@@ -226,6 +231,11 @@ async function smoke(mode, browser) {
       assert.equal(await text('#form-success'), 'true');
       assert.equal(await page.evaluate(() => window.actionDocument), 123);
     }
+    await page.locator('#name').fill('unsaved change');
+    await click('#reset-form');
+    assert.equal(await page.locator('#name').inputValue(), 'patch value');
+    await click('#reset-initial');
+    assert.equal(await page.locator('#name').inputValue(), 'Original');
     await click('#delete');
     await waitText('#saved-name', 'Original');
     await page.goto(origin + '/named');
@@ -252,7 +262,7 @@ async function smoke(mode, browser) {
     });
     await waitText('#form-pending', 'false');
     await delay(800);
-    assert.equal(await text('#form-success'), 'false');
+    assert.equal(await text('#slow-success'), 'false');
     await click('#redirect');
     await waitText('#route-value', 'saved');
     assert.equal(new URL(page.url()).pathname, '/users/saved');

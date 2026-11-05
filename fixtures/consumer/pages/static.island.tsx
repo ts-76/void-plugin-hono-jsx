@@ -1,5 +1,5 @@
 import { css } from 'hono/css';
-import { HonoStyles } from 'void-plugin-hono-jsx/pages';
+import { HonoStyles } from 'void-plugin-hono-jsx';
 export const layout = false;
 export default function Page() {
   return (

@@ -1,5 +1,5 @@
 import type { PropsWithChildren } from 'hono/jsx';
-import { useNavigation } from 'void-plugin-hono-jsx/pages';
+import { useNavigation } from 'void-plugin-hono-jsx';
 export default function Layout({ children }: PropsWithChildren) {
   return (
     <section>

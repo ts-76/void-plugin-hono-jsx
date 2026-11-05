@@ -8,9 +8,14 @@ export async function checkFormConsumer({ origin, page, assert }) {
   await page.locator('#app[data-hono-pages="mounted"]').waitFor();
   await wait('#form-state', 'false:false:false:false');
   await page.locator('#form-name').fill('');
+  await page.locator('#form-note').fill('');
   await page.locator('#form-save').click();
   await wait('#field-error', 'Name is required.');
+  await wait('#note-error', 'Note is required.');
   assert.equal(await page.locator('#form-name').inputValue(), '');
+  await page.locator('#form-note').fill('Corrected');
+  await wait('#note-error', '');
+  await wait('#field-error', 'Name is required.');
   await page.locator('#clear-field').click();
   await wait('#field-error', '');
   await page.locator('#clear-error').click();
@@ -46,20 +51,25 @@ export async function checkFormConsumer({ origin, page, assert }) {
   );
   await page.waitForTimeout(650);
   assert.equal((await page.locator('#form-state').textContent()).split(':')[2], 'false');
-  await page.route(origin + '/forms?fail', (route) =>
-    route.fulfill({
-      status: 500,
-      contentType: 'application/json',
-      headers: { 'X-VoidPages': 'true' },
-      body: JSON.stringify({ message: 'Form failed' }),
-    }),
+  const isProbe = (request, probe) =>
+    request.method() === 'POST' && request.postDataJSON()?.probe === probe;
+  await page.route(origin + '/forms?save', (route) =>
+    isProbe(route.request(), 'fail')
+      ? route.fulfill({
+          status: 500,
+          contentType: 'application/json',
+          headers: { 'X-VoidPages': 'true' },
+          body: JSON.stringify({ message: 'Form failed' }),
+        })
+      : route.fallback(),
   );
   await page.locator('#form-fail').click();
   await page.locator('#custom-form-error').waitFor();
   await page.locator('#clear-error').click();
   assert.equal(await page.getByRole('alert').count(), 0);
   let quotaRequests = 0;
-  await page.route(origin + '/forms?quota', (route) => {
+  await page.route(origin + '/forms?save', (route) => {
+    if (!isProbe(route.request(), 'quota')) return route.fallback();
     quotaRequests++;
     return route.fulfill({
       status: 429,
@@ -101,6 +111,6 @@ export async function checkFormConsumer({ origin, page, assert }) {
   await page.goto(origin);
   await page.locator('#app[data-hono-pages="mounted"]').waitFor();
   console.log(
-    'Form consumer: bound/legacy API, validation, controlled input, success/dirty/reset/clear, CRUD, single action, duplicate/cancel, custom error and redirect passed.',
+    'Form consumer: fixed action API, validation, controlled input, success/dirty/reset/clear, CRUD, single action, duplicate/cancel, custom error and redirect passed.',
   );
 }

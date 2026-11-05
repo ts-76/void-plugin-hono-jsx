@@ -8,7 +8,7 @@ import {
   readStaticMarkdown,
   compileMarkdownModule,
   readMarkdownModule,
-} from '../packages/void-plugin-hono-jsx/src/plugins/markdown/static.ts';
+} from '@ts-76/hono-markdown/compiler';
 
 test('standalone Markdown emits static components, context, metadata and shared copy client code', async () => {
   const root = await mkdtemp(join(tmpdir(), 'static-md-'));
@@ -21,8 +21,7 @@ test('standalone Markdown emits static components, context, metadata and shared 
     assert.match(parsed.content, /^# Hello/);
     const result = await compileStaticMarkdown(source, { sourcePath: join(root, 'deck.md') });
     assert.match(result.code, /MarkdownContext.Provider/);
-    assert.match(result.code, /from "void-plugin-hono-jsx\/markdown"/);
-    assert.doesNotMatch(result.code, /from ["']@ts-76\/hono-markdown/);
+    assert.match(result.code, /from "@ts-76\/hono-markdown"/);
     assert.match(result.code, /jsx\(__component0/);
     assert.match(result.code, /<strong>Strong/);
     assert.match(result.code, /class: 'void-md'/);
@@ -66,8 +65,7 @@ test('module compiler emits islands separately and keeps the static API strict',
       assert.match(readMarkdownModule(source).content, /Interactive/);
       const result = await compileMarkdownModule(source, { sourcePath: join(root, 'deck.md') });
       assert.equal(result.islands.length, 1);
-      assert.match(result.code, /from "void-plugin-hono-jsx\/markdown"/);
-      assert.doesNotMatch(result.code, /from ["']@ts-76\/hono-markdown/);
+      assert.match(result.code, /from "@ts-76\/hono-markdown"/);
       assert.equal(result.islands[0].hydrate, policy);
       assert.equal(result.islands[0].modulePath, join(root, 'Counter.tsx'));
       assert.match(result.code, /data-hono-md-context/);

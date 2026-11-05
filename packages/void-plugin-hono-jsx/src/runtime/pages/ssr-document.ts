@@ -49,7 +49,7 @@ export async function renderHonoDocument(
   }).toString()) as HtmlEscapedString;
   if (String(app).includes('<style id="hono-css"'))
     throw new Error(
-      'Hono Styles: the adapter owns #hono-css; remove hono/css Style from the page or use HonoStyles from void-plugin-hono-jsx/pages for its nonce.',
+      'Hono Styles: the adapter owns #hono-css; remove hono/css Style from the page or use HonoStyles from void-plugin-hono-jsx for its nonce.',
     );
   const head = page.head;
   const body = page.deferredKeys

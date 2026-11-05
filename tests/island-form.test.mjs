@@ -9,14 +9,14 @@ const { useIslandForm, useForm } = await import(
 );
 test('island form initializes JSON fields without a Pages provider during SSR', async () => {
   const Page = () => {
-    const form = useIslandForm({ name: 'Original' });
+    const form = useIslandForm('/save', { name: 'Original' });
     return jsx('output', { children: form.data.name + ':' + form.pending + ':' + form.hasChanges });
   };
   assert.equal(await jsx(Page, {}).toString(), '<output>Original:false:false</output>');
 });
 test('ordinary form still requires the full Pages renderer', async () => {
   const Page = () => {
-    useForm({ name: 'Original' });
+    useForm('/save', { name: 'Original' });
     return jsx('p', { children: 'invalid' });
   };
   await assert.rejects(async () => jsx(Page, {}).toString(), /requires the full Pages renderer/);

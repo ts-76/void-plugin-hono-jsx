@@ -9,14 +9,14 @@ Use Node.js 24.22.1 or newer within Node 24.
 
 ```sh
 npm install void-plugin-hono-jsx hono@4.13.16
-npm install --save-dev void@1.5.0 vite@8.3.5 typescript@7.0.2
+npm install --save-dev void@1.6.2 vite@8.3.5 typescript@7.0.2
 ```
 
 The default install uses `latest`. Use `@next` to test a release candidate, or an explicit version for reproducible installs.
 
 Version 0.9.1 accepts known risks in the required Void/Cloudflare tooling: affected undici can terminate a Node development/CLI process on a malformed peer response, and affected Zod can allocate excessive validation issues. Keep dev/preview private, use trusted project configuration and avoid unbounded external inputs. These dependencies remain unfixed; the audit is nonzero. See the [0.9.1 acceptance, exact scope and usage limits](https://github.com/ts-76/void-plugin-hono-jsx/blob/v0.9.1/docs/dependency-security.md).
 
-This candidate validates Void 1.5.0 and retains the Drizzle/esbuild tooling finding. Publication is on hold pending upstream fixes; the historical 0.9.1 acceptance does not cover this baseline. See [current dependency limits](https://github.com/ts-76/void-plugin-hono-jsx/blob/main/SECURITY.md).
+The Void 1.6 dependency graph requires its own release audit. The version-specific Void 1.5 acceptance does not apply to it. See [current dependency limits](https://github.com/ts-76/void-plugin-hono-jsx/blob/main/SECURITY.md).
 
 ## Configure
 
@@ -39,7 +39,7 @@ The adapter includes JSX transformation. Run Vite from the project root and keep
 | Dependency | Supported stable range | Tested version |
 | --- | --- | --- |
 | Node.js | >=24.22.1 <25.0.0 | 24.22.1 |
-| Void | >=1.5.0 <1.6.0 | 1.5.0 |
+| Void | >=1.6.2 <1.7.0 | 1.6.2 |
 | Hono | >=4.13.16 <5.0.0 | 4.13.16 |
 | Vite | >=8.0.16 <9.0.0 | 8.3.5 |
 
@@ -78,19 +78,46 @@ For a React scaffold:
 
 ## Runtime exports
 
+Migrate `void-plugin-hono-jsx/pages` and `void-plugin-hono-jsx/form` imports to
+`void-plugin-hono-jsx`. Vite setup continues to use `void-plugin-hono-jsx/plugin`.
+Applications compiling Markdown directly should install `@ts-76/hono-markdown`
+and use its `/compiler` entry. Set `contextModule: 'void-plugin-hono-jsx/markdown'`
+when generated modules should resolve the context through the Void adapter.
+
 ```tsx
 import {
   Link, useRouter, useShared, useParams, useErrors, useNavigation,
   deferredResult, type Deferred, type DeferredResult,
-} from 'void-plugin-hono-jsx/pages';
-import { Form, useForm, useIslandForm, action } from 'void-plugin-hono-jsx/form';
+  Form, useForm, useIslandForm, action,
+} from 'void-plugin-hono-jsx';
 ```
 
 Runnable navigation, forms and error handling are in the [Pages example](https://github.com/ts-76/void-plugin-hono-jsx/tree/main/examples/pages).
 
+`Link` marks the current page with `aria-current="page"` and `data-void-active`.
+Use `activeMatch="prefix"` to also style parent links. Links to the destination
+being loaded receive `data-void-pending`.
+Set `prefetch.defaultStrategy` in `voidHonoJsx()` for a default on GET links.
+An individual link can override the default or opt out with `prefetch={false}`.
+`preserveState` keeps the page mounted only when the page component and route
+parameters are the same. Query changes can keep state. A different record resets
+page state while the surrounding layout keeps its usual lifetime.
+
+For `useForm()`, `reset()` restores the last submitted values after a
+successful JSON action. Use `reset({ initial: true })` to restore the original
+values, or `resetOnSuccess: true` to restore them after each successful save.
+Editing a field dismisses its own validation message and preserves other messages.
+
 ### Multipart forms
 
-Use `<Form form={form} encType="multipart/form-data">` or pass `FormData` to a form submission method.
+Create both Pages and Island forms with the action URL, for example
+`useForm('/forms?save', { name: '' })` or `useIslandForm('/forms?save', { name: '' })`.
+With the URL bound, use `<Form form={form}>` or call `form.post()`. Replace
+legacy `useForm(defaults)` and `<Form url>` with this form. Use a separate form
+or `action()` for a different action.
+
+Use `<Form form={form} encType="multipart/form-data">` or call
+`form.post({ data: formData })` to submit multipart data.
 Files, repeated fields and the clicked submitter are preserved.
 Full Pages performs one GET after a successful mutation, so the destination must support GET and loaders may rerun.
 Cancellation cannot undo writes.
@@ -136,7 +163,7 @@ The [Markdown fixture](https://github.com/ts-76/void-plugin-hono-jsx/tree/main/f
 
 The adapter collects default `hono/css` rules into one `style#hono-css` in head, before application stylesheets. Pages and islands reuse this host; static pages need no client JavaScript for their CSS. Do not render Hono's `<Style />` inside a page or layout.
 
-For a per-response CSP nonce, render `<HonoStyles nonce={nonce} />` from `void-plugin-hono-jsx/pages` in the SSR tree. It configures the head host and adds no element inside the client root. Use one nonce per document; SPA navigation retains the initial host and nonce. Pass the same nonce in the response's CSP header. CSP nonce setup for client-only shells is not provided.
+For a per-response CSP nonce, render `<HonoStyles nonce={nonce} />` from `void-plugin-hono-jsx` in the SSR tree. It configures the head host and adds no element inside the client root. Use one nonce per document; SPA navigation retains the initial host and nonce. Pass the same nonce in the response's CSP header. CSP nonce setup for client-only shells is not provided.
 
 This integration covers the default CSS context. Custom `createCssContext()` hosts need their own lifecycle. Hono may register initial SSR rules again on first client render; subsequent visits reuse its registry. Exact SSR-to-client rule deduplication is not guaranteed.
 
@@ -171,8 +198,8 @@ The adapter requires `@ts-76/hono-markdown@^0.3.0` so installations include the 
 fence-range and island-attribute security fixes.
 
 The Void plugin owns page discovery, layouts, head, loaders, virtual modules and
-Void's scheduler. Existing `/markdown`, `/markdown/compiler`, `/markdown/client`
-and theme imports remain supported. The old and common imports share the same
+Void's scheduler. Import portable compilers from `@ts-76/hono-markdown/compiler`.
+Use the adapter's `/markdown`, `/markdown/client` and theme imports for Void hosts. The old and common imports share the same
 Markdown context, avoiding duplicate providers when documents and decks coexist.
 The client entry only supplies Void's scheduler. Hosts supply a `ready` gate
 for presentation-specific activation; the adapter does not inspect slide DOM.

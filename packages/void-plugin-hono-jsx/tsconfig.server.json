@@ -5,8 +5,7 @@
     "outDir": "dist/server"
   },
   "include": [
-    "src/runtime/pages/api.tsx",
-    "src/runtime/pages/form.ts",
+    "src/runtime/index.ts",
     "src/runtime/markdown/context.ts",
     "src/runtime/pages/ssr-document.ts",
     "src/runtime/pages/ssr-page.ts",

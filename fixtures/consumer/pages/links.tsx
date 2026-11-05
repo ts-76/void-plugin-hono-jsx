@@ -1,5 +1,5 @@
 import { useState } from 'hono/jsx';
-import { Link, useNavigation, useRouter } from 'void-plugin-hono-jsx/pages';
+import { Link, useNavigation, useRouter } from 'void-plugin-hono-jsx';
 export const layout = '!navigation';
 export default function Links({ search, tags }: { search: string; tags: string[] }) {
   const navigation = useNavigation();

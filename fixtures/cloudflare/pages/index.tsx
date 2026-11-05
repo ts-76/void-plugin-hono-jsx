@@ -1,13 +1,13 @@
-import { Form, useForm } from 'void-plugin-hono-jsx/form';
+import { Form, useForm } from 'void-plugin-hono-jsx';
 import type { Props } from './index.server';
 export default function Page({ notes }: Props) {
-  const json = useForm({ value: '' });
+  const json = useForm('/?save', { value: '' });
   const multipart = useForm('/?upload', {});
   return (
     <main>
       <h1>Cloudflare Hono RC</h1>
       <p>Only synthetic data; resources will be deleted.</p>
-      <Form id="json-form" form={json} url="/?save">
+      <Form id="json-form" form={json}>
         <label>
           JSON value
           <input

@@ -14,20 +14,25 @@ export function createRenderState() {
   let revision = 0;
   let commit = 0;
   let committedFrame: RenderFrame | undefined;
-  let renderedProps: Record<string, unknown> | undefined;
+  let renderedFrame: RenderFrame | undefined;
   const pending = new Map<number, { resolve(): void; reject(error: unknown): void }>();
   const failed = new Set<number>();
 
-  function frame(page: PageObject, component: unknown, layouts: unknown[]): RenderFrame {
-    renderedProps = page.props;
-    return {
+  function frame(
+    page: PageObject,
+    component: unknown,
+    layouts: unknown[],
+    identityRevision = 0,
+  ): RenderFrame {
+    renderedFrame = {
       page: { ...page, props: { ...page.props } },
       sourceProps: page.props,
       component,
       layouts,
-      revision,
+      revision: identityRevision,
       commit,
     };
+    return renderedFrame;
   }
   function settle(through: number, error?: { value: unknown }) {
     for (const [id, waiter] of pending)
@@ -40,15 +45,24 @@ export function createRenderState() {
   return {
     initial: frame,
     request(page: PageObject, component: unknown, layouts: unknown[], preserveState: boolean) {
-      if (!preserveState) revision++;
+      const previous = renderedFrame;
+      const nextParams = page.params ?? {};
+      const previousParams = previous?.page.params ?? {};
+      const samePage =
+        previous &&
+        previous.component === component &&
+        previous.page.component === page.component &&
+        Object.keys(previousParams).length === Object.keys(nextParams).length &&
+        Object.entries(previousParams).every(([key, value]) => nextParams[key] === value);
+      const identityRevision = preserveState && samePage ? previous.revision : ++revision;
       const id = ++commit;
       const committed = new Promise<void>((resolve, reject) =>
         pending.set(id, { resolve, reject }),
       );
-      return { frame: frame(page, component, layouts), committed };
+      return { frame: frame(page, component, layouts, identityRevision), committed };
     },
     acceptsDeferred(props: Record<string, unknown>) {
-      return props === renderedProps;
+      return props === renderedFrame?.sourceProps;
     },
     canCommit(frame: RenderFrame) {
       return !failed.has(frame.commit);
@@ -66,7 +80,7 @@ export function createRenderState() {
       // and never roll back a newer navigation for an older failure.
       queueMicrotask(() => {
         if (commit === frame.commit) {
-          if (committedFrame) renderedProps = committedFrame.sourceProps;
+          renderedFrame = committedFrame;
           recover(committedFrame);
         }
         settle(frame.commit, { value: error });

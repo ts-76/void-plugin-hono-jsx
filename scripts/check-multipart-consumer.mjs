@@ -62,7 +62,6 @@ export async function checkMultipartConsumer({ origin, page, assert }) {
     );
     for (const [button, name, method] of [
       ['direct', 'bound', 'POST'],
-      ['explicit', 'explicit', 'POST'],
       ['put', 'put', 'PUT'],
       ['patch', 'patch', 'PATCH'],
       ['delete', 'delete', 'DELETE'],
@@ -107,6 +106,17 @@ export async function checkMultipartConsumer({ origin, page, assert }) {
     await page.locator('#other-heading').waitFor();
     await page.waitForTimeout(650);
     assert.equal(new URL(page.url()).pathname, '/other', 'later navigation wins over the upload');
+
+    await page.goBack();
+    await page.locator('#multipart-form').waitFor();
+    await page.locator('#multipart-name').fill('history-navigation');
+    await page.locator('#multipart-slow').click();
+    await wait('#multipart-navigation', 'submitting:POST');
+    await page.evaluate(() => history.forward());
+    await page.locator('#other-heading').waitFor();
+    await page.waitForTimeout(650);
+    assert.equal(new URL(page.url()).pathname, '/other', 'popstate supersedes the upload');
+
     await page.goto(origin + '/multipart');
     await page.locator('#app[data-hono-pages="mounted"]').waitFor();
     let foreign = 0;
@@ -160,6 +170,6 @@ export async function checkMultipartConsumer({ origin, page, assert }) {
   await page.goto(origin);
   await page.locator('#app[data-hono-pages="mounted"]').waitFor();
   console.log(
-    'Multipart forms: browser boundary, native fields/submitter, repeated fields/files, bound/explicit URL and CRUD, validation retention, duplicate/cancel/navigation generations, mutation state and redirect passed. Successful actions use one explicit GET refresh.',
+    'Multipart forms: browser boundary, native fields/submitter, repeated fields/files, bound submission and CRUD, validation retention, duplicate/cancel/navigation generations, mutation state and redirect passed. Successful actions use one explicit GET refresh.',
   );
 }

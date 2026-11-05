@@ -1,5 +1,5 @@
-import { Form, useForm } from 'void-plugin-hono-jsx/form';
-import { Link, useNavigation } from 'void-plugin-hono-jsx/pages';
+import { useState } from 'hono/jsx';
+import { Form, useForm, Link, useNavigation, useRouter } from 'void-plugin-hono-jsx';
 export default function Multipart({
   uploads,
   reads,
@@ -11,6 +11,9 @@ export default function Multipart({
 }) {
   const form = useForm('/multipart?upload', { name: 'model-default' });
   const navigation = useNavigation();
+  const router = useRouter();
+  const redirect = useForm('/multipart?redirect', {});
+  const [foreignError, setForeignError] = useState('');
   const data = () => new FormData(document.getElementById('multipart-form') as HTMLFormElement);
   return (
     <main>
@@ -35,20 +38,24 @@ export default function Multipart({
           Upload
         </button>
       </Form>
-      <button id="multipart-direct" onClick={() => void form.post(data())}>
+      <button id="multipart-direct" onClick={() => void form.post({ data: data() })}>
         Bound FormData
       </button>
-      <button id="multipart-explicit" onClick={() => void form.post('/multipart?upload', data())}>
-        Explicit URL
-      </button>
       {(['put', 'patch', 'delete'] as const).map((method) => (
-        <button id={'multipart-' + method} onClick={() => void form.submit(method, data())}>
+        <button
+          id={'multipart-' + method}
+          onClick={() => void form.submit(method, { data: data() })}
+        >
           {method}
         </button>
       ))}
       <button
         id="multipart-slow"
-        onClick={() => void form.post('/multipart?upload&slow=1', data())}
+        onClick={() => {
+          const body = data();
+          body.set('slow', '1');
+          void form.post({ data: body });
+        }}
       >
         Slow
       </button>
@@ -57,11 +64,16 @@ export default function Multipart({
       </button>
       <button
         id="multipart-foreign"
-        onClick={() => void form.post('https://foreign.invalid/upload', data())}
+        onClick={() => {
+          void router
+            .visit('https://foreign.invalid/upload', { method: 'POST', data: data() })
+            .catch((error: Error) => setForeignError(error.message));
+        }}
       >
         Foreign
       </button>
-      <button id="multipart-redirect" onClick={() => void form.post('/multipart?redirect', data())}>
+      {foreignError && <p role="alert">{foreignError}</p>}
+      <button id="multipart-redirect" onClick={() => void redirect.post({ data: data() })}>
         Redirect
       </button>
       <Link id="multipart-leave" href="/other">

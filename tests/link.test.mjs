@@ -28,10 +28,13 @@ const code = transformed.code.replace(
 const { Link, RouterContext, NavigationContext, useNavigation } = await import(
   'data:text/javascript;base64,' + Buffer.from(code).toString('base64')
 );
-const html = async (props) =>
+const html = async (props, url = '/', navigation = null) =>
   jsx(RouterContext.Provider, {
-    value: createSsrRouter('/'),
-    children: jsx(Link, { children: 'Go', ...props }),
+    value: createSsrRouter(url),
+    children: jsx(NavigationContext.Provider, {
+      value: navigation,
+      children: jsx(Link, { children: 'Go', ...props }),
+    }),
   }).toString();
 
 test('SSR Link merges query data without leaking navigation props or browser effects', async () => {
@@ -72,4 +75,22 @@ test('navigation hook is idle in SSR and requires a provider', async () => {
     children: jsx(read, {}),
   }).toString();
   assert.match(markup, /idle/);
+});
+
+test('Link distinguishes current page, active ancestor and pending destination', async () => {
+  const path = '/items/1';
+  const navigation = {
+    state: 'loading',
+    method: 'GET',
+    location: new URL('/items?page=2', 'http://localhost'),
+  };
+  const current = await html({ href: path }, path);
+  assert.match(current, /aria-current="page".*data-void-active/);
+  const pending = await html({ href: '/items?page=2', activeMatch: 'prefix' }, path, navigation);
+  assert.match(pending, /data-void-active.*data-void-pending/);
+  assert.doesNotMatch(pending, /aria-current/);
+  assert.doesNotMatch(
+    await html({ href: '/items?page=3' }, path, navigation),
+    /data-void-active|data-void-pending/,
+  );
 });

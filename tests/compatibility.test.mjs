@@ -98,7 +98,7 @@ test('config hook uses its own meta version and identifies its configured projec
 });
 
 test('validated Void lines and Hono major boundaries follow the declared peer policy', () => {
-  for (const version of ['1.5.0', '1.5.1', '1.5.99'])
+  for (const version of ['1.6.2', '1.6.3', '1.6.99'])
     assert.equal(supportsFramework('void', version), true);
   for (const version of [
     '0.26.0',
@@ -118,7 +118,12 @@ test('validated Void lines and Hono major boundaries follow the declared peer po
     '1.3.99',
     '1.4.0',
     '1.4.99',
+    '1.5.0',
+    '1.5.99',
     '1.6.0',
+    '1.6.1',
+    '1.6.2-beta.0',
+    '1.7.0',
     '1.5.0-beta.0',
     '1.3.0',
     '2.0.0',

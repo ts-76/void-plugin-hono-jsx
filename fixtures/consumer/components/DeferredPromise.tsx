@@ -1,5 +1,5 @@
 import { ErrorBoundary, Suspense, use, useState } from 'hono/jsx';
-import { deferredResult, type Deferred, type DeferredResult } from 'void-plugin-hono-jsx/pages';
+import { deferredResult, type Deferred, type DeferredResult } from 'void-plugin-hono-jsx';
 declare global {
   interface Window {
     deferredPromises: Record<string, Promise<DeferredResult<string>>>;

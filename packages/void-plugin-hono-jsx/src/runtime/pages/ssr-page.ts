@@ -26,6 +26,7 @@ export function createHonoPageRenderer(manifest: PageManifest, options: RenderOp
   return async function renderPage(
     page: PageObject,
     assets: Parameters<typeof renderHonoDocument>[2],
+    requestUrl?: string,
   ) {
     if (options.staticData && page.deferredKeys)
       throw new Error(
@@ -57,7 +58,7 @@ export function createHonoPageRenderer(manifest: PageManifest, options: RenderOp
         children: content,
       });
     content = jsx(RouterContext.Provider, {
-      value: createSsrRouter(page.url, page.params),
+      value: createSsrRouter(page.url, page.params, requestUrl),
       children: jsx(PageContext.Provider, {
         value: page,
         children: jsx(NavigationContext.Provider, {

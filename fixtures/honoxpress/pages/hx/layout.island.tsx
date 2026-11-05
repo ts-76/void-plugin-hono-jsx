@@ -1,5 +1,5 @@
 import type { Child } from 'hono/jsx';
-import { HonoStyles } from 'void-plugin-hono-jsx/pages';
+import { HonoStyles } from 'void-plugin-hono-jsx';
 import { useFrontmatter, useMarkdownProps } from 'void-plugin-hono-jsx/markdown';
 import { DocsFrame } from '../../components/honoxpress/docs-layout';
 import { ThemeScript } from '../../components/honoxpress/theme-switch';
