@@ -1,5 +1,5 @@
 import { useState } from 'hono/jsx';
-import { Link, useRouter, type Deferred } from 'void-plugin-hono-jsx/pages';
+import { Link, useRouter, type Deferred } from 'void-plugin-hono-jsx';
 import DeferredPromise from '../components/DeferredPromise';
 import type { Props } from './deferred-group.server';
 function Value({ id, value }: { id: string; value: Deferred<string> }) {

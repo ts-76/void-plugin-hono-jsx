@@ -1,5 +1,5 @@
 import { useState } from 'hono/jsx';
-import { Link } from 'void-plugin-hono-jsx/pages';
+import { Link } from 'void-plugin-hono-jsx';
 export default function Page(props: {
   fixture: string;
   path: string;

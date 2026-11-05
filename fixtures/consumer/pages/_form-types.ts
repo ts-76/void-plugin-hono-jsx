@@ -1,4 +1,4 @@
-import { useForm, action } from 'void-plugin-hono-jsx/form';
+import { useForm, action } from 'void-plugin-hono-jsx';
 function checkBound() {
   const form = useForm('/forms?save', { name: 'Original', note: 'Default' });
   form.setData('name', 'New');

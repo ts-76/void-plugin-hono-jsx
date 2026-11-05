@@ -1,6 +1,5 @@
 import { useState } from 'hono/jsx';
-import { Form, useForm } from 'void-plugin-hono-jsx/form';
-import { Link, useNavigation, useRouter } from 'void-plugin-hono-jsx/pages';
+import { Form, useForm, Link, useNavigation, useRouter } from 'void-plugin-hono-jsx';
 export default function Multipart({
   uploads,
   reads,

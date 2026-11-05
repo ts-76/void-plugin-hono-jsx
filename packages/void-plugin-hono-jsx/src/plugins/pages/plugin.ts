@@ -140,7 +140,7 @@ export function voidHonoJsx(options: HonoJsxOptions = {}): Plugin[] {
       },
       configEnvironment() {
         const modules = Object.keys(publicRuntimeModules);
-        const packages = [...new Set(modules.map((id) => id.slice(0, id.lastIndexOf('/'))))];
+        const packages = [...new Set(modules.map((id) => id.split('/')[0]))];
         return {
           optimizeDeps: { exclude: ['hono', ...modules] },
           resolve: { noExternal: ['hono', ...packages] },

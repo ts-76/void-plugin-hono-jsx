@@ -1,4 +1,4 @@
-import { Form, useIslandForm } from 'void-plugin-hono-jsx/form';
+import { Form, useIslandForm } from 'void-plugin-hono-jsx';
 export default function Island({ saved, submissions }: { saved: string; submissions: number }) {
   const form = useIslandForm('/island-forms?save', { name: saved } as {
     name: string;

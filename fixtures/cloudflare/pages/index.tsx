@@ -1,4 +1,4 @@
-import { Form, useForm } from 'void-plugin-hono-jsx/form';
+import { Form, useForm } from 'void-plugin-hono-jsx';
 import type { Props } from './index.server';
 export default function Page({ notes }: Props) {
   const json = useForm('/?save', { value: '' });

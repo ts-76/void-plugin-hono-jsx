@@ -1,6 +1,6 @@
 import { useState } from 'hono/jsx';
 import { css, cx } from 'hono/css';
-import { HonoStyles, Link } from 'void-plugin-hono-jsx/pages';
+import { HonoStyles, Link } from 'void-plugin-hono-jsx';
 import type { Props } from './[page].server';
 import '../../../css-override.css';
 export const layout = false;

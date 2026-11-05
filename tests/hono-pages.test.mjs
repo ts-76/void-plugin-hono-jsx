@@ -216,7 +216,7 @@ for (const policy of ['idle', 'visible', 'media:(max-width: 600px)']) {
 }
 
 test('island components reject form helpers with an explicit diagnostic', async () => {
-  const component = "import { useForm } from 'void-plugin-hono-jsx/form'; " + page;
+  const component = "import { useForm } from 'void-plugin-hono-jsx'; " + page;
   await withPages(
     {
       'index.island.tsx':
@@ -375,7 +375,7 @@ test('relative re-exports in static barrels retain the island client requirement
 });
 
 test('island components accept named provider-free form imports', async () => {
-  const component = "import { useIslandForm, Form } from 'void-plugin-hono-jsx/form'; " + page;
+  const component = "import { useIslandForm, Form } from 'void-plugin-hono-jsx'; " + page;
   await withPages(
     {
       'index.island.tsx':

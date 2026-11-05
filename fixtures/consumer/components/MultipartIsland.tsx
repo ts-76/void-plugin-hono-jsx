@@ -1,4 +1,4 @@
-import { Form, useIslandForm } from 'void-plugin-hono-jsx/form';
+import { Form, useIslandForm } from 'void-plugin-hono-jsx';
 export default function MultipartIsland() {
   const form = useIslandForm('/multipart-island?upload', { name: 'island-model' });
   return (

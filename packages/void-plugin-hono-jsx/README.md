@@ -78,12 +78,18 @@ For a React scaffold:
 
 ## Runtime exports
 
+Migrate `void-plugin-hono-jsx/pages` and `void-plugin-hono-jsx/form` imports to
+`void-plugin-hono-jsx`. Vite setup continues to use `void-plugin-hono-jsx/plugin`.
+Applications compiling Markdown directly should install `@ts-76/hono-markdown`
+and use its `/compiler` entry. Set `contextModule: 'void-plugin-hono-jsx/markdown'`
+when generated modules should resolve the context through the Void adapter.
+
 ```tsx
 import {
   Link, useRouter, useShared, useParams, useErrors, useNavigation,
   deferredResult, type Deferred, type DeferredResult,
-} from 'void-plugin-hono-jsx/pages';
-import { Form, useForm, useIslandForm, action } from 'void-plugin-hono-jsx/form';
+  Form, useForm, useIslandForm, action,
+} from 'void-plugin-hono-jsx';
 ```
 
 Runnable navigation, forms and error handling are in the [Pages example](https://github.com/ts-76/void-plugin-hono-jsx/tree/main/examples/pages).
@@ -157,7 +163,7 @@ The [Markdown fixture](https://github.com/ts-76/void-plugin-hono-jsx/tree/main/f
 
 The adapter collects default `hono/css` rules into one `style#hono-css` in head, before application stylesheets. Pages and islands reuse this host; static pages need no client JavaScript for their CSS. Do not render Hono's `<Style />` inside a page or layout.
 
-For a per-response CSP nonce, render `<HonoStyles nonce={nonce} />` from `void-plugin-hono-jsx/pages` in the SSR tree. It configures the head host and adds no element inside the client root. Use one nonce per document; SPA navigation retains the initial host and nonce. Pass the same nonce in the response's CSP header. CSP nonce setup for client-only shells is not provided.
+For a per-response CSP nonce, render `<HonoStyles nonce={nonce} />` from `void-plugin-hono-jsx` in the SSR tree. It configures the head host and adds no element inside the client root. Use one nonce per document; SPA navigation retains the initial host and nonce. Pass the same nonce in the response's CSP header. CSP nonce setup for client-only shells is not provided.
 
 This integration covers the default CSS context. Custom `createCssContext()` hosts need their own lifecycle. Hono may register initial SSR rules again on first client render; subsequent visits reuse its registry. Exact SSR-to-client rule deduplication is not guaranteed.
 
@@ -192,8 +198,8 @@ The adapter requires `@ts-76/hono-markdown@^0.3.0` so installations include the 
 fence-range and island-attribute security fixes.
 
 The Void plugin owns page discovery, layouts, head, loaders, virtual modules and
-Void's scheduler. Existing `/markdown`, `/markdown/compiler`, `/markdown/client`
-and theme imports remain supported. The old and common imports share the same
+Void's scheduler. Import portable compilers from `@ts-76/hono-markdown/compiler`.
+Use the adapter's `/markdown`, `/markdown/client` and theme imports for Void hosts. The old and common imports share the same
 Markdown context, avoiding duplicate providers when documents and decks coexist.
 The client entry only supplies Void's scheduler. Hosts supply a `ready` gate
 for presentation-specific activation; the adapter does not inspect slide DOM.

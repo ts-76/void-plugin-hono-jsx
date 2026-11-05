@@ -90,8 +90,8 @@ The adapter requires `@ts-76/hono-markdown@^0.3.0` so installations include the 
 fence-range and island-attribute security fixes.
 
 The Void plugin owns page discovery, layouts, head, loaders, virtual modules and
-Void's scheduler. Existing `/markdown`, `/markdown/compiler`, `/markdown/client`
-and theme imports remain supported. The old and common imports share the same
+Void's scheduler. Import portable compilers from `@ts-76/hono-markdown/compiler`.
+Use the adapter's `/markdown`, `/markdown/client` and theme imports for Void hosts. The old and common imports share the same
 Markdown context, avoiding duplicate providers when documents and decks coexist.
 The client entry only supplies Void's scheduler. Hosts supply a `ready` gate
 for presentation-specific activation; the adapter does not inspect slide DOM.

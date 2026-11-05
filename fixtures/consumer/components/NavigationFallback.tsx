@@ -1,4 +1,4 @@
-import type { NavigationFallbackProps } from 'void-plugin-hono-jsx/pages';
+import type { NavigationFallbackProps } from 'void-plugin-hono-jsx';
 export default function Fallback({ navigation }: NavigationFallbackProps) {
   if (navigation.location?.searchParams.get('value') === 'fallback-render-error')
     throw new Error('Fallback component failed');

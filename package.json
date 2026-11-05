@@ -39,8 +39,6 @@
     "hono": "4.13.16"
   },
   "devDependencies": {
-    "@jridgewell/remapping": "2.3.5",
-    "@jridgewell/trace-mapping": "0.3.31",
     "@shikijs/transformers": "4.6.0",
     "@types/node": "^24.0.0",
     "magic-string": "1.4.5",

@@ -1,6 +1,6 @@
 import 'void-plugin-hono-jsx/theme-content.css';
 import { css } from 'hono/css';
-import { HonoStyles } from 'void-plugin-hono-jsx/pages';
+import { HonoStyles } from 'void-plugin-hono-jsx';
 import {
   useFrontmatter,
   useMarkdownHeadings,

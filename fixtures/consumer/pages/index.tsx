@@ -1,6 +1,5 @@
 import { useState } from 'hono/jsx';
-import { Link, useRouter, useShared, useParams, useErrors } from 'void-plugin-hono-jsx/pages';
-import { useForm } from 'void-plugin-hono-jsx/form';
+import { Link, useRouter, useShared, useParams, useErrors, useForm } from 'void-plugin-hono-jsx';
 import type { Props } from './index.server';
 export default function Page({ initialCount }: Props) {
   const [count, setCount] = useState(initialCount);

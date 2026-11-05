@@ -80,12 +80,10 @@ export function honoIslands(): Plugin {
           (node) =>
             node.type === 'ImportDeclaration' &&
             node.importKind !== 'type' &&
-            ['void-plugin-hono-jsx/form', 'void-plugin-hono-jsx/pages'].includes(
-              node.source.value,
-            ) &&
+            node.source.value === 'void-plugin-hono-jsx' &&
             node.specifiers.some((entry) =>
               entry.type !== 'ImportSpecifier'
-                ? node.source.value.endsWith('/form')
+                ? true
                 : entry.importKind !== 'type' &&
                   ['useForm', 'action', 'setActionRouter'].includes(
                     'name' in entry.imported ? entry.imported.name : entry.imported.value,

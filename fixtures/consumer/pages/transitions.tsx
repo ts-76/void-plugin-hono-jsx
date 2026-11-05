@@ -1,4 +1,4 @@
-import { Link, useRouter } from 'void-plugin-hono-jsx/pages';
+import { Link, useRouter } from 'void-plugin-hono-jsx';
 import { useLayoutEffect, useState } from 'hono/jsx';
 import type { VoidRouter } from 'void/pages-client';
 import '../components/transition.css';

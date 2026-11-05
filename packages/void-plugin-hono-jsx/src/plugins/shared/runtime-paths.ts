@@ -42,13 +42,9 @@ export const publicRuntimeModules: Record<string, { server: string; client: stri
         server: markdownRuntimePath,
         client: fileURLToPath(new URL('../../browser/markdown/context.js', import.meta.url)),
       },
-      'void-plugin-hono-jsx/pages': {
-        server: pagesRuntimePath,
-        client: fileURLToPath(new URL('../../browser/pages/api.js', import.meta.url)),
-      },
-      'void-plugin-hono-jsx/form': {
-        server: fileURLToPath(new URL('../../server/pages/form.js', import.meta.url)),
-        client: fileURLToPath(new URL('../../browser/pages/form.js', import.meta.url)),
+      'void-plugin-hono-jsx': {
+        server: fileURLToPath(new URL('../../server/index.js', import.meta.url)),
+        client: fileURLToPath(new URL('../../browser/index.js', import.meta.url)),
       },
     }
   : {};

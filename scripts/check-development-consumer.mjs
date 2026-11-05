@@ -82,7 +82,7 @@ export async function checkDevelopmentConsumer({ page, origin, consumer, assertR
     }
     await writeFile(
       added,
-      'import { Link } from \'void-plugin-hono-jsx/pages\'; export default function Page() { return <main><h1 id="added-page">Added page</h1><Link id="added-home" href="/">Home</Link></main>; }',
+      'import { Link } from \'void-plugin-hono-jsx\'; export default function Page() { return <main><h1 id="added-page">Added page</h1><Link id="added-home" href="/">Home</Link></main>; }',
     );
     const deadline = Date.now() + 10000;
     let ready = false;

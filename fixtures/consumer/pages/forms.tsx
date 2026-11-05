@@ -1,4 +1,4 @@
-import { Form, action, useForm } from 'void-plugin-hono-jsx/form';
+import { Form, action, useForm } from 'void-plugin-hono-jsx';
 export default function Forms({ saved, submissions }: { saved: string; submissions: number }) {
   const defaults: { name: string; note: string; probe?: 'slow' | 'fail' | 'quota' } = {
     name: 'Original',
