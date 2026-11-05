@@ -35,6 +35,7 @@ function cancelled() {
 export async function createHonoRouter(config: VoidRouterConfig) {
   let multipart: MultipartVisit | undefined;
   let coreNavigation = idleNavigationState();
+  let generation = 0;
   let transitionOverride: boolean | undefined;
   let transitionForVisit = config.viewTransitions;
   const publishNavigation = (state: NavigationState) => config.onNavigationChange?.(state);
@@ -52,7 +53,10 @@ export async function createHonoRouter(config: VoidRouterConfig) {
       ...config.adapter,
       async applyUpdate(page, component, layouts, options) {
         if (multipart?.refresh === 'not-started') throw cancelled();
+        const visit = generation;
         await applyWithTransition(transitionForVisit, async () => {
+          // A browser can delay the update callback until another visit has committed.
+          if (visit !== generation) throw cancelled();
           await config.adapter.applyUpdate(page, component, layouts, options);
         });
       },
@@ -60,6 +64,7 @@ export async function createHonoRouter(config: VoidRouterConfig) {
     onNavigationChange(state) {
       coreNavigation = state;
       if (state.state !== 'idle') {
+        generation++;
         transitionForVisit = transitionOverride ?? config.viewTransitions;
         if (multipart?.refresh === 'starting') multipart.refresh = 'started';
         else if (multipart) abortMultipart();
@@ -89,6 +94,7 @@ export async function createHonoRouter(config: VoidRouterConfig) {
     abortMultipart();
     const request: MultipartVisit = { controller: new AbortController(), refresh: 'not-started' };
     multipart = request;
+    generation++;
     core.router.flushAll();
     publishNavigation({
       state: 'submitting',
