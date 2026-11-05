@@ -159,6 +159,6 @@ export async function checkMultipartConsumer({ origin, page, assert }) {
   await page.goto(origin);
   await page.locator('#app[data-hono-pages="mounted"]').waitFor();
   console.log(
-    'Multipart forms: browser boundary, native fields/submitter, repeated fields/files, bound/explicit URL and CRUD, validation retention, duplicate/cancel/navigation generations, mutation state and redirect passed. Successful actions use one explicit GET refresh.',
+    'Multipart forms: browser boundary, native fields/submitter, repeated fields/files, bound submission and CRUD, validation retention, duplicate/cancel/navigation generations, mutation state and redirect passed. Successful actions use one explicit GET refresh.',
   );
 }
