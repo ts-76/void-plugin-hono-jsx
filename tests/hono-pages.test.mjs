@@ -16,6 +16,9 @@ async function withPages(files, check, options) {
     }
     process.chdir(root);
     const plugin = voidHonoJsx(options).find((plugin) => plugin.name === 'void-hono:pages');
+    if (typeof plugin.load !== 'function') plugin.load = plugin.load.handler;
+    plugin.meta = { viteVersion: '8.3.5' };
+    plugin.config({}, { command: 'build' });
     plugin.environment = { mode: 'build' };
     await check(plugin, voidHonoJsx());
   } finally {
@@ -76,12 +79,12 @@ test('development SSR captures page/layout modules with providers and excludes b
     async (plugin) => {
       await plugin.buildStart();
       const id = plugin.resolveId('virtual:void-pages-renderer');
-      plugin.environment.mode = 'dev';
+      plugin.config({}, { command: 'serve' });
       const development = await plugin.load(id);
       assert.match(development, /import \* as __honoPageSnapshot\d+ from .*index\.tsx/);
       assert.match(development, /import \* as __honoPageSnapshot\d+ from .*layout\.tsx/);
       assert.doesNotMatch(development, /browser\.tsx|\(\) => import\(/);
-      plugin.environment.mode = 'build';
+      plugin.config({}, { command: 'build' });
       const production = await plugin.load(id);
       assert.match(production, /\(\) => import\(/);
       assert.doesNotMatch(production, /__honoPageSnapshot/);
@@ -424,7 +427,7 @@ for (const options of [
 test('Markdown routes fail discovery with the upstream gate and exact file', async () => {
   await withPages({ 'guide.md': '# Guide' }, async (plugin) => {
     await assert.rejects(
-      () => plugin.buildStart(),
+      () => plugin.load(plugin.resolveId('virtual:void-pages-renderer')),
       /Markdown requires voidHonoMarkdown.*guide\.md/,
     );
   });
