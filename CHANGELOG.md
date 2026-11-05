@@ -1,5 +1,35 @@
 # Changelog
 
+## [0.11.0](https://github.com/ts-76/void-plugin-hono-jsx/compare/v0.10.0...v0.11.0) (2026-11-05)
+
+
+### ⚠ BREAKING CHANGES
+
+* bind the action URL when creating a form and pass submission data as an options object. Import application APIs from void-plugin-hono-jsx and portable Markdown compilation from @ts-76/hono-markdown/compiler. See the package README for migration steps.
+* consolidate application imports at the package root
+* bind forms to their action at creation
+* reset preserved page state when route parameters change
+* require Void 1.6.2
+
+### Features
+
+* align the Hono JSX adapter with Void 1.6 ([#174](https://github.com/ts-76/void-plugin-hono-jsx/issues/174)) ([6f325e8](https://github.com/ts-76/void-plugin-hono-jsx/commit/6f325e8da29d954aa0c25a591d0f3f6c02a60218))
+* bind forms to their action at creation ([5ccf525](https://github.com/ts-76/void-plugin-hono-jsx/commit/5ccf52559efe05b9c0cf9db8d48b83d20168cb77))
+* consolidate application imports at the package root ([1ce6e33](https://github.com/ts-76/void-plugin-hono-jsx/commit/1ce6e33695049e79fb522a4a4c4d12fe5cbdc840))
+* expose active and pending links and default prefetch ([de80df8](https://github.com/ts-76/void-plugin-hono-jsx/commit/de80df8c56c72804d061c0dd109474f4f0141889))
+* preserve unrelated field errors and reset to original values ([2d7596d](https://github.com/ts-76/void-plugin-hono-jsx/commit/2d7596d69600b3ec4506ddc6dcd9d948dcc3a3b9))
+* require Void 1.6.2 ([3950de0](https://github.com/ts-76/void-plugin-hono-jsx/commit/3950de02e58a2b227d1535b19cabdc1b012a2c12))
+
+
+### Bug Fixes
+
+* emit the public server entry with its declarations ([f91788e](https://github.com/ts-76/void-plugin-hono-jsx/commit/f91788e06b5174328de2572013a85c38213929d6))
+* ignore delayed native callbacks after a newer visit ([464dded](https://github.com/ts-76/void-plugin-hono-jsx/commit/464ddedf9f62231fd4aae24f00d685516e167da8))
+* infer bound form fields without a body validator ([6f29a15](https://github.com/ts-76/void-plugin-hono-jsx/commit/6f29a15d61de72bc6db1483410cf843d1dda258a))
+* pass the request URL to the SSR router ([ee786b3](https://github.com/ts-76/void-plugin-hono-jsx/commit/ee786b312e92a6653ac9814469862b15d8b29c6c))
+* prebundle Void runtime before island entry updates ([450477d](https://github.com/ts-76/void-plugin-hono-jsx/commit/450477dec61634984835ce6373033afcea1ef24d))
+* reset preserved page state when route parameters change ([a1e9be7](https://github.com/ts-76/void-plugin-hono-jsx/commit/a1e9be77ce67f3b17a4324e9c5728c62c7c46fd9))
+
 ## [0.10.0](https://github.com/ts-76/void-plugin-hono-jsx/compare/v0.9.1...v0.10.0) (2026-11-03)
 
 
