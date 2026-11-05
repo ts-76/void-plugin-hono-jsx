@@ -106,6 +106,17 @@ export async function checkMultipartConsumer({ origin, page, assert }) {
     await page.locator('#other-heading').waitFor();
     await page.waitForTimeout(650);
     assert.equal(new URL(page.url()).pathname, '/other', 'later navigation wins over the upload');
+
+    await page.goBack();
+    await page.locator('#multipart-form').waitFor();
+    await page.locator('#multipart-name').fill('history-navigation');
+    await page.locator('#multipart-slow').click();
+    await wait('#multipart-navigation', 'submitting:POST');
+    await page.evaluate(() => history.forward());
+    await page.locator('#other-heading').waitFor();
+    await page.waitForTimeout(650);
+    assert.equal(new URL(page.url()).pathname, '/other', 'popstate supersedes the upload');
+
     await page.goto(origin + '/multipart');
     await page.locator('#app[data-hono-pages="mounted"]').waitFor();
     let foreign = 0;
