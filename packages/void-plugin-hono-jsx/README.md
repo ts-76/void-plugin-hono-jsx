@@ -93,6 +93,9 @@ Use `activeMatch="prefix"` to also style parent links. Links to the destination
 being loaded receive `data-void-pending`.
 Set `prefetch.defaultStrategy` in `voidHonoJsx()` for a default on GET links.
 An individual link can override the default or opt out with `prefetch={false}`.
+`preserveState` keeps the page mounted only when the page component and route
+parameters are the same. Query changes can keep state. A different record resets
+page state while the surrounding layout keeps its usual lifetime.
 
 ### Multipart forms
 

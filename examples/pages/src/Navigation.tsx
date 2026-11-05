@@ -54,6 +54,7 @@ export function Navigation() {
             className="nav-item"
             href="/users/bob"
             id="nav-bob"
+            preserveState
             aria-current={active('/users/bob')}
           >
             <Icon name="users" />

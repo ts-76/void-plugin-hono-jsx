@@ -10,12 +10,12 @@ const page = (value) => ({
   errors: null,
   url: '/',
 });
-const request = (state, value, preserve = true) =>
-  state.request(page(value), () => null, [], preserve);
+const Page = () => null;
+const request = (state, value, preserve = true) => state.request(page(value), Page, [], preserve);
 
 test('a later committed frame resolves coalesced requests and preserves or resets page identity explicitly', async () => {
   const state = createRenderState();
-  state.complete(state.initial(page(0), () => null, []));
+  state.complete(state.initial(page(0), Page, []));
   const first = request(state, 1, false);
   const second = request(state, 2);
   assert.equal(first.frame.revision, 1);
@@ -36,7 +36,7 @@ test('a later committed frame resolves coalesced requests and preserves or reset
 
 test('failed frames restore the last committed props, reject all affected waiters and allow a later successful render', async () => {
   const state = createRenderState();
-  const initial = state.initial(page(0), () => null, []);
+  const initial = state.initial(page(0), Page, []);
   state.complete(initial);
   const first = request(state, 1);
   const second = request(state, 2);
@@ -68,7 +68,7 @@ test('failed frames restore the last committed props, reject all affected waiter
 
 test('an older failed render never restores over a newer navigation or settles its waiter', async () => {
   const state = createRenderState();
-  state.complete(state.initial(page(0), () => null, []));
+  state.complete(state.initial(page(0), Page, []));
   const older = request(state, 1);
   const error = new Error('old failure');
   const rejected = assert.rejects(older.committed, (failure) => failure === error);
@@ -99,4 +99,21 @@ test('unmount rejects every pending render and isolates other renderer instances
   await Promise.all(rejected);
   second.complete(live.frame);
   await live.committed;
+});
+
+test('preserveState keeps query changes but resets for a different route or record', async () => {
+  const state = createRenderState();
+  const alice = { ...page(0), url: '/users/alice', params: { id: 'alice' } };
+  const initial = state.initial(alice, Page, []);
+  state.complete(initial);
+  const tab = state.request({ ...alice, url: '/users/alice?tab=profile' }, Page, [], true);
+  assert.equal(tab.frame.revision, initial.revision);
+  state.complete(tab.frame);
+  const bob = state.request({ ...alice, url: '/users/bob', params: { id: 'bob' } }, Page, [], true);
+  assert.notEqual(bob.frame.revision, tab.frame.revision);
+  state.complete(bob.frame);
+  const other = state.request({ ...bob.frame.page, component: 'archive' }, Page, [], true);
+  assert.notEqual(other.frame.revision, bob.frame.revision);
+  state.complete(other.frame);
+  await Promise.all([tab.committed, bob.committed, other.committed]);
 });

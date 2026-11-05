@@ -95,8 +95,11 @@ async function smoke(mode, browser) {
     await page.evaluate(() => {
       window.sourceDocument = 123;
     });
+    await page.locator('#route-count + button').click();
+    await waitText('#route-count', '1');
     await click('#nav-bob');
     await waitText('#route-value', 'bob');
+    await waitText('#route-count', '0');
     assert.equal(await page.locator('#nav-bob').getAttribute('aria-current'), 'page');
     assert.equal(await page.locator('#nav-alice').getAttribute('aria-current'), null);
     assert.equal(await page.evaluate(() => window.sourceDocument), 123);
