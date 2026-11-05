@@ -3,7 +3,9 @@ import { join, relative } from 'node:path';
 import { normalizePath, parseSync, type Plugin } from 'vite';
 import { scanPages, resolvePagesDir, type PageScanResult } from 'void/pages';
 import {
+  createIslandManifest,
   editIslandSource,
+  generateIslandClientEntry,
   computePagesNeedingClientJS,
   ISLANDS_RENDERER_ID,
   ISLANDS_CLIENT_ENTRY_ID,
@@ -20,7 +22,7 @@ import { analyzeIslands, islandImports, registerIslandImports } from './analysis
 export function honoIslands(): Plugin {
   const root = process.cwd();
   const pagesDir = resolvePagesDir(root);
-  let islands = new Map<string, string>();
+  let manifest = createIslandManifest(root, ['.tsx', '.jsx']);
   let pageFiles = new Set<string>();
   let dependencyFiles = new Set<string>();
   let cssImports: string[] = [];
@@ -37,7 +39,8 @@ export function honoIslands(): Plugin {
       dependencyFiles.add(file),
     );
     scan = nextScan;
-    ({ islands, pageFiles, interactivePages, scriptOnlyPages, cssImports, dependencyFiles } = next);
+    ({ manifest, pageFiles, interactivePages, scriptOnlyPages, cssImports, dependencyFiles } =
+      next);
   }
 
   return {
@@ -75,7 +78,8 @@ export function honoIslands(): Plugin {
       if (!/\.[jt]sx$/.test(filename) || filename.includes('/node_modules/')) return;
       const canonical = realpathSync(filename);
       if (
-        (pageFiles.has(canonical) || [...islands.values()].includes(canonical)) &&
+        (pageFiles.has(canonical) ||
+          [...manifest.entries.values()].some((entry) => entry.componentPath === canonical)) &&
         parseSync(filename, code).program.body.some(
           (node) =>
             node.type === 'ImportDeclaration' &&
@@ -101,7 +105,7 @@ export function honoIslands(): Plugin {
         throw new Error(
           'Hono islands: attributed imports require a static island page, layout or component graph; use ordinary imports inside interactive components.',
         );
-      registerIslandImports(code, filename, root, islands);
+      registerIslandImports(code, filename, root, manifest);
       // Void requests static modules in the client environment to collect CSS.
       // Actual interactive entry graphs were validated above; strip attributes
       // for that traversal rather than generating server-only marker wrappers.
@@ -163,13 +167,18 @@ export const renderIslandPage = createHonoIslandRenderer(renderPage, { interacti
         // Void owns dev first-paint CSS. Production needs the static imports
         // so its shared manifest asset collector can emit stylesheet links.
         const styles = this.environment?.mode === 'dev' ? '' : cssImports.join('\n');
-        if (!islands.size || !interactivePages.size) return styles || 'export {};';
-        const loaders = [...islands]
-          .map(([name, path]) => `${JSON.stringify(name)}: () => import(${JSON.stringify(path)})`)
-          .join(',\n');
-        return `${styles}
-import { startHonoIslands } from ${JSON.stringify(islandClientPath)};
-startHonoIslands({ ${loaders} }, ${Boolean(markdown)});`;
+        if (!manifest.entries.size || !interactivePages.size) return styles || 'export {};';
+        const entry = generateIslandClientEntry({
+          manifest,
+          // The validated graph already supplies CSS for layouts and Markdown.
+          cssFiles: new Set(),
+          styles: null,
+          needsRuntime: true,
+          isDev: this.environment?.mode === 'dev',
+          hydrateIsland: `import { createHonoIslandMounter } from ${JSON.stringify(islandClientPath)};
+const hydrateIsland = createHonoIslandMounter(${Boolean(markdown)});`,
+        });
+        return styles ? styles + '\n' + entry : entry;
       }
     },
   };

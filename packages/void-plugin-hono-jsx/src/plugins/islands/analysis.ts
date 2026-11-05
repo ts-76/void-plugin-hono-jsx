@@ -3,9 +3,11 @@ import { join, relative, resolve, dirname, basename } from 'node:path';
 import { normalizePath, parseSync } from 'vite';
 import { resolveEffectiveLayoutChain, type PageScanResult } from 'void/pages';
 import {
+  createIslandManifest,
   findIslandImports,
   findStaticCssImports,
   rewriteCssImportForVirtualModule,
+  type IslandManifest,
 } from 'void/pages-islands-plugin';
 import { resolveComponent } from '../shared/resolve-component.ts';
 import { markdownDiagnostic, type HonoMarkdownApi } from '../markdown/api.ts';
@@ -41,7 +43,7 @@ export function registerIslandImports(
   code: string,
   filename: string,
   root: string,
-  islands: Map<string, string>,
+  manifest: IslandManifest,
   found = islandImports(code, filename),
 ) {
   for (const entry of found) {
@@ -67,7 +69,8 @@ export function registerIslandImports(
       );
     const canonical = realpathSync(path);
     const id = normalizePath(relative(root, canonical));
-    islands.set(id, canonical);
+    // Markdown emits the same canonical id, including the extension.
+    manifest.entries.set(id, { islandId: id, componentPath: canonical, hydrate: entry.hydrate });
   }
   return found;
 }
@@ -80,7 +83,7 @@ export function analyzeIslands(
   markdown: HonoMarkdownApi | undefined,
   onWatch: (file: string) => void,
 ) {
-  const islands = new Map<string, string>();
+  const manifest = createIslandManifest(root, ['.tsx', '.jsx']);
   const pageFiles = new Set<string>();
   const graph = new Map<string, Set<string>>();
   const directlyInteractive = new Set<string>();
@@ -183,7 +186,7 @@ export function analyzeIslands(
     graph.set(canonical, dependencies);
     pageFiles.add(canonical);
     const { code, found, edges } = analyze(canonical);
-    registerIslandImports(code, canonical, root, islands, found);
+    registerIslandImports(code, canonical, root, manifest, found);
     if (found.length) {
       if (!/\.[jt]sx$/.test(canonical) && !(canonical.endsWith('.md') && markdown))
         throw new Error('Hono islands: attributed imports require a static TSX/JSX module.');
@@ -213,7 +216,7 @@ export function analyzeIslands(
       );
     for (const edge of edges) validateInteractive(edge.target);
   };
-  for (const target of islands.values()) validateInteractive(target);
+  for (const entry of manifest.entries.values()) validateInteractive(entry.componentPath);
   for (const page of scan.pages.filter((page) => !page.island)) {
     for (const file of [
       page.componentPath,
@@ -258,7 +261,7 @@ export function analyzeIslands(
     if (hasScript && !hasIslands) scriptOnlyPages.add(page.componentId);
   }
   return {
-    islands,
+    manifest,
     pageFiles,
     interactivePages,
     scriptOnlyPages,
