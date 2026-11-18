@@ -4,7 +4,7 @@ import { jsx } from 'hono/jsx/jsx-runtime';
 import { runtimeModule } from './compile-runtime.mjs';
 import { createHonoIslandRenderer } from '../packages/void-plugin-hono-jsx/src/runtime/islands/page.ts';
 
-const { createHonoPageRenderer } = await import(
+const { createHonoPageRenderer, snapshotComponents } = await import(
   await runtimeModule(
     new URL('../packages/void-plugin-hono-jsx/src/runtime/pages/ssr-page.ts', import.meta.url),
   )
@@ -46,7 +46,7 @@ test('the page runtime composes layouts and keeps server metadata separate from 
       },
       layoutTree: { index: ['layout'] },
     },
-    { staticData: false, markdown: true, markdownScripts: new Set(['index']) },
+    { staticData: false, markdown: MarkdownContext, markdownScripts: new Set(['index']) },
   );
   const html = await render(page, assets);
   assert.match(html, /<main><p>props:server-only<\/p><\/main>/);
@@ -54,6 +54,39 @@ test('the page runtime composes layouts and keeps server metadata separate from 
   const metadata = html.match(/data-hono-markdown="([^"]*)"/)[1].replaceAll('&quot;', '"');
   assert.deepEqual(JSON.parse(metadata), { frontmatter: { title: 'Public' }, headings: [] });
   assert.match(html, /href="\/page.css"/);
+});
+
+test('island pages pass their props to Markdown islands through the adapter metadata', async () => {
+  const metadataOf = async (routeMeta) => {
+    const render = createHonoPageRenderer(
+      { components: { index: async () => ({ default: () => null }) }, layoutTree: {}, routeMeta },
+      { staticData: false, markdown: MarkdownContext, markdownScripts: new Set() },
+    );
+    const html = await render(page, assets);
+    return JSON.parse(html.match(/data-hono-markdown="([^"]*)"/)[1].replaceAll('&quot;', '"'));
+  };
+  assert.deepEqual((await metadataOf({ index: { island: true } })).props, { value: 'props' });
+  assert.equal((await metadataOf({})).props, undefined, 'full Pages read props through the router');
+});
+
+test('development snapshots load each component once and keep that module generation', async () => {
+  const calls = [];
+  const generations = { page: 1, layout: 1 };
+  const loader = (id) => async () => {
+    calls.push(id);
+    return { default: () => null, generation: generations[id] };
+  };
+  const components = { page: loader('page'), layout: loader('layout') };
+  await snapshotComponents(components);
+  assert.deepEqual(calls.sort(), ['layout', 'page']);
+  generations.page = 2;
+  generations.layout = 2;
+  assert.equal(components.page().generation, 1);
+  assert.equal(components.layout().generation, 1);
+  assert.equal(components.page(), components.page());
+  assert.equal(calls.length, 2);
+  const failing = { page: async () => Promise.reject(new Error('syntax error')) };
+  await assert.rejects(snapshotComponents(failing), /syntax error/);
 });
 
 test('SSR resolves the page URL against the actual request origin', async () => {
@@ -65,7 +98,7 @@ test('SSR resolves the page URL against the actual request origin', async () => 
   const Page = () => jsx('output', { children: useRouter().url.href });
   const render = createHonoPageRenderer(
     { components: { index: async () => ({ default: Page }) }, layoutTree: {} },
-    { staticData: false, markdown: false, markdownScripts: new Set() },
+    { staticData: false, markdownScripts: new Set() },
   );
   const html = await render(
     { ...page, url: '/items?tab=details' },
@@ -76,7 +109,7 @@ test('SSR resolves the page URL against the actual request origin', async () => 
 });
 
 test('the page runtime rejects invalid components and deferred static output', async () => {
-  const options = { staticData: false, markdown: false, markdownScripts: new Set() };
+  const options = { staticData: false, markdownScripts: new Set() };
   await assert.rejects(
     createHonoPageRenderer({ components: {}, layoutTree: {} }, options)(page, assets),
     /unknown page/,

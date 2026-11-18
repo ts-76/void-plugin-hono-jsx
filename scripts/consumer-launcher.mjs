@@ -3,14 +3,14 @@ import { join } from 'node:path';
 export const consumerStacks = {
   baseline: {
     fixture: 'consumer-void-1-vite',
-    void: '1.6.2',
+    void: '1.10.0',
     vite: '8.3.5',
     hostVite: '8.3.5',
     launcher: 'vite',
   },
   'void-1-vp': {
     fixture: 'consumer-void-1-vp',
-    void: '1.6.2',
+    void: '1.10.0',
     vite: 'npm:@voidzero-dev/vite-plus-core@1.4.0',
     vitePackageVersion: '1.4.0',
     hostVite: '8.3.5',

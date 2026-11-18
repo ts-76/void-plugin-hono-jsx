@@ -19,7 +19,8 @@ stage-receipt.json
 # Generated from the root release-please changelog during package build.
 /packages/void-plugin-hono-jsx/CHANGELOG.md
 
-.harness/dev/*/notes/
-
 # Void 1.5 generated Cloudflare build output
 .cloudflare/
+
+# Local agent work records
+.harness/

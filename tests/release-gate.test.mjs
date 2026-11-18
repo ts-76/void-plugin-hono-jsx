@@ -200,33 +200,43 @@ test('tarball allowlist rejects unexpected files and symbolic links', () => {
   }
 });
 
-test('release archives cannot retain a common Markdown range without the island security fixes', () => {
+test('release archives ship the common Markdown runtime only as an optional peer with the island security fixes', () => {
   const f = fixture();
+  const pack = (metadata) => {
+    writeFileSync(
+      path.join(f.root, 'candidate/package/package.json'),
+      JSON.stringify({ ...f.pkg, private: false, ...metadata }),
+    );
+    execFileSync('tar', [
+      '-czf',
+      f.tarball,
+      '-C',
+      path.join(f.root, 'candidate'),
+      ...f.evidence.files.map((file) => 'package/' + file),
+    ]);
+  };
+  const optional = { '@ts-76/hono-markdown': { optional: true } };
   try {
-    const metadata = path.join(f.root, 'candidate/package/package.json');
     for (const range of ['^0.1.0', '^0.1.1', '^0.1.2', '^0.2.0', '^0.2.1', '^0.2.2', '^0.3.0']) {
-      writeFileSync(
-        metadata,
-        JSON.stringify({
-          ...f.pkg,
-          private: false,
-          dependencies: { '@ts-76/hono-markdown': range },
-        }),
-      );
-      execFileSync('tar', [
-        '-czf',
-        f.tarball,
-        '-C',
-        path.join(f.root, 'candidate'),
-        ...f.evidence.files.map((file) => 'package/' + file),
-      ]);
+      pack({
+        peerDependencies: { '@ts-76/hono-markdown': range },
+        peerDependenciesMeta: optional,
+      });
       if (range === '^0.3.0') inspectTarball(f.tarball);
-      else assert.throws(() => inspectTarball(f.tarball), /fixed common Markdown runtime/);
+      else assert.throws(() => inspectTarball(f.tarball), /optional peer fixed at \^0\.3\.0/);
     }
+    pack({ peerDependencies: { '@ts-76/hono-markdown': '^0.3.0' }, peerDependenciesMeta: {} });
+    assert.throws(() => inspectTarball(f.tarball), /optional peer fixed at \^0\.3\.0/);
+    pack({ dependencies: { devalue: '^6.0.3', '@ts-76/hono-markdown': '^0.3.0' } });
+    assert.throws(() => inspectTarball(f.tarball), /Only documented peer dependencies/);
+    pack({ dependencies: { devalue: '^5.0.0' } });
+    assert.throws(() => inspectTarball(f.tarball), /Pages payload decoder/);
     const actual = JSON.parse(
       readFileSync(new URL('../packages/void-plugin-hono-jsx/package.json', import.meta.url)),
     );
-    assert.equal(actual.dependencies['@ts-76/hono-markdown'], '^0.3.0');
+    assert.deepEqual(actual.dependencies, { devalue: '^6.0.3' });
+    assert.equal(actual.peerDependencies['@ts-76/hono-markdown'], '^0.3.0');
+    assert.equal(actual.peerDependenciesMeta['@ts-76/hono-markdown'].optional, true);
   } finally {
     f.cleanup();
   }

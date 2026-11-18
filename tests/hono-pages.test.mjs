@@ -5,6 +5,9 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import { voidHonoJsx } from '../packages/void-plugin-hono-jsx/src/plugins/pages/plugin.ts';
 
+const viteContext = { meta: { viteVersion: '8.3.5' } };
+const viteConfig = { logger: { warn() {} } };
+
 async function withPages(files, check, options) {
   const previous = process.cwd();
   const root = await mkdtemp(join(tmpdir(), 'hono-pages-contract-'));
@@ -81,13 +84,17 @@ test('development SSR captures page/layout modules with providers and excludes b
       const id = plugin.resolveId('virtual:void-pages-renderer');
       plugin.config({}, { command: 'serve' });
       const development = await plugin.load(id);
-      assert.match(development, /import \* as __honoPageSnapshot\d+ from .*index\.tsx/);
-      assert.match(development, /import \* as __honoPageSnapshot\d+ from .*layout\.tsx/);
-      assert.doesNotMatch(development, /browser\.tsx|\(\) => import\(/);
+      assert.match(development, /import\(.*index\.tsx/);
+      assert.match(development, /import\(.*layout\.tsx/);
+      assert.doesNotMatch(development, /browser\.tsx/);
+      assert.match(
+        development,
+        /\nawait snapshotComponents\(components\);\nexport const renderPage/,
+      );
       plugin.config({}, { command: 'build' });
       const production = await plugin.load(id);
       assert.match(production, /\(\) => import\(/);
-      assert.doesNotMatch(production, /__honoPageSnapshot/);
+      assert.doesNotMatch(production, /snapshotComponents/);
     },
   );
 });
@@ -106,6 +113,7 @@ test('Void discovers a loader-backed page and the adapter generates both entries
       const client = await plugin.load(clientId);
       assert.match(renderer, /index\.tsx/);
       assert.match(renderer, /createHonoPageRenderer/);
+      assert.doesNotMatch(renderer, /MarkdownContext|hono-markdown|markdown\/context/);
       assert.match(client, /startHonoPages/);
       assert.doesNotMatch(client, /index\.server/);
     },
@@ -300,7 +308,10 @@ test('island layouts and nested static component imports register one shared int
       await islands.buildStart();
       const renderer = islands.load(islands.resolveId('virtual:void-islands-renderer'));
       assert.match(renderer, /new Set\(\["index"\]\)/);
-      assert.match(islands.load(islands.resolveId('virtual:void-islands-client')), /Counter\.tsx/);
+      const islandClient = islands.load(islands.resolveId('virtual:void-islands-client'));
+      assert.match(islandClient, /Counter\.tsx/);
+      assert.match(islandClient, /createHonoIslandMounter\(\)/);
+      assert.doesNotMatch(islandClient, /MarkdownContext|markdown\/context/);
       const transformed = islands.transform(
         "import Counter from './Counter' with { island: 'visible' }; export default Counter;",
         join(process.cwd(), 'Wrapper.tsx'),
@@ -412,7 +423,6 @@ test('navigation options retain defaults and serialize shared parsed cache durat
   );
 });
 for (const options of [
-  { viewTransitions: 'yes' },
   { prefetch: { hoverDelay: -1 } },
   { prefetch: { hoverDelay: Infinity } },
   { prefetch: { cacheFor: -1 } },
@@ -428,26 +438,35 @@ test('Markdown routes fail discovery with the upstream gate and exact file', asy
   await withPages({ 'guide.md': '# Guide' }, async (plugin) => {
     await assert.rejects(
       () => plugin.load(plugin.resolveId('virtual:void-pages-renderer')),
-      /Markdown requires voidHonoMarkdown.*guide\.md/,
+      /Markdown requires @ts-76\/hono-markdown and voidHonoMarkdown.*guide\.md/,
     );
   });
 });
 
-test('optional Markdown configuration reports the Hono boundary before the closed framework dispatch', () => {
+test('optional Markdown configuration reports the Hono boundary before the closed framework dispatch', async () => {
   const plugin = voidHonoJsx().find((plugin) => plugin.name === 'void-hono:pages');
   assert.equal(plugin.configResolved.order, 'pre');
-  assert.throws(
-    () => plugin.configResolved.handler({ plugins: [{ name: 'void-md' }] }),
+  await assert.rejects(
+    () =>
+      plugin.configResolved.handler.call(viteContext, {
+        ...viteConfig,
+        plugins: [{ name: 'void-md' }],
+      }),
     /use voidHonoMarkdown.*official compiler/,
   );
-  assert.doesNotThrow(() => plugin.configResolved.handler({ plugins: [{ name: 'void-core' }] }));
+  await assert.doesNotReject(() =>
+    plugin.configResolved.handler.call(viteContext, {
+      ...viteConfig,
+      plugins: [{ name: 'void-core' }],
+    }),
+  );
 });
 
 test('Markdown island discovery fails at the same gate before parsing Markdown as JavaScript', async () => {
   await withPages({ 'guide.island.md': '# Guide' }, async (_plugin, plugins) => {
     await assert.rejects(
       () => plugins.find((plugin) => plugin.name === 'void-hono:islands').buildStart(),
-      /Markdown requires voidHonoMarkdown.*guide\.island\.md/,
+      /Markdown requires @ts-76\/hono-markdown and voidHonoMarkdown.*guide\.island\.md/,
     );
   });
 });
@@ -510,12 +529,10 @@ test('navigation fallback registers a component module only in the client entry'
   );
 });
 for (const navigationFallback of [
-  null,
   { component: () => null },
   { component: 'fallback.ts' },
   { component: 'fallback.tsx', delay: -1 },
   { component: 'fallback.tsx', delay: Infinity },
-  { component: 'fallback.tsx', delay: 0.5 },
 ]) {
   test(
     'invalid navigation fallback fails before starting Vite: ' + JSON.stringify(navigationFallback),
@@ -524,3 +541,13 @@ for (const navigationFallback of [
     },
   );
 }
+
+test('the client entry sends multipart actions with the installed Void Pages protocol version', async () => {
+  const { PAGES_PROTOCOL_VERSION } = await import('@void/edge');
+  await withPages({ 'index.tsx': page }, async (plugin) => {
+    await plugin.configResolved.handler.call(viteContext, { ...viteConfig, plugins: [] });
+    await plugin.buildStart();
+    const client = await plugin.load(plugin.resolveId('virtual:void-pages-client'));
+    assert.match(client, new RegExp(`"pagesProtocolVersion":"${PAGES_PROTOCOL_VERSION}"`));
+  });
+});

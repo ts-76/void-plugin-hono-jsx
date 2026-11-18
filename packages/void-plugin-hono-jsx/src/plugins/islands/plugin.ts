@@ -18,8 +18,11 @@ import { markdownApi, type HonoMarkdownApi } from '../markdown/api.ts';
 
 import { analyzeIslands, islandImports, registerIslandImports } from './analysis.ts';
 
+/** Lets the pages plugin keep a hot-swapped island edit from reloading the document. */
+export type HonoIslandsApi = { hotSwapsIsland(file: string, timestamp: number): boolean };
+
 /** Hono mounting through Void's shared island scheduler. */
-export function honoIslands(): Plugin {
+export function honoIslands(): Plugin & { api: HonoIslandsApi } {
   const root = process.cwd();
   const pagesDir = resolvePagesDir(root);
   let manifest = createIslandManifest(root, ['.tsx', '.jsx']);
@@ -30,6 +33,7 @@ export function honoIslands(): Plugin {
   let scriptOnlyPages = new Set<string>();
   let scan: PageScanResult | undefined;
   let markdown: HonoMarkdownApi | undefined;
+  let analyzedGraph = '';
 
   // Refresh before graph analysis, regardless of Markdown hot-hook order.
   async function rescan() {
@@ -41,6 +45,53 @@ export function honoIslands(): Plugin {
     scan = nextScan;
     ({ manifest, pageFiles, interactivePages, scriptOnlyPages, cssImports, dependencyFiles } =
       next);
+    // Transforms register more imports into the live manifest, so compare analyses only.
+    analyzedGraph = graphSignature();
+  }
+
+  // Compares real paths, since a project can be reached through a symbolic link.
+  function islandIds(file: string) {
+    const real = (path: string) => {
+      try {
+        return normalizePath(realpathSync(path));
+      } catch {
+        return normalizePath(path);
+      }
+    };
+    const target = real(file);
+    return [...manifest.entries.values()]
+      .filter((entry) => real(entry.componentPath) === target)
+      .map((entry) => entry.islandId);
+  }
+  // Everything that decides which modules are islands, pages and stylesheets.
+  function graphSignature() {
+    const sorted = (values: Iterable<string>) => [...values].sort();
+    return JSON.stringify([
+      sorted(
+        [...manifest.entries.values()].map((e) =>
+          [e.islandId, e.componentPath, e.hydrate].join('\0'),
+        ),
+      ),
+      sorted(pageFiles),
+      sorted(interactivePages),
+      sorted(scriptOnlyPages),
+      sorted(cssImports),
+    ]);
+  }
+  // Files given an HMR handler. Vite would otherwise apply their removal, or an
+  // edit after they leave the island graph, as a hot update the page cannot load.
+  const hotAccepting = new Set<string>();
+  // Both the client and worker environments receive each edit; decide once per edit.
+  let hotSwap = { key: '', swaps: false };
+  async function decideHotSwap(file: string, type: string, timestamp: number) {
+    const key = file + '\0' + timestamp;
+    if (hotSwap.key === key) return hotSwap.swaps;
+    const before = analyzedGraph;
+    // Additions and removals change the graph; a removed file has no real path.
+    const wasIsland = type === 'update' && islandIds(file).length > 0;
+    await rescan();
+    hotSwap = { key, swaps: wasIsland && analyzedGraph === before };
+    return hotSwap.swaps;
   }
 
   return {
@@ -50,10 +101,16 @@ export function honoIslands(): Plugin {
       markdown = markdownApi(config.plugins);
     },
     buildStart: rescan,
-    async hotUpdate({ file, modules, timestamp }) {
-      const inPages = normalizePath(file).startsWith(normalizePath(pagesDir) + '/');
-      if (!inPages && !dependencyFiles.has(normalizePath(file))) return;
-      await rescan();
+    api: {
+      hotSwapsIsland: (file, timestamp) => hotSwap.key === file + '\0' + timestamp && hotSwap.swaps,
+    },
+    async hotUpdate({ file, type, modules, timestamp }) {
+      const path = normalizePath(file);
+      const inPages = path.startsWith(normalizePath(pagesDir) + '/');
+      if (!inPages && !dependencyFiles.has(path) && !hotAccepting.has(path)) return;
+      // An edit to an island component that keeps the island graph is applied by
+      // the component's own HMR handler instead of a document reload.
+      const swaps = await decideHotSwap(file, type, timestamp);
       const invalidated = new Set<(typeof modules)[number]>();
       for (const id of [
         ISLANDS_RENDERER_ID,
@@ -64,8 +121,10 @@ export function honoIslands(): Plugin {
         if (module)
           this.environment.moduleGraph.invalidateModule(module, invalidated, timestamp, true);
       }
-      if (!inPages && this.environment.config.consumer === 'client')
+      if (!swaps && !inPages && this.environment.config.consumer === 'client') {
         this.environment.hot.send({ type: 'full-reload' });
+        return [];
+      }
     },
     config() {
       return { build: { rollupOptions: { input: { 'islands-client': ISLANDS_CLIENT_ENTRY_ID } } } };
@@ -77,6 +136,21 @@ export function honoIslands(): Plugin {
       const filename = id.split('?')[0];
       if (!/\.[jt]sx$/.test(filename) || filename.includes('/node_modules/')) return;
       const canonical = realpathSync(filename);
+      const hotIds =
+        this.environment?.mode === 'dev' && this.environment.config.consumer === 'client'
+          ? islandIds(canonical)
+          : [];
+      if (hotIds.length) hotAccepting.add(normalizePath(filename));
+      // Development: an edited island component renders its mounted islands again.
+      const hmr = hotIds.length
+        ? `
+import { remountHonoIslands as __remountHonoIslands } from ${JSON.stringify(islandClientPath)};
+if (import.meta.hot)
+  import.meta.hot.accept((next) => {
+    if (!next || !__remountHonoIslands(${JSON.stringify(hotIds)}, next)) import.meta.hot.invalidate();
+  });
+`
+        : '';
       if (
         (pageFiles.has(canonical) ||
           [...manifest.entries.values()].some((entry) => entry.componentPath === canonical)) &&
@@ -100,7 +174,7 @@ export function honoIslands(): Plugin {
         );
       }
       const found = islandImports(code, filename);
-      if (!found.length) return;
+      if (!found.length) return hmr ? editIslandSource(code, [], { append: hmr }) : undefined;
       if (!pageFiles.has(canonical))
         throw new Error(
           'Hono islands: attributed imports require a static island page, layout or component graph; use ordinary imports inside interactive components.',
@@ -117,6 +191,7 @@ export function honoIslands(): Plugin {
             end: entry.end,
             text: `import ${entry.importName} from ${entry.specifierRaw};`,
           })),
+          { append: hmr },
         );
       return editIslandSource(
         code,
@@ -175,8 +250,14 @@ export const renderIslandPage = createHonoIslandRenderer(renderPage, { interacti
           styles: null,
           needsRuntime: true,
           isDev: this.environment?.mode === 'dev',
-          hydrateIsland: `import { createHonoIslandMounter } from ${JSON.stringify(islandClientPath)};
-const hydrateIsland = createHonoIslandMounter(${Boolean(markdown)});`,
+          // Import the Markdown context only when Markdown is enabled, so the
+          // optional package stays out of other applications' graphs.
+          hydrateIsland: markdown
+            ? `import { createHonoIslandMounter } from ${JSON.stringify(islandClientPath)};
+import { MarkdownContext as __honoMarkdownContext } from ${JSON.stringify(markdownRuntimePath)};
+const hydrateIsland = createHonoIslandMounter(__honoMarkdownContext);`
+            : `import { createHonoIslandMounter } from ${JSON.stringify(islandClientPath)};
+const hydrateIsland = createHonoIslandMounter();`,
         });
         return styles ? styles + '\n' + entry : entry;
       }

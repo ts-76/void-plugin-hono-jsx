@@ -401,11 +401,17 @@ function inspectArchive(bytes, expectedFiles) {
   const pkg = JSON.parse(contents.get('package.json'));
   assert.ok(!pkg.scripts, 'Publishable adapter must not run package lifecycle scripts');
   assert.ok(!pkg.devDependencies, 'Only documented peer dependencies are shipped');
+  // devalue decodes Void's Pages payloads for the adapter's own multipart requests.
   assert.ok(
-    !pkg.dependencies ||
-      (Object.keys(pkg.dependencies).length === 1 &&
-        pkg.dependencies['@ts-76/hono-markdown'] === '^0.3.0'),
-    'Only documented peer dependencies and the fixed common Markdown runtime (^0.3.0) are shipped',
+    pkg.dependencies &&
+      Object.keys(pkg.dependencies).length === 1 &&
+      pkg.dependencies.devalue === '^6.0.3',
+    'Only documented peer dependencies and the Pages payload decoder (devalue ^6.0.3) are shipped',
+  );
+  assert.ok(
+    pkg.peerDependencies?.['@ts-76/hono-markdown'] === '^0.3.0' &&
+      pkg.peerDependenciesMeta?.['@ts-76/hono-markdown']?.optional === true,
+    'The common Markdown runtime must be an optional peer fixed at ^0.3.0',
   );
   return { files, contents };
 }

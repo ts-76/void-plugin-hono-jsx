@@ -1,4 +1,4 @@
-import { realpathSync, statSync } from 'node:fs';
+import { realpathSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { normalizePath } from 'vite';
 import {
@@ -22,7 +22,8 @@ import { parseCacheFor } from 'void/pages-prefetch';
 import { honoJsxTransform } from '../shared/jsx-transform.ts';
 import { honoIslands } from '../islands/plugin.ts';
 import { markdownApi, markdownDiagnostic, type HonoMarkdownApi } from '../markdown/api.ts';
-import { assertSupportedFrameworks } from '../shared/compatibility.ts';
+import { warnUnsupportedVersions } from '../shared/compatibility.ts';
+import { pagesProtocolVersion } from '../shared/protocol.ts';
 
 const rendererId = 'virtual:void-pages-renderer';
 const clientId = 'virtual:void-pages-client';
@@ -51,8 +52,6 @@ function clientOptions(options: HonoJsxOptions) {
     hoverDelay: prefetchHoverDelay,
     cacheFor,
   } = resolvePrefetchConfig(options.prefetch);
-  if (typeof viewTransitions !== 'boolean')
-    throw new Error('Hono Pages: viewTransitions must be a boolean.');
   if (!Number.isFinite(prefetchHoverDelay) || prefetchHoverDelay < 0)
     throw new Error('Hono Pages: prefetch.hoverDelay must be a finite non-negative number.');
   const prefetchDefaultCacheFor = parseCacheFor(cacheFor);
@@ -77,25 +76,18 @@ export function voidHonoJsx(options: HonoJsxOptions = {}): Plugin[] {
   let fallbackPath: string | undefined;
   const fallbackDelay = fallback?.delay ?? 150;
   if (fallback !== undefined) {
-    if (
-      !fallback ||
-      typeof fallback.component !== 'string' ||
-      !fallback.component.trim() ||
-      !/\.[jt]sx$/.test(fallback.component)
-    )
+    if (!/\.[jt]sx$/.test(fallback.component))
       throw new Error('Hono Pages: navigationFallback.component must name a local TSX/JSX file.');
-    if (!Number.isSafeInteger(fallbackDelay) || fallbackDelay < 0 || fallbackDelay > 2147483647)
-      throw new Error(
-        'Hono Pages: navigationFallback.delay must be an integer from 0 to 2147483647 milliseconds.',
-      );
+    if (!Number.isFinite(fallbackDelay) || fallbackDelay < 0)
+      throw new Error('Hono Pages: navigationFallback.delay must be a non-negative number.');
     fallbackPath = normalizePath(realpathSync(resolve(root, fallback.component)));
-    if (!statSync(fallbackPath).isFile())
-      throw new Error('Hono Pages: navigationFallback.component must be a file.');
   }
   const pagesDir = resolvePagesDir(root);
   const staticData = resolveStaticPageDataBuildOptions(root);
   let refreshScan: (() => Promise<PageScanResult | null>) | undefined;
   let markdown: HonoMarkdownApi | undefined;
+  // Read once the configuration resolves; the client sends it with multipart actions.
+  let protocolVersion: string | undefined;
 
   function validate(scan: PageScanResult) {
     for (const layout of [...scan.layouts, ...scan.namedLayouts]) {
@@ -125,23 +117,16 @@ export function voidHonoJsx(options: HonoJsxOptions = {}): Plugin[] {
       const rendererScan = isDev
         ? { ...scan, pages: scan.pages.filter((page) => page.renderMode !== 'client') }
         : scan;
-      let manifest = generateComponentManifest(rendererScan, pagesDir);
-      if (isDev) {
-        // Keep page modules and their Hono providers in the same dev generation
-        // during overlapping requests and reloads. Production retains lazy imports.
-        const imports: string[] = [];
-        manifest = manifest.replace(/\(\) => import\(("(?:[^"\\]|\\.)*")\)/g, (_, path: string) => {
-          const name = `__honoPageSnapshot${imports.length}`;
-          imports.push(`import * as ${name} from ${path};`);
-          return `() => ${name}`;
-        });
-        manifest = imports.join('\n') + '\n' + manifest;
-      }
+      const manifest = generateComponentManifest(rendererScan, pagesDir);
       const scripts = [...(markdown?.getClientScripts().keys() ?? [])];
+      // Development keeps components in the renderer's module generation; production
+      // retains lazy imports. The optional Markdown package is imported only when enabled.
       return `
-import { createHonoPageRenderer } from ${JSON.stringify(ssrPagePath)};
+import { createHonoPageRenderer${isDev ? ', snapshotComponents' : ''} } from ${JSON.stringify(ssrPagePath)};
+${markdown ? `import { MarkdownContext as __honoMarkdownContext } from ${JSON.stringify(markdownRuntimePath)};` : ''}
 ${manifest}
-export const renderPage = createHonoPageRenderer({ components, layoutTree }, { staticData: ${staticData.enabled}, markdown: ${Boolean(markdown)}, markdownScripts: new Set(${JSON.stringify(scripts)}) });
+${isDev ? 'await snapshotComponents(components);' : ''}
+export const renderPage = createHonoPageRenderer({ components, layoutTree, routeMeta }, { staticData: ${staticData.enabled}, ${markdown ? 'markdown: __honoMarkdownContext, ' : ''}markdownScripts: new Set(${JSON.stringify(scripts)}) });
 `;
     },
     generateClient(scan, staticPageData) {
@@ -160,25 +145,22 @@ export const renderPage = createHonoPageRenderer({ components, layoutTree }, { s
 import { startHonoPages } from ${JSON.stringify(clientRuntimePath)};
 ${fallbackPath ? `import __HonoNavigationFallback from ${JSON.stringify(fallbackPath)};` : ''}
 ${manifest}
-await startHonoPages({ components, layoutTree, routeMeta, matchRoute, staticPageData: ${staticPageData.enabled}, staticPageDataFastPath: ${staticPageData.fastPath} }, { ...${JSON.stringify(navigationOptions)}${fallbackPath ? `, navigationFallback: { component: __HonoNavigationFallback, delay: ${fallbackDelay} }` : ''} });
+await startHonoPages({ components, layoutTree, routeMeta, matchRoute, staticPageData: ${staticPageData.enabled}, staticPageDataFastPath: ${staticPageData.fastPath} }, { ...${JSON.stringify({ ...navigationOptions, ...(protocolVersion ? { pagesProtocolVersion: protocolVersion } : {}) })}${fallbackPath ? `, navigationFallback: { component: __HonoNavigationFallback, delay: ${fallbackDelay} }` : ''} });
 `;
     },
   });
+  const islands = honoIslands();
   const configHook = handler(lifecycle.config);
   const resolvedHook = handler(lifecycle.configResolved);
   const resolveHook = handler(lifecycle.resolveId);
 
   return [
-    honoIslands(),
+    islands,
     honoJsxTransform(),
     {
       ...lifecycle,
       enforce: 'pre',
       config(config, env) {
-        assertSupportedFrameworks({
-          root: resolve(config.root ?? root),
-          viteVersion: this.meta.viteVersion,
-        });
         configHook?.call(this, config, env);
         return {
           resolve: { dedupe: ['hono'] },
@@ -187,9 +169,11 @@ await startHonoPages({ components, layoutTree, routeMeta, matchRoute, staticPage
       },
       configResolved: {
         order: 'pre',
-        handler(config) {
+        async handler(config) {
+          warnUnsupportedVersions(config.logger, this.meta.viteVersion);
           markdown = markdownApi(config.plugins);
           resolvedHook?.call(this, config);
+          protocolVersion = await pagesProtocolVersion();
         },
       },
       configEnvironment(environment) {
@@ -222,6 +206,9 @@ await startHonoPages({ components, layoutTree, routeMeta, matchRoute, staticPage
             this.environment.moduleGraph.invalidateModule(module, invalidated, timestamp, true);
         }
         if (this.environment.config.consumer === 'client') {
+          // The islands plugin runs first and has already decided whether the island
+          // component's own HMR handler applies this edit.
+          if (islands.api.hotSwapsIsland(file, timestamp)) return;
           this.environment.hot.send({ type: 'full-reload' });
           return [];
         }

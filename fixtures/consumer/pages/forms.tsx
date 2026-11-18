@@ -43,6 +43,9 @@ export default function Forms({ saved, submissions }: { saved: string; submissio
       <button id="clear-field" onClick={() => form.clearErrors('name')}>
         Clear field
       </button>
+      <button id="set-field-error" onClick={() => form.setError('name', 'Client check failed.')}>
+        Set field error
+      </button>
       <button id="clear-error" onClick={form.clearError}>
         Clear action error
       </button>

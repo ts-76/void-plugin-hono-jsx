@@ -1,12 +1,8 @@
 import assert from 'node:assert/strict';
 import { readFile, readdir } from 'node:fs/promises';
+import { decodePageData, pageDataFromHtml, pagesHeaders } from './page-data.mjs';
 
-const payload = (html) =>
-  JSON.parse(
-    html.match(
-      /<script id="__VOID_PAGE_DATA__" type="application\/json">([\s\S]*?)<\/script>/,
-    )?.[1] ?? 'null',
-  );
+const payload = (html) => pageDataFromHtml(html) ?? null;
 
 // Preserve the HTTP, SSR and bundle checks formerly run by the manual Pages scripts.
 export async function checkSourceContracts(base, checkBuild) {
@@ -50,10 +46,10 @@ export async function checkSourceContracts(base, checkBuild) {
     assert.deepEqual(page.props, props, path);
     assert.deepEqual(page.params, params, path);
     assert.ok(html.includes(`id="route-value">${value}</p>`), path);
-    const pageResponse = await fetch(new URL(path, base), { headers: { 'X-VoidPages': 'true' } });
+    const pageResponse = await fetch(new URL(path, base), { headers: pagesHeaders });
     assert.equal(pageResponse.status, 200);
     assert.equal(pageResponse.headers.get('X-VoidPages'), 'true');
-    const json = await pageResponse.json();
+    const json = decodePageData(await pageResponse.json());
     assert.deepEqual(json.props, page.props);
     assert.deepEqual(json.params, page.params);
   }
@@ -103,7 +99,7 @@ export async function checkSourceContracts(base, checkBuild) {
     return fetch(base + path, {
       method,
       headers: {
-        'X-VoidPages': 'true',
+        ...pagesHeaders,
         Accept: 'application/json',
         'Content-Type': 'application/json',
         ...headers,
@@ -116,11 +112,11 @@ export async function checkSourceContracts(base, checkBuild) {
     for (const method of ['POST', 'PUT', 'PATCH', 'DELETE']) {
       const response = await action(path, method, method + ' name');
       assert.equal(response.status, 200);
-      const page = await response.json();
+      const page = decodePageData(await response.json());
       assert.equal(page.props.name, method === 'DELETE' ? 'Original' : method + ' name');
       assert.equal(page.errors, null);
     }
-    const invalid = await (await action(path, 'POST', '')).json();
+    const invalid = decodePageData(await (await action(path, 'POST', '')).json());
     assert.deepEqual(invalid.errors, { name: 'Name is required.' });
     assert.equal(invalid.props.name, 'Original');
   }
@@ -134,13 +130,13 @@ export async function checkSourceContracts(base, checkBuild) {
   // Keep that transport repro separate from this HTTP 404 contract check.
   const unknown = await fetch(base + '/named?unknown', {
     method: 'POST',
-    headers: { 'X-VoidPages': 'true', Accept: 'application/json', Connection: 'close' },
+    headers: { ...pagesHeaders, Accept: 'application/json', Connection: 'close' },
   });
   await unknown.text();
   assert.equal(unknown.status, 404);
   const failure = await fetch(base + '/named?fail', {
     method: 'POST',
-    headers: { 'X-VoidPages': 'true', Accept: 'application/json', Connection: 'close' },
+    headers: { ...pagesHeaders, Accept: 'application/json', Connection: 'close' },
   });
   assert.match(await failure.text(), /Example action failed\./);
   assert.equal(failure.status, 500);

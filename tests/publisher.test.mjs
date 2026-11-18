@@ -102,13 +102,18 @@ test('publisher audit accepts only reviewed versions/content and fails closed on
   );
 });
 
-test('current publisher policy requires zero findings with the fixed locked dependencies', async () => {
+test('current publisher policy accepts only the owner-reviewed picomatch finding', async () => {
   const policy = loadPublisherPolicy();
-  assert.deepEqual(policy.acceptedFindings, []);
+  assert.deepEqual(
+    policy.acceptedFindings.map(({ name, version, id }) => ({ name, version, id })),
+    [{ name: 'picomatch', version: '4.0.7', id: 'GHSA-fc5q-39xc-vjpf' }],
+  );
   const inventory = JSON.parse(readFileSync(inventoryPath));
   const clean = inventory.map(() => ({}));
-  const report = await auditPublisher({ policy, request: async () => ({ results: clean }) });
-  assert.deepEqual(report.findings, []);
+  await assert.rejects(
+    auditPublisher({ policy, request: async () => ({ results: clean }) }),
+    /Publisher findings changed; reassess/,
+  );
   const index = inventory.findIndex((pkg) => pkg.name === 'undici' && pkg.version === '6.29.1');
   assert.ok(index >= 0);
   const results = [...clean];

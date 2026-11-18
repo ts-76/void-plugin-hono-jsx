@@ -13,7 +13,12 @@ const { RouterContext, PageContext } = await import(
   )
 );
 
-async function model(url = '/upload') {
+// Void 1.10 reads the current page location to preserve its query on page actions.
+const page = (href) => {
+  globalThis.window = { location: new URL(href) };
+};
+async function model(url = '/upload', href = 'https://example.test/form') {
+  page(href);
   const visits = [];
   let form;
   const router = {
@@ -93,6 +98,14 @@ test('JSON forms use the bound URL and optionally submit an explicit payload', a
     ],
   );
   assert.equal(form.data.name, 'model-default');
+  form.setData({ name: 'cleanup' });
+});
+
+test('page actions keep the current page query as Void 1.10 does for the official adapters', async () => {
+  const { form, visits } = await model('/upload', 'https://example.test/upload?tab=files');
+  await form.post();
+  assert.equal(visits[0].url, '/upload?tab=files');
+  assert.equal(visits[0]._preservedQuery, 'tab=files');
   form.setData({ name: 'cleanup' });
 });
 

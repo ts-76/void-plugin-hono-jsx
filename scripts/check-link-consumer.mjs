@@ -1,3 +1,5 @@
+import { pagesHeaders } from './page-data.mjs';
+
 export async function checkLinkConsumer({ origin, page, assert }) {
   const prefetched = [];
   const listener = (request) => {
@@ -118,7 +120,7 @@ export async function checkLinkConsumer({ origin, page, assert }) {
       route.fulfill({
         status: 500,
         contentType: 'application/json',
-        headers: { 'X-VoidPages': 'true' },
+        headers: pagesHeaders,
         body: JSON.stringify({ message: 'Link action failed' }),
       }),
     );

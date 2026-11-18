@@ -7,12 +7,10 @@ import {
   useFrontmatter as legacyHook,
 } from '../packages/void-plugin-hono-jsx/src/runtime/markdown/context.ts';
 import { extractMarkdown } from '@ts-76/hono-markdown/parser';
-import { extractMarkdown as legacyExtract } from '../packages/void-plugin-hono-jsx/src/plugins/markdown/compiler.ts';
 
-test('old and neutral Markdown imports share the exact provider, hooks and parser', () => {
+test('old and neutral Markdown imports share the exact provider and hooks', () => {
   assert.equal(MarkdownContext, legacyContext);
   assert.equal(useFrontmatter, legacyHook);
-  assert.equal(extractMarkdown, legacyExtract);
   const source =
     '<script>import Counter from "./Counter" with { island: "visible" }; import Box from "./Box" with { component: "static" }; window.ready = true;</script>\n# Title';
   const parsed = extractMarkdown(source);

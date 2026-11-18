@@ -4,6 +4,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
+// Versions outside peerDependencies are reported as warnings; the build still runs.
 export async function checkCompatibilityConsumer({ consumer, env, stack }) {
   const build = () =>
     spawnSync(process.execPath, launcherArgs(consumer, 'build', [], env), {
@@ -21,34 +22,15 @@ export async function checkCompatibilityConsumer({ consumer, env, stack }) {
       assert.equal(JSON.parse(original).version, version);
       await writeFile(path, JSON.stringify({ ...JSON.parse(original), version: '999.0.0' }));
       const result = build();
-      assert.notEqual(result.status, 0, `Unverified ${name} must fail`);
-      const diagnostic = result.stdout + result.stderr;
-      assert.ok(diagnostic.includes(`${name} 999.0.0 is unsupported`));
-      assert.ok(diagnostic.includes(path), `Missing resolved ${name} metadata path`);
-      assert.ok(diagnostic.includes(`Running Vite from hook context: ${stack.hostVite}`));
+      const output = result.stdout + result.stderr;
+      assert.equal(result.status, 0, `Unverified ${name} must only warn:\n${output}`);
+      assert.ok(output.includes(`${name} 999.0.0 is outside the supported range`), output);
     } finally {
       await writeFile(path, original);
     }
   }
-  const voidPath = join(consumer, 'node_modules/void/package.json');
-  const originalVoid = await readFile(voidPath, 'utf8');
-  try {
-    for (const version of ['0.26.1', '0.27.0', '1.1.11', '1.2.0', '1.3.0']) {
-      await writeFile(voidPath, JSON.stringify({ ...JSON.parse(originalVoid), version }));
-      const result = build();
-      assert.notEqual(result.status, 0, `Unsupported Void ${version} must fail`);
-      assert.ok((result.stdout + result.stderr).includes(`void ${version} is unsupported`));
-    }
-  } finally {
-    await writeFile(voidPath, originalVoid);
-  }
   const configPath = join(consumer, 'vite.config.ts');
   const originalConfig = await readFile(configPath, 'utf8');
-  const vitePath = join(consumer, 'node_modules/vite/package.json');
-  assert.equal(
-    JSON.parse(await readFile(vitePath, 'utf8')).version,
-    stack.vitePackageVersion ?? stack.vite,
-  );
   try {
     // Same real host and npm dependency; report a different host via the actual hook.
     const config = `import { defineConfig } from 'vite';
@@ -56,24 +38,19 @@ import { voidPlugin } from 'void';
 import { voidHonoJsx } from 'void-plugin-hono-jsx/plugin';
 const pages = voidHonoJsx();
 const plugin = pages.find(p => p.name === 'void-hono:pages');
-const configHook = plugin.config;
-plugin.config = function(config, env) { return configHook.call({ ...this, meta: { ...this.meta, viteVersion: '9.0.0' } }, config, env); };
+const handler = plugin.configResolved.handler;
+plugin.configResolved.handler = function(config) { return handler.call({ ...this, meta: { ...this.meta, viteVersion: '9.0.0' } }, config); };
 export default defineConfig({ plugins: [voidPlugin(), ...pages] });`;
     await writeFile(configPath, config);
     const result = build();
-    assert.notEqual(
-      result.status,
-      0,
-      'Unsupported running Vite must fail despite supported installed Vite',
-    );
-    const diagnostic = result.stdout + result.stderr;
-    assert.match(diagnostic, /running Vite 9\.0\.0 is unsupported/);
-    assert.ok(diagnostic.includes(vitePath), 'Missing diagnostic resolved Vite package path');
-    assert.match(diagnostic, /CLI\/launcher/);
+    const output = result.stdout + result.stderr;
+    assert.equal(result.status, 0, `Unsupported running Vite must only warn:\n${output}`);
+    assert.match(output, /running Vite 9\.0\.0 is outside the supported range/);
+    assert.match(output, /launcher/);
   } finally {
     await writeFile(configPath, originalConfig);
   }
   console.log(
-    `Compatibility: real host Vite ${stack.hostVite}, resolved metadata paths and rejection of a differing unsupported host verified.`,
+    `Compatibility: real host Vite ${stack.hostVite}; unverified Void, Hono and running Vite versions warn without failing the build.`,
   );
 }

@@ -18,6 +18,41 @@ export async function checkIslandGraph({ origin, page, assert, mode, consumer })
   await page.goto(origin + '/graph/static');
   assert.equal(await page.locator('script[src], link[rel="modulepreload"]').count(), 0);
   if (mode === 'development') {
+    // Runs before the graph edits below, so no structural reload is still pending.
+    await page.goto(origin + '/graph/nested', { waitUntil: 'commit' }).catch((error) => {
+      if (!error.message.includes('ERR_ABORTED')) throw error;
+    });
+    await page.waitForFunction(
+      () => document.querySelectorAll('[data-hono-island="mounted"]').length === 4,
+    );
+    // Editing the island component itself renders every mounted island again without
+    // reloading the document. Island state resets because Hono JSX has no Fast Refresh.
+    const counter = join(consumer, 'components/PolicyCounter.tsx');
+    const originalCounter = await readFile(counter, 'utf8');
+    const labels = (text) =>
+      page.waitForFunction((text) => {
+        const buttons = [...document.querySelectorAll('[data-hono-island] button')];
+        return buttons.length === 4 && buttons.every((button) => button.textContent === text);
+      }, text);
+    await page.evaluate(() => {
+      window.__honoIslandHmrMarker = true;
+    });
+    await page.locator('[data-hono-island] #page-increment').click();
+    assert.equal(await page.locator('#page-count').textContent(), '1');
+    try {
+      await writeFile(counter, originalCounter.replace('Increment', 'Add one'));
+      await labels('Add one');
+      assert.equal(
+        await page.evaluate(() => window.__honoIslandHmrMarker),
+        true,
+        'An island component edit must not reload the document',
+      );
+      assert.equal(await page.locator('#page-count').textContent(), '0');
+    } finally {
+      await writeFile(counter, originalCounter);
+    }
+    await labels('Increment');
+    assert.equal(await page.evaluate(() => window.__honoIslandHmrMarker), true);
     const path = join(consumer, 'components/StaticIslandWrapper.tsx');
     const original = await readFile(path, 'utf8');
     const alternate = join(consumer, 'components/AlternatePolicyCounter.tsx');
@@ -55,6 +90,6 @@ export async function checkIslandGraph({ origin, page, assert, mode, consumer })
   await page.goto(origin);
   await page.locator('#app[data-hono-pages="mounted"]').waitFor();
   console.log(
-    'Island graph: root/nested/named layouts, static wrapper, independent repeated props, zero-script chain and component edits passed.',
+    'Island graph: root/nested/named layouts, static wrapper, independent repeated props, zero-script chain, component edits and island HMR without a document reload passed.',
   );
 }

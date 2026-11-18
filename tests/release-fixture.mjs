@@ -36,6 +36,9 @@ export function releaseFixture() {
     repository: { url: 'https://github.com/' + policy.repository + '.git' },
     publishConfig: { access: 'public', registry: 'https://registry.npmjs.org/', tag: 'next' },
     exports: { './plugin': { types: './dist/plugin.d.ts', import: './dist/plugin.js' } },
+    dependencies: { devalue: '^6.0.3' },
+    peerDependencies: { '@ts-76/hono-markdown': '^0.3.0' },
+    peerDependenciesMeta: { '@ts-76/hono-markdown': { optional: true } },
   };
   writeFileSync(path.join(root, 'release-policy.json'), JSON.stringify(policy));
   writeFileSync(path.join(pkgRoot, 'package.json'), JSON.stringify(pkg));
