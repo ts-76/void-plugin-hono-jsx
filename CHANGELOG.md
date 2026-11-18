@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.12.0](https://github.com/ts-76/void-plugin-hono-jsx/compare/v0.11.0...v0.12.0) (2026-11-18)
+
+
+### ⚠ BREAKING CHANGES
+
+* support Void through 1.10 and load Markdown only when installed ([#179](https://github.com/ts-76/void-plugin-hono-jsx/issues/179))
+
+### Features
+
+* support Void through 1.10 and load Markdown only when installed ([#179](https://github.com/ts-76/void-plugin-hono-jsx/issues/179)) ([859d83c](https://github.com/ts-76/void-plugin-hono-jsx/commit/859d83cbea02bd7f25d6a8db64d684ec47957c97))
+
 ## [0.11.0](https://github.com/ts-76/void-plugin-hono-jsx/compare/v0.10.0...v0.11.0) (2026-11-05)
 
 
