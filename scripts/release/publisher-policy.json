@@ -15,6 +15,15 @@
     "entry": "bin/npm-cli.js",
     "entrySha256": "8e5f6f3429f8cdbe693cdc29904e9d5a7b127a494bd15c804bd54c7403bfcbe7"
   },
-  "acceptedFindings": [],
+  "acceptedFindings": [
+    {
+      "name": "picomatch",
+      "version": "4.0.7",
+      "id": "GHSA-fc5q-39xc-vjpf",
+      "modified": "2026-11-17T16:00:03.999173557Z",
+      "advisorySha256": "88abf5b2382db287c3b2b22b656720d55bfa75b90ca67ba219242cccbb8dc54f",
+      "reason": "Owner accepted the ReDoS risk on 2026-11-18 for the private, integrity-pinned npm publisher used only to stage the exact verified tarball. No patched release was available at review time."
+    }
+  ],
   "scope": "Private npm runtime from integrity-pinned upstream CLI code with security-pinned glob 14.0.3 and minimatch 11.0.2 outside upstream dependency ranges; exact accepted tgz stage only; Node 24.22.1; isolated config/cache; mandatory OIDC preflight/provenance and owner final approval. No directory publication or lifecycle scripts."
 }
