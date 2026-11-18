@@ -3,11 +3,7 @@ import { test } from 'node:test';
 import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import {
-  compileMarkdown,
-  extractMarkdown,
-  renderChunks,
-} from '../packages/void-plugin-hono-jsx/src/plugins/markdown/compiler.ts';
+import { compileMarkdown, extractMarkdown, renderChunks } from '@ts-76/hono-markdown/parser';
 import { voidHonoMarkdown } from '../packages/void-plugin-hono-jsx/src/plugins/markdown/plugin.ts';
 import { honoIslands } from '../packages/void-plugin-hono-jsx/src/plugins/islands/plugin.ts';
 

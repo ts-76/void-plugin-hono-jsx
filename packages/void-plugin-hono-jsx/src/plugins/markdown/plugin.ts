@@ -3,14 +3,15 @@ import { join, relative, dirname } from 'node:path';
 import { normalizePath, type Plugin } from 'vite';
 import { resolvePagesDir } from 'void/pages';
 import { resolveComponent } from '../shared/resolve-component.ts';
-import { createMarkdownCompiler, renderChunks } from './compiler.ts';
-import type { HonoMarkdownOptions } from './features.ts';
-import { markdownCopyId, markdownCopyCode } from './copy.ts';
-export type { HonoMarkdownOptions } from './features.ts';
+import { createMarkdownCompiler, renderChunks } from '@ts-76/hono-markdown/parser';
+import type { HonoMarkdownOptions } from '@ts-76/hono-markdown/features';
+import { markdownCopyCode } from '@ts-76/hono-markdown/copy';
+export type { HonoMarkdownOptions } from '@ts-76/hono-markdown/features';
 import type { HonoMarkdownApi } from './api.ts';
 import { markdownRuntimePath } from '../shared/runtime-paths.ts';
 
 const clientId = 'virtual:void-hono-markdown-client';
+const markdownCopyId = 'virtual:void-hono-markdown-copy';
 const scriptQuery = '?hono-markdown-script';
 const literal = (value: unknown) => `JSON.parse(${JSON.stringify(JSON.stringify(value))})`;
 

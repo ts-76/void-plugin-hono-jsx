@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { pagesHeaders } from './page-data.mjs';
 export async function checkTransitionConsumer({ origin, page }) {
   await page.goto(origin + '/transitions');
   await page.locator('#app[data-hono-pages="mounted"]').waitFor();
@@ -108,16 +109,20 @@ export async function checkTransitionConsumer({ origin, page }) {
     route.fulfill({
       status: 500,
       contentType: 'application/json',
-      headers: { 'X-VoidPages': 'true' },
+      headers: pagesHeaders,
       body: JSON.stringify({ message: 'Transition failure' }),
     }),
   );
+  // Void 1.10 loads a failed GET destination as a document so the server's
+  // error response is displayed; return to the page for the following checks.
   await page.locator('#transition-error').click();
-  await page.getByRole('alert').waitFor();
-  await page.locator('#app[data-navigation="idle"]').waitFor();
+  await page.waitForURL('**/transitions?value=error');
+  await page.waitForFunction(() => !document.getElementById('app'));
+  await page.unroute(origin + '/transitions?value=error');
+  await page.goto(origin + '/transitions?value=on');
+  await page.locator('#app[data-hono-pages="mounted"]').waitFor();
   assert.equal(await page.locator('#transition-value').textContent(), 'on');
   assert.equal(await page.title(), 'Transition on');
-  await page.unroute(origin + '/transitions?value=error');
   await page.evaluate(() => {
     document.startViewTransition = undefined;
   });

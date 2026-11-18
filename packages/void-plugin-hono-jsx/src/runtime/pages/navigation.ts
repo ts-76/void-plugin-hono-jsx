@@ -1,3 +1,4 @@
+import { unflatten } from 'devalue';
 import {
   createRouterFacade,
   createVoidRouter,
@@ -27,12 +28,26 @@ type MultipartVisit = {
   refresh: 'not-started' | 'starting' | 'started';
 };
 
+// Void 1.7 and later send Pages payloads as devalue; earlier versions send plain JSON.
+function decodePagePayload(value: unknown): unknown {
+  return value &&
+    typeof value === 'object' &&
+    '__void' in value &&
+    value.__void === 'devalue' &&
+    'data' in value &&
+    Array.isArray(value.data)
+    ? unflatten(value.data)
+    : value;
+}
+
 function cancelled() {
   return new DOMException('Hono Pages: navigation was superseded.', 'AbortError');
 }
 
 /** Void owns ordinary visits. The adapter bridges native FormData and Hono render completion. */
-export async function createHonoRouter(config: VoidRouterConfig) {
+export async function createHonoRouter(
+  config: VoidRouterConfig & { pagesProtocolVersion?: string },
+) {
   let multipart: MultipartVisit | undefined;
   let coreNavigation = idleNavigationState();
   let generation = 0;
@@ -105,12 +120,19 @@ export async function createHonoRouter(config: VoidRouterConfig) {
       const response = await fetch(target, {
         method,
         body: options.data as FormData,
-        headers: { 'X-VoidPages': 'true', Accept: 'application/json' },
+        // Void 1.7 and later answer a Pages request only with its protocol version.
+        headers: {
+          'X-VoidPages': 'true',
+          ...(config.pagesProtocolVersion
+            ? { 'X-VoidPages-Version': config.pagesProtocolVersion }
+            : {}),
+          Accept: 'application/json',
+        },
         signal: request.controller.signal,
       });
       let body: unknown;
       if (response.headers.get('content-type')?.includes('application/json'))
-        body = await response.json();
+        body = decodePagePayload(await response.json());
       else if (!response.ok) body = await response.text();
       else await response.body?.cancel();
       if (multipart !== request) throw cancelled();

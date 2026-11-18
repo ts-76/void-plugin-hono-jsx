@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile, writeFile } from 'node:fs/promises';
 import { chromium } from 'playwright';
 import { observePurge } from './isr-purge-observation.mjs';
+import { pageDataFromHtml, pagesHeaders } from './page-data.mjs';
 
 // Explicit opt-in: this runner mutates only the dedicated, key-protected fixture.
 const [originArg, keyFile, reportFile, revision = 'first', phase = 'matrix'] =
@@ -75,7 +76,7 @@ async function control(body) {
 async function page(path, json = false, headers = {}) {
   const startedAt = Date.now();
   const response = await request(path, {
-    headers: { ...headers, ...(json ? { 'X-VoidPages': 'true' } : {}) },
+    headers: { ...headers, ...(json ? pagesHeaders : {}) },
   });
   const text = await response.text();
   assert.equal(response.status, 200, `${path}: ${response.status}`);
@@ -85,9 +86,9 @@ async function page(path, json = false, headers = {}) {
     props = JSON.parse(text).props;
   } else {
     assert.match(response.headers.get('content-type') ?? '', /text\/html/);
-    const match = text.match(/<script[^>]*id="__VOID_PAGE_DATA__"[^>]*>([\s\S]*?)<\/script>/);
-    assert.ok(match, `${path}: embedded page data missing`);
-    props = JSON.parse(match[1]).props;
+    const page = pageDataFromHtml(text);
+    assert.ok(page, `${path}: embedded page data missing`);
+    props = page.props;
     assert.doesNotMatch(text, /<script>window\.isrInjected/);
   }
   assert.equal(props.fixture, fixture);

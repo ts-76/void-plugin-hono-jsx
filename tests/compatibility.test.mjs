@@ -1,157 +1,101 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { readFileSync } from 'node:fs';
 import {
-  assertSupportedFrameworks,
-  supportsVite,
-  supportsFramework,
-  supportsNode,
+  satisfies,
+  unsupportedVersions,
+  warnUnsupportedVersions,
 } from '../packages/void-plugin-hono-jsx/src/plugins/shared/compatibility.ts';
 import { voidHonoJsx } from '../packages/void-plugin-hono-jsx/src/plugins/pages/plugin.ts';
 
-function project(version = '8.3.3') {
-  const root = mkdtempSync(join(tmpdir(), 'hono-vite-identity-'));
-  mkdirSync(join(root, 'node_modules/vite'), { recursive: true });
-  writeFileSync(join(root, 'package.json'), '{"private":true}');
-  writeFileSync(
-    join(root, 'node_modules/vite/package.json'),
-    JSON.stringify({ name: 'vite', version, main: 'index.js' }),
+const manifest = JSON.parse(
+  readFileSync(new URL('../packages/void-plugin-hono-jsx/package.json', import.meta.url), 'utf8'),
+);
+const supported = { void: '1.10.0', hono: '4.13.16' };
+const installed = (versions) => (name) => versions[name];
+
+test('ranges use the package.json comparator forms and reject prereleases or malformed versions', () => {
+  for (const version of ['8.0.16', '8.3.5', '8.99.0'])
+    assert.ok(satisfies(version, '>=8.0.16 <9.0.0'));
+  for (const version of ['8.0.15', '9.0.0', '8.3.5-beta.0', '8.3.05', '8.3', undefined])
+    assert.equal(satisfies(version, '>=8.0.16 <9.0.0'), false);
+  assert.ok(satisfies('0.3.4', '^0.3.0'));
+  assert.equal(satisfies('0.4.0', '^0.3.0'), false);
+  assert.ok(satisfies('4.14.0', '^4.13.16'));
+  assert.equal(satisfies('5.0.0', '^4.13.16'), false);
+  assert.ok(satisfies('1.2.3', '1.2.3'));
+  assert.ok(satisfies('1.2.4', '>1.2.3 <=1.2.4'));
+});
+
+test('versions inside the declared peer and engine ranges produce no warnings', () => {
+  assert.deepEqual(
+    unsupportedVersions({
+      viteVersion: '8.3.5',
+      nodeVersion: '24.22.1',
+      installed: installed(supported),
+    }),
+    [],
   );
-  writeFileSync(join(root, 'node_modules/vite/index.js'), '');
-  return { root, cleanup: () => rmSync(root, { recursive: true, force: true }) };
-}
-
-test('accept stable Vite 8 updates at or above the scaffold minimum, excluding prereleases', () => {
-  for (const version of ['8.0.16', '8.0.99', '8.1.0', '8.3.3', '8.3.4', '8.3.99', '8.4.0'])
-    assert.equal(supportsVite(version), true);
-  for (const version of [
-    '8.0.15',
-    '7.3.4',
-    '9.3.3',
-    '8.3.4-alpha.0',
-    '8.3.03',
-    '8.3.4.0',
-    undefined,
-  ])
-    assert.equal(supportsVite(version), false);
 });
 
-test('actual hook Vite accepts patch differences even when project resolves another supported copy', () => {
-  const p = project('8.3.4');
-  try {
-    for (const viteVersion of ['8.0.16', '8.3.3', '8.3.4'])
-      assert.doesNotThrow(() => assertSupportedFrameworks({ root: p.root, viteVersion }));
-  } finally {
-    p.cleanup();
-  }
-});
-
-test('unsupported running Vite fails despite project and adapter resolving supported npm Vite', () => {
-  const p = project();
-  try {
-    assert.throws(
-      () => assertSupportedFrameworks({ root: p.root, viteVersion: '9.0.0' }),
-      (error) => {
-        assert.match(error.message, /running Vite 9\.0\.0 is unsupported/);
-        assert.ok(error.message.includes(join(p.root, 'node_modules/vite/package.json')));
-        assert.match(error.message, /Adapter helper Vite: 8\.3\.5; package\.json: .*package\.json/);
-        assert.match(
-          error.message,
-          /installing project vite alone does not update the running Vite/,
-        );
-        return true;
-      },
+test('each version outside its declared range produces a warning naming that range', () => {
+  const messages = unsupportedVersions({
+    viteVersion: '9.0.0',
+    nodeVersion: '26.13.1',
+    installed: installed({ void: '1.11.0', hono: '5.0.0' }),
+  });
+  const expected = [
+    ['Node 26.13.1', manifest.engines.node],
+    ['running Vite 9.0.0', manifest.peerDependencies.vite],
+    ['void 1.11.0', manifest.peerDependencies.void],
+    ['hono 5.0.0', manifest.peerDependencies.hono],
+  ];
+  assert.equal(messages.length, expected.length);
+  for (const [label, range] of expected)
+    assert.ok(
+      messages.some((message) => message.includes(label) && message.includes(range)),
+      label,
     );
-  } finally {
-    p.cleanup();
-  }
+  assert.match(
+    messages.find((message) => message.includes('running Vite')),
+    /launcher/,
+  );
 });
 
-test('missing host version fails closed instead of using resolved package metadata', () => {
-  const p = project();
-  try {
-    assert.throws(
-      () => assertSupportedFrameworks({ root: p.root, viteVersion: undefined }),
-      /running Vite unavailable is unsupported/,
-    );
-  } finally {
-    p.cleanup();
-  }
+test('a missing host Vite version and unresolved packages are reported or skipped without throwing', () => {
+  const messages = unsupportedVersions({
+    viteVersion: undefined,
+    nodeVersion: '24.22.1',
+    installed: () => undefined,
+  });
+  assert.deepEqual(messages.length, 1);
+  assert.match(messages[0], /running Vite unknown is outside/);
 });
 
-test('config hook uses its own meta version and identifies its configured project root', () => {
-  const p = project('8.3.4');
-  try {
-    const plugin = voidHonoJsx().find((p) => p.name === 'void-hono:pages');
-    assert.throws(
-      () => plugin.config.call({ meta: { viteVersion: '9.0.0' } }, { root: p.root }, {}),
-      (error) =>
-        error.message.includes('running Vite 9.0.0') &&
-        error.message.includes(join(p.root, 'node_modules/vite/package.json')),
-    );
-    assert.ok(plugin.config.call({ meta: { viteVersion: '8.3.4' } }, { root: p.root }, {}).resolve);
-  } finally {
-    p.cleanup();
-  }
+test('warnings go to the Vite logger once per message', () => {
+  const warnings = [];
+  const logger = { warn: (message) => warnings.push(message) };
+  warnUnsupportedVersions(logger, '9.1.0');
+  warnUnsupportedVersions(logger, '9.1.0');
+  assert.equal(warnings.filter((message) => message.includes('running Vite 9.1.0')).length, 1);
 });
 
-test('validated Void lines and Hono major boundaries follow the declared peer policy', () => {
-  for (const version of ['1.6.2', '1.6.3', '1.6.99'])
-    assert.equal(supportsFramework('void', version), true);
-  for (const version of [
-    '0.26.0',
-    '0.26.1',
-    '0.26.2',
-    '0.27.0',
-    '0.27.99',
-    '0.28.0',
-    '1.0.0',
-    '1.1.10',
-    '1.1.11',
-    '1.1.12',
-    '1.1.99',
-    '1.2.0',
-    '1.2.1',
-    '1.2.99',
-    '1.3.99',
-    '1.4.0',
-    '1.4.99',
-    '1.5.0',
-    '1.5.99',
-    '1.6.0',
-    '1.6.1',
-    '1.6.2-beta.0',
-    '1.7.0',
-    '1.5.0-beta.0',
-    '1.3.0',
-    '2.0.0',
-    '1.2.1-beta.0',
-    '1.1.12-beta.0',
-    '0.27.1-beta.0',
-  ])
-    assert.equal(supportsFramework('void', version), false);
-  for (const version of ['4.13.16', '4.13.17', '4.14.0'])
-    assert.equal(supportsFramework('hono', version), true);
-  for (const version of ['4.13.12', '4.13.13', '4.13.14', '4.13.15', '5.0.0', '4.14.0-beta.0'])
-    assert.equal(supportsFramework('hono', version), false);
+test('the pages plugin warns for an unsupported running Vite instead of failing the build', () => {
+  const plugin = voidHonoJsx().find((p) => p.name === 'void-hono:pages');
+  const warnings = [];
+  assert.ok(plugin.config.call({ meta: { viteVersion: '9.2.0' } }, {}, {}).resolve);
+  assert.doesNotThrow(() =>
+    plugin.configResolved.handler.call(
+      { meta: { viteVersion: '9.2.0' } },
+      { plugins: [], logger: { warn: (message) => warnings.push(message) } },
+    ),
+  );
+  assert.ok(warnings.some((message) => message.includes('running Vite 9.2.0')));
 });
 
-test('Node support is limited to the documented 24 LTS line and minimum', () => {
-  for (const version of ['24.22.1', '24.22.2', '24.23.0', '24.99.0'])
-    assert.equal(supportsNode(version), true);
-  for (const version of [
-    '22.0.0',
-    '24.20.9',
-    '24.21.0',
-    '24.21.1',
-    '24.22.0',
-    '25.0.0',
-    '26.0.0',
-    '24.22.1-rc.0',
-    '24.022.1',
-    undefined,
-  ])
-    assert.equal(supportsNode(version), false);
+test('every declared range uses comparators that the warning check understands', () => {
+  const ranges = { ...manifest.peerDependencies, node: manifest.engines.node };
+  for (const [name, range] of Object.entries(ranges))
+    for (const comparator of range.trim().split(/\s+/))
+      assert.match(comparator, /^(?:>=|<=|>|<|\^|=)?\d+\.\d+\.\d+$/, `${name}: ${range}`);
 });

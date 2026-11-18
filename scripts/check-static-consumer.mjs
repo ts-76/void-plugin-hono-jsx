@@ -6,6 +6,7 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { cp, readFile, rm, access, writeFile, mkdir } from 'node:fs/promises';
 import { join, relative, extname } from 'node:path';
 import { createServer } from 'node:http';
+import { decodePageData } from './page-data.mjs';
 
 export async function checkStaticConsumer({ repo, consumer, browser, env }) {
   for (const directory of ['pages', 'components', 'routes', 'server'])
@@ -73,7 +74,9 @@ export async function checkStaticConsumer({ repo, consumer, browser, env }) {
   assert.match(initial, /id="static-count"[^>]*>5<\/output>/);
   assert.match(initial, /&lt;\/script&gt;/);
   assert.match(initial, /src="\/assets\//);
-  const data = JSON.parse(await readFile(join(output, '_void/pages/users/alice.json'), 'utf8'));
+  const data = decodePageData(
+    JSON.parse(await readFile(join(output, '_void/pages/users/alice.json'), 'utf8')),
+  );
   assert.equal(data.props.label, 'alice');
   assert.equal(data.props.initialCount, 7);
   const requests = [];

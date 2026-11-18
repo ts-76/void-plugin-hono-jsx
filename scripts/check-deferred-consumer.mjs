@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { decodePageData, pagesHeaders } from './page-data.mjs';
 
 export async function checkDeferredConsumer({ origin, page, mode }) {
   const promiseMatches = async (legacy, promise) => {
@@ -57,7 +58,8 @@ export async function checkDeferredConsumer({ origin, page, mode }) {
     /data-hono-target=/,
     'Deferred HTML completion must remain the Void protocol',
   );
-  assert.match(rest, /\\u003c\/script\\u003e/);
+  // Escaped closing tags only; Void 1.7 and later emit the upper-case `\u003C` form.
+  assert.match(rest, /\\u003c\/script\\u003e/i);
   await page.locator('#consumer-layout-increment').click();
   await page.waitForFunction(
     () => document.querySelector('#consumer-layout-count')?.textContent === '1',
@@ -130,13 +132,13 @@ export async function checkDeferredConsumer({ origin, page, mode }) {
   assert.equal(await page.locator('#deferred-state').getAttribute('role'), 'alert');
   // Void 0.26.1 deliberately hides internal error details in production streams.
   const rejectedStream = await fetch(origin + '/deferred?token=failure', {
-    headers: { 'X-VoidPages': 'true' },
+    headers: pagesHeaders,
   });
   const rejectedBody = await rejectedStream.text();
   const rejectedMessages = rejectedBody
     .trim()
     .split('\n')
-    .map((line) => JSON.parse(line));
+    .map((line) => decodePageData(JSON.parse(line)));
   assert.equal(
     rejectedMessages.find((message) => message.__deferred === 'slow')?.error,
     failureMessage,

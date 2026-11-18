@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { pagesHeaders } from './page-data.mjs';
 
 export async function checkNavigationFallback({ origin, browser }) {
   const page = await browser.newPage();
@@ -22,7 +23,7 @@ export async function checkNavigationFallback({ origin, browser }) {
           await route.fulfill({
             status: 500,
             contentType: 'application/json',
-            headers: { 'X-VoidPages': 'true' },
+            headers: pagesHeaders,
             body: JSON.stringify({ message: 'Fallback navigation failed' }),
           });
         else await route.continue();
@@ -132,17 +133,6 @@ export async function checkNavigationFallback({ origin, browser }) {
     assert.equal(await page.title(), 'Transition fallback-new');
     assert.equal(await page.locator('[data-hono-navigation-fallback]').count(), 0);
 
-    const failed = await hold('/transitions?value=error', true);
-    await visit('/transitions?value=error');
-    await failed.seen;
-    await page.locator('#common-navigation-fallback').waitFor();
-    failed.release();
-    await finish();
-    await failed.dispose();
-    assert.equal(await page.locator('#transition-value').textContent(), 'fallback-new');
-    assert.equal(await page.title(), 'Transition fallback-new');
-    assert.equal(await page.evaluate(() => window.fallbackErrors.length), 1);
-
     // A presentation component can fail while the GET is still held. This
     // must not retry the same failed Hono subtree during parent state updates.
     await page.evaluate(() => {
@@ -228,8 +218,19 @@ export async function checkNavigationFallback({ origin, browser }) {
       true,
     );
     assert.deepEqual(errors, []);
+
+    // A failed GET shows the fallback while pending. Void 1.10 then loads the
+    // destination as a document so the server's error response is displayed.
+    const failed = await hold('/transitions?value=error', true);
+    await visit('/transitions?value=error');
+    await failed.seen;
+    await page.locator('#common-navigation-fallback').waitFor();
+    failed.release();
+    await page.waitForURL('**/transitions?value=error');
+    await page.waitForFunction(() => !document.getElementById('app'));
+    await failed.dispose();
     console.log(
-      `Navigation fallback: SSR idle, delayed GET (${Math.round(firstDelay)}ms), retained page/layout/input DOM, reset/preserveState, cancellation, fetch/fallback-render failure, history and completed-prefetch (${Math.round(fast.duration)}ms, ${fast.displayed} fallback observations) passed.`,
+      `Navigation fallback: SSR idle, delayed GET (${Math.round(firstDelay)}ms), retained page/layout/input DOM, reset/preserveState, cancellation, fallback-render failure, history, completed-prefetch and failed-GET document fallback (${Math.round(fast.duration)}ms, ${fast.displayed} fallback observations) passed.`,
     );
   } catch (error) {
     console.error(

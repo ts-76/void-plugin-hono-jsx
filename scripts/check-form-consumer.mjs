@@ -1,3 +1,5 @@
+import { pagesHeaders } from './page-data.mjs';
+
 export async function checkFormConsumer({ origin, page, assert }) {
   const wait = (selector, text) =>
     page.waitForFunction(
@@ -17,6 +19,11 @@ export async function checkFormConsumer({ origin, page, assert }) {
   await wait('#note-error', '');
   await wait('#field-error', 'Name is required.');
   await page.locator('#clear-field').click();
+  await wait('#field-error', '');
+  // A client-set message behaves like a server one: editing that field clears it.
+  await page.locator('#set-field-error').click();
+  await wait('#field-error', 'Client check failed.');
+  await page.locator('#form-name').fill('Typed');
   await wait('#field-error', '');
   await page.locator('#clear-error').click();
   assert.equal(await page.getByRole('alert').count(), 0);
@@ -58,7 +65,7 @@ export async function checkFormConsumer({ origin, page, assert }) {
       ? route.fulfill({
           status: 500,
           contentType: 'application/json',
-          headers: { 'X-VoidPages': 'true' },
+          headers: pagesHeaders,
           body: JSON.stringify({ message: 'Form failed' }),
         })
       : route.fallback(),
@@ -74,7 +81,7 @@ export async function checkFormConsumer({ origin, page, assert }) {
     return route.fulfill({
       status: 429,
       contentType: 'application/json',
-      headers: { 'X-VoidPages': 'true' },
+      headers: pagesHeaders,
       body: JSON.stringify({
         code: 'usage_limit',
         resource: 'requests',

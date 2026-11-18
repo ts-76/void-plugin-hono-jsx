@@ -43,6 +43,8 @@ export type HonoForm<T extends Fields> = {
   reset: { (): void; (...fields: Array<(keyof T & string) | FormResetOptions>): void };
   clearErrors(...fields: Array<keyof T & string>): void;
   clearError(): void;
+  /** Sets one field's validation message; editing that field clears it, as with server errors. */
+  setError(field: keyof T & string, message: string): void;
 } & Record<FormMethod, (options?: FormSubmitOptions<T>) => Promise<void>>;
 
 function toFormError(failure: unknown, url: string): VoidActionError {
@@ -188,7 +190,7 @@ function useFormModel<T extends Fields>(
   const [pending, setPending] = useState(false);
   const [wasSuccessful, setSuccessful] = useState(false);
   const [recentlySuccessful, setRecent] = useState(false);
-  const [error, setError] = useState<VoidActionError | null>(null);
+  const [error, setFormError] = useState<VoidActionError | null>(null);
   const active = useRef(false);
   const generation = useRef(0);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -217,7 +219,7 @@ function useFormModel<T extends Fields>(
         Object.entries(messages).filter(([key]) => isEqualFormValue(previous[key], edited[key])),
       ),
     );
-    setError(null);
+    setFormError(null);
     setRecent(false);
     clearTimeout(timer.current);
   };
@@ -229,7 +231,7 @@ function useFormModel<T extends Fields>(
     setSuccessful(false);
     setRecent(false);
     clearTimeout(timer.current);
-    setError(null);
+    setFormError(null);
     setErrors({});
     const modelAtSubmit = current.current;
     const data = options.data ?? modelAtSubmit;
@@ -254,11 +256,12 @@ function useFormModel<T extends Fields>(
           if (id === generation.current) setRecent(false);
         }, 2000);
       } else {
-        setError(result.error);
+        setFormError(result.error);
         setErrors(fieldErrors(result.error));
       }
     } catch (failure) {
-      if (id === generation.current && !isAbortError(failure)) setError(toFormError(failure, url));
+      if (id === generation.current && !isAbortError(failure))
+        setFormError(toFormError(failure, url));
     } finally {
       if (id === generation.current) {
         active.current = false;
@@ -275,7 +278,7 @@ function useFormModel<T extends Fields>(
     setRecent(false);
     clearTimeout(timer.current);
     void Promise.resolve(abort()).catch((failure: unknown) => {
-      if (id === generation.current) setError(toFormError(failure, url));
+      if (id === generation.current) setFormError(toFormError(failure, url));
     });
   }
   return {
@@ -318,7 +321,10 @@ function useFormModel<T extends Fields>(
       );
     },
     clearError() {
-      setError(null);
+      setFormError(null);
+    },
+    setError(field, message) {
+      setErrors((previous) => ({ ...previous, [field]: message }));
     },
     post: (options) => submit('post', options),
     put: (options) => submit('put', options),

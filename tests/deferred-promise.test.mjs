@@ -8,6 +8,7 @@ import {
   rejectDeferred,
   deferredResult,
   isLoading,
+  bufferInitialDeferred,
 } from '../packages/void-plugin-hono-jsx/src/runtime/pages/deferred.ts';
 
 async function browser(check) {
@@ -114,3 +115,19 @@ test('SSR Suspense returns only the initial fallback without waiting for a resul
     clearTimeout(timer);
   }
 });
+
+test('early deferred messages keep the Void queue format, including serialized payloads', () =>
+  browser(async () => {
+    const release = bufferInitialDeferred();
+    const payload = { __void: 'devalue', data: ['value'] };
+    window.__resolveDeferred('plain', 'value');
+    window.__resolveDeferred('serialized', payload, true);
+    window.__rejectDeferred('failed', 'Unavailable');
+    assert.deepEqual(window.__deferredQueue, [
+      ['plain', 'value'],
+      ['serialized', payload, 0, true],
+      ['failed', 0, 'Unavailable'],
+    ]);
+    release();
+    assert.equal(window.__resolveDeferred, undefined);
+  }));

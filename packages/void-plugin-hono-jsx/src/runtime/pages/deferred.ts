@@ -68,15 +68,17 @@ export function isLoading(ref: unknown): boolean {
 // messages in its existing queue until the initial deferred registry is ready.
 declare global {
   interface Window {
-    __resolveDeferred?: (group: string, data: unknown) => void;
+    __resolveDeferred?: (group: string, data: unknown, serialized?: boolean) => void;
     __rejectDeferred?: (group: string, error: string) => void;
-    __deferredQueue?: Array<[string, unknown] | [string, 0, string]>;
+    // Void 1.7 and later mark devalue payloads with a fourth entry.
+    __deferredQueue?: Array<[string, unknown] | [string, 0, string] | [string, unknown, 0, true]>;
   }
 }
 export function bufferInitialDeferred() {
   const resolve = window.__resolveDeferred;
   const reject = window.__rejectDeferred;
-  window.__resolveDeferred = (group, data) => (window.__deferredQueue ??= []).push([group, data]);
+  window.__resolveDeferred = (group, data, serialized) =>
+    (window.__deferredQueue ??= []).push(serialized ? [group, data, 0, true] : [group, data]);
   window.__rejectDeferred = (group, error) =>
     (window.__deferredQueue ??= []).push([group, 0, error]);
   return () => {

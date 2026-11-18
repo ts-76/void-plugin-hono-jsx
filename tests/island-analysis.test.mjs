@@ -34,6 +34,7 @@ function fixture() {
   return {
     root,
     plugin,
+    environment,
     sent,
     invalidated,
     write(file, source) {
@@ -273,3 +274,107 @@ test(
     }
   },
 );
+
+test('an island component edit that keeps the island graph is left to its own HMR handler', async () => {
+  const f = fixture();
+  const hot = async (file) => {
+    const timestamp = Date.now() + Math.random();
+    const path = join(f.root, file);
+    await f.plugin.hotUpdate.call(
+      { environment: f.environment },
+      { file: path, type: 'update', modules: [], timestamp },
+    );
+    return f.plugin.api.hotSwapsIsland(path, timestamp);
+  };
+  try {
+    f.write(
+      'pages/index.island.tsx',
+      'import Counter from "../components/Counter" with { island: "load" }; export default function Page(){return <Counter/>}',
+    );
+    // The same component with another policy: the manifest keeps one policy per island id.
+    f.write(
+      'pages/other.island.tsx',
+      'import Counter from "../components/Counter" with { island: "idle" }; export default function Page(){return <Counter/>}',
+    );
+    f.write('components/label.ts', 'export const label = "Count";');
+    f.write(
+      'components/Counter.tsx',
+      'import { label } from "./label"; export default function Counter(){return <button>{label}</button>}',
+    );
+    await f.plugin.buildStart();
+    // Page transforms register their island imports into the live manifest again,
+    // so its policy for the shared island id differs from the last analysis.
+    for (const page of ['pages/other.island.tsx', 'pages/index.island.tsx'])
+      f.plugin.transform.call(
+        { environment: { mode: 'dev', config: { consumer: 'server' } } },
+        fs.readFileSync(join(f.root, page), 'utf8'),
+        join(f.root, page),
+      );
+    f.write(
+      'components/Counter.tsx',
+      'import { label } from "./label"; export default function Counter(){return <button>{label}!</button>}',
+    );
+    assert.equal(await hot('components/Counter.tsx'), true);
+    assert.deepEqual(f.sent, []);
+    assert.equal(await hot('components/label.ts'), false, 'a dependency edit still reloads');
+    assert.equal(f.sent.length, 1);
+  } finally {
+    f.cleanup();
+  }
+});
+
+test('only development client transforms of island components accept their own updates', async () => {
+  const f = fixture();
+  try {
+    f.write(
+      'pages/index.island.tsx',
+      'import Counter from "../components/Counter" with { island: "load" }; export default function Page(){return <Counter/>}',
+    );
+    const source = 'export default function Counter(){return <button>Count</button>}';
+    f.write('components/Counter.tsx', source);
+    f.write('components/Other.tsx', source);
+    await f.plugin.buildStart();
+    const transform = (environment, file) =>
+      f.plugin.transform.call({ environment }, source, join(f.root, file));
+    const client = transform(
+      { mode: 'dev', config: { consumer: 'client' } },
+      'components/Counter.tsx',
+    );
+    assert.match(client.code, /import\.meta\.hot\.accept/);
+    assert.match(client.code, /__remountHonoIslands\(\["components\/Counter\.tsx"\]/);
+    for (const [environment, file] of [
+      [{ mode: 'dev', config: { consumer: 'server' } }, 'components/Counter.tsx'],
+      [{ mode: 'build', config: { consumer: 'client' } }, 'components/Counter.tsx'],
+      [{ mode: 'dev', config: { consumer: 'client' } }, 'components/Other.tsx'],
+    ])
+      assert.equal(transform(environment, file), undefined, file);
+  } finally {
+    f.cleanup();
+  }
+});
+
+test('removing a hot-accepting component after it left the island graph reloads the page', async () => {
+  const f = fixture();
+  try {
+    f.write(
+      'pages/index.island.tsx',
+      'import Counter from "../components/Counter" with { island: "load" }; export default function Page(){return <Counter/>}',
+    );
+    const source = 'export default function Counter(){return <button>Count</button>}';
+    f.write('components/Counter.tsx', source);
+    await f.plugin.buildStart();
+    f.plugin.transform.call(
+      { environment: { mode: 'dev', config: { consumer: 'client' } } },
+      source,
+      join(f.root, 'components/Counter.tsx'),
+    );
+    f.write('pages/index.island.tsx', 'export default function Page(){return <p>Static</p>}');
+    await f.update('pages/index.island.tsx');
+    assert.deepEqual(f.sent, [], 'the pages plugin owns page edits');
+    fs.rmSync(join(f.root, 'components/Counter.tsx'));
+    assert.deepEqual(await f.update('components/Counter.tsx', 'delete'), []);
+    assert.deepEqual(f.sent, [{ type: 'full-reload' }]);
+  } finally {
+    f.cleanup();
+  }
+});

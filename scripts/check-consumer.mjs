@@ -334,7 +334,7 @@ try {
   const commonPackage = commonPackageSource({
     accepted: Boolean(args.length),
     override: process.env.HONO_MARKDOWN_PACKAGE,
-    range: metadata.dependencies?.['@ts-76/hono-markdown'],
+    range: metadata.peerDependencies?.['@ts-76/hono-markdown'],
     packLocal() {
       const packed = JSON.parse(
         npm(
@@ -445,8 +445,9 @@ try {
     }
     console.log('Static-only client assets: no executable statements or framework imports.');
     await smoke('preview', browser, true);
-    await checkStaticConsumer({ repo, consumer, browser, env });
+    // Version warnings need a buildable consumer; the static checks end in a failing build.
     await checkCompatibilityConsumer({ consumer, env, stack });
+    await checkStaticConsumer({ repo, consumer, browser, env });
     await checkIsrConsumer({ repo, consumer, browser, env });
     await checkMarkdownConsumer({ repo, consumer, browser, env, tarball, npmCli });
   } finally {

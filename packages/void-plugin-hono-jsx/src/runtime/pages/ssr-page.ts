@@ -1,25 +1,40 @@
-import { jsx } from 'hono/jsx';
+import { jsx, type Context } from 'hono/jsx';
 import { createSsrRouter, idleNavigationState } from 'void/pages-client';
 import type { PageObject } from 'void/pages-protocol';
 import { PageContext, RouterContext, NavigationContext } from './api.tsx';
-import { MarkdownContext, type MarkdownHeading } from '../markdown/context.ts';
 import { renderHonoDocument } from './ssr-document.ts';
 
 type PageModule = {
   default: unknown;
   frontmatter?: Record<string, unknown>;
   clientFrontmatter?: Record<string, unknown>;
-  headings?: MarkdownHeading[];
+  headings?: unknown[];
 };
 type PageManifest = {
   components: Record<string, () => PageModule | Promise<PageModule>>;
   layoutTree: Record<string, string[]>;
+  routeMeta?: Record<string, { island?: boolean }>;
 };
 type RenderOptions = {
   staticData: boolean;
-  markdown: boolean;
+  /** Supplied by the generated entry only when Markdown is enabled. */
+  markdown?: Pick<Context<never>, 'Provider'>;
   markdownScripts: ReadonlySet<string>;
 };
+
+/**
+ * Development only. A request can keep an old renderer while the worker module runner
+ * reloads, so every server component is loaded while the renderer module evaluates.
+ * Pages and layouts then stay in the renderer's module generation.
+ */
+export async function snapshotComponents(components: PageManifest['components']) {
+  await Promise.all(
+    Object.entries(components).map(async ([id, load]) => {
+      const module = await load();
+      components[id] = () => module;
+    }),
+  );
+}
 
 /** The generated entry supplies discovery data; rendering stays type checked here. */
 export function createHonoPageRenderer(manifest: PageManifest, options: RenderOptions) {
@@ -53,7 +68,7 @@ export function createHonoPageRenderer(manifest: PageManifest, options: RenderOp
       content = jsx(Layout, { children: content });
     }
     if (options.markdown)
-      content = jsx(MarkdownContext.Provider, {
+      content = jsx(options.markdown.Provider, {
         value: { frontmatter, clientFrontmatter, headings, props: page.props },
         children: content,
       });
@@ -69,8 +84,16 @@ export function createHonoPageRenderer(manifest: PageManifest, options: RenderOp
     });
     return renderHonoDocument(content, page, assets, {
       markdownScript: options.markdownScripts.has(page.component) ? page.component : undefined,
+      // Island pages carry their props here because Void's page data format is
+      // private (devalue since Void 1.7). Full Pages read props through the router.
       ...(options.markdown
-        ? { markdown: JSON.stringify({ frontmatter: clientFrontmatter, headings }) }
+        ? {
+            markdown: JSON.stringify({
+              frontmatter: clientFrontmatter,
+              headings,
+              ...(manifest.routeMeta?.[page.component]?.island ? { props: page.props } : {}),
+            }),
+          }
         : {}),
     });
   };

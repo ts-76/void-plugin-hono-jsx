@@ -40,6 +40,14 @@ Changes are grouped for release. A merged PR does not publish to npm.
 In the PR, describe the resulting behavior, checks actually run and any remaining limitations.
 Keep generated logs, screenshots, caches and tarballs out of Git.
 
+## Shared Markdown package
+
+`packages/hono-markdown` is published separately as `@ts-76/hono-markdown`. Release it before an adapter version that needs a newer range.
+`npm install`, `npm run typecheck` and `npm test` build it automatically; `npm run build:package` builds both packages.
+`npm run check:consumer` verifies the independent package first, then installs both candidates for the real-app checks.
+Local checks can select a candidate tarball with `HONO_MARKDOWN_PACKAGE`; accepted release checks always install the published package.
+The adapter's legacy theme exports keep their own CSS snapshot and do not follow the common theme automatically.
+
 ## Bug reports
 
 Include:

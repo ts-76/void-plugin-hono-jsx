@@ -23,7 +23,11 @@ import { createRenderState, type RenderFrame } from './render-state.ts';
 type NavigationOptions = Pick<
   VoidRouterConfig,
   'viewTransitions' | 'prefetchHoverDelay' | 'prefetchDefaultCacheFor' | 'prefetchDefaultStrategy'
-> & { navigationFallback?: NavigationFallbackOptions };
+> & {
+  navigationFallback?: NavigationFallbackOptions;
+  /** The installed Void's Pages protocol version, absent before Void 1.7. */
+  pagesProtocolVersion?: string;
+};
 
 type Manifest = Pick<
   VoidRouterConfig,

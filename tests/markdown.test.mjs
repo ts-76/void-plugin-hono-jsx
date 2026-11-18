@@ -5,11 +5,7 @@ import { mkdtemp, mkdir, writeFile, rm, symlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { jsx } from 'hono/jsx/jsx-runtime';
-import {
-  compileMarkdown,
-  extractMarkdown,
-  renderChunks,
-} from '../packages/void-plugin-hono-jsx/src/plugins/markdown/compiler.ts';
+import { compileMarkdown, extractMarkdown, renderChunks } from '@ts-76/hono-markdown/parser';
 import { voidHonoMarkdown } from '../packages/void-plugin-hono-jsx/src/plugins/markdown/plugin.ts';
 import { voidHonoJsx } from '../packages/void-plugin-hono-jsx/src/plugins/pages/plugin.ts';
 import {
@@ -115,7 +111,10 @@ test('configured optional Markdown participates in server manifests and island g
     md.configResolved({ root, plugins });
     const pages = plugins.find((p) => p.name === 'void-hono:pages');
     const islands = plugins.find((p) => p.name === 'void-hono:islands');
-    pages.configResolved.handler({ plugins });
+    pages.configResolved.handler.call(
+      { meta: { viteVersion: '8.3.5' } },
+      { plugins, logger: { warn() {} } },
+    );
     islands.configResolved({ plugins });
     pages.environment = { mode: 'build' };
     await pages.buildStart();
@@ -123,7 +122,8 @@ test('configured optional Markdown participates in server manifests and island g
     const loadPages = typeof pages.load === 'function' ? pages.load : pages.load.handler;
     const server = await loadPages.call(pages, pages.resolveId('virtual:void-pages-renderer'));
     assert.match(server, /index\.md/);
-    assert.match(server, /markdown: true/);
+    assert.match(server, /markdown: __honoMarkdownContext/);
+    assert.match(server, /import \{ MarkdownContext as __honoMarkdownContext \}/);
     assert.match(server, /new Set\(\["index"\]\)/);
     const client = await loadPages.call(pages, pages.resolveId('virtual:void-pages-client'));
     assert.doesNotMatch(client, /index\.md/);

@@ -4,6 +4,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import { cp, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { createServer } from 'node:net';
+import { pageDataFromHtml } from './page-data.mjs';
 
 export async function checkIsrConsumer({ repo, consumer, browser, env }) {
   for (const directory of ['pages', 'components', 'routes', 'server', 'dist', '.void', '.wrangler'])
@@ -68,9 +69,9 @@ export async function checkIsrConsumer({ repo, consumer, browser, env }) {
     const response = await fetch(origin + path);
     const html = await response.text();
     assert.equal(response.status, 200, html);
-    const payload = html.match(/<script[^>]*id="__VOID_PAGE_DATA__"[^>]*>([\s\S]*?)<\/script>/);
-    assert.ok(payload, 'Missing safely serialized page data');
-    return { response, html, props: JSON.parse(payload[1]).props };
+    const page = pageDataFromHtml(html);
+    assert.ok(page, 'Missing safely serialized page data');
+    return { response, html, props: page.props };
   };
   async function until(check, message) {
     const deadline = Date.now() + 10000;

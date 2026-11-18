@@ -1,11 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import MarkdownExit from 'markdown-exit';
-import {
-  compileMarkdown,
-  createMarkdownCompiler,
-  renderChunks,
-} from '../packages/void-plugin-hono-jsx/src/plugins/markdown/compiler.ts';
+import { compileMarkdown, createMarkdownCompiler, renderChunks } from '@ts-76/hono-markdown/parser';
 
 const text = (html) => new MarkdownExit().utils.unescapeAll(html.replace(/<[^>]+>/g, ''));
 

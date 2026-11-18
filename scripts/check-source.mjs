@@ -7,6 +7,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { checkSourceContracts } from './check-source-contracts.mjs';
+import { pagesHeaders } from './page-data.mjs';
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
 const temporary = await mkdtemp(join(tmpdir(), 'hono-pages-source-'));
@@ -154,7 +155,7 @@ async function smoke(mode, browser) {
     await page.route('**/users/failed?fail=1', (route) =>
       route.fulfill({
         contentType: 'application/json',
-        headers: { 'X-VoidPages': 'true' },
+        headers: pagesHeaders,
         body: 'invalid json',
       }),
     );
